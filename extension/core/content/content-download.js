@@ -7,9 +7,6 @@ this.screenbreak.extension.core.content.download = this.screenbreak.extension.co
 	return { downloadPage };
 
 	async function downloadPage(pageData, options) {
-		if (options.includeBOM) {
-			pageData.content = "\ufeff" + pageData.content;
-		}
 		for (let blockIndex = 0; blockIndex * MAX_CONTENT_SIZE < pageData.content.length; blockIndex++) {
 			const message = {
 				method: "downloads.download",

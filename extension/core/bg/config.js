@@ -27,8 +27,7 @@ screenbreak.extension.core.bg.config = (() => {
 		removeAlternativeImages: true,
 		groupDuplicateImages: true,
 		resolveFragmentIdentifierURLs: false,
-		saveFavicon: true,
-		includeBOM: false
+		saveFavicon: true
 	};
 
 	let configStorage;
