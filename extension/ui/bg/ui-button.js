@@ -29,40 +29,14 @@ screenbreak.extension.ui.bg.button = (() => {
 	const BUTTON_DEFAULT_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonDefaultTooltip");
 	const BUTTON_BLOCKED_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonBlockedTooltip");
 	const BUTTON_DEFAULT_BADGE_MESSAGE = "";
-	const BUTTON_INITIALIZING_BADGE_MESSAGE = browser.i18n.getMessage("buttonInitializingBadge");
-	const BUTTON_INITIALIZING_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonInitializingTooltip");
 	const BUTTON_BLOCKED_BADGE_MESSAGE = browser.i18n.getMessage("buttonBlockedBadge");
-	const BUTTON_OK_BADGE_MESSAGE = browser.i18n.getMessage("buttonOKBadge");
-	const BUTTON_SAVE_PROGRESS_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonSaveProgressTooltip");
-	const BUTTON_UPLOAD_PROGRESS_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonUploadProgressTooltip");
 	const DEFAULT_COLOR = [2, 147, 20, 192];
-	const ACTIVE_COLOR = [4, 229, 36, 192];
 	const FORBIDDEN_COLOR = [255, 255, 255, 1];
-	const INJECT_SCRIPTS_STEP = 1;
 
 	const BUTTON_STATES = {
 		default: {
 			setBadgeBackgroundColor: { color: DEFAULT_COLOR },
 			setBadgeText: { text: BUTTON_DEFAULT_BADGE_MESSAGE },
-			setTitle: { title: BUTTON_DEFAULT_TOOLTIP_MESSAGE },
-			setIcon: { path: DEFAULT_ICON_PATH }
-		},
-		inject: {
-			setBadgeBackgroundColor: { color: DEFAULT_COLOR },
-			setBadgeText: { text: BUTTON_INITIALIZING_BADGE_MESSAGE },
-			setTitle: { title: BUTTON_INITIALIZING_TOOLTIP_MESSAGE },
-		},
-		execute: {
-			setBadgeBackgroundColor: { color: ACTIVE_COLOR },
-			setBadgeText: { text: BUTTON_INITIALIZING_BADGE_MESSAGE },
-		},
-		progress: {
-			setBadgeBackgroundColor: { color: ACTIVE_COLOR },
-			setBadgeText: { text: BUTTON_DEFAULT_BADGE_MESSAGE }
-		},
-		end: {
-			setBadgeBackgroundColor: { color: ACTIVE_COLOR },
-			setBadgeText: { text: BUTTON_OK_BADGE_MESSAGE },
 			setTitle: { title: BUTTON_DEFAULT_TOOLTIP_MESSAGE },
 			setIcon: { path: DEFAULT_ICON_PATH }
 		},
@@ -74,18 +48,16 @@ screenbreak.extension.ui.bg.button = (() => {
 		}
 	};
 
-	browser.browserAction.onClicked.addListener(async () => {
+	browser.browserAction.onClicked.addListener(async tab => {
 		const business = screenbreak.extension.core.bg.business;
-		const allTabs = await screenbreak.extension.core.bg.tabs.get({ currentWindow: true, highlighted: true });
-		business.saveTabs(allTabs);
+		if (!business.isSavingTab(tab)) {
+			business.saveTabs([tab]);
+		}
 	});
 
 	return {
 		onMessage,
-		onStart,
-		onUploadProgress,
 		onForbiddenDomain,
-		onEnd,
 		onCancelled,
 		refreshTab
 	};
@@ -96,29 +68,10 @@ screenbreak.extension.ui.bg.button = (() => {
 			delete tabsData[sender.tab.id].button;
 			refreshTab(sender.tab);
 		}
-		if (message.method.endsWith(".processProgress")) {
-			if (message.maxIndex) {
-				onSaveProgress(sender.tab.id, message.index, message.maxIndex);
-			}
-		}
-		if (message.method.endsWith(".processEnd")) {
-			onEnd(sender.tab.id);
-		}
 		if (message.method.endsWith(".processCancelled")) {
 			onCancelled(sender.tab);
 		}
 		return Promise.resolve({});
-	}
-
-	function onStart(tabId, step) {
-		let state;
-		state = step == INJECT_SCRIPTS_STEP ? getButtonState("inject") : getButtonState("execute");
-		state.setTitle = { title: BUTTON_INITIALIZING_TOOLTIP_MESSAGE + " (" + step + "/2)" };
-		refresh(tabId, state);
-	}
-
-	function onEnd(tabId) {
-		refresh(tabId, getButtonState("end"));
 	}
 
 	function onForbiddenDomain(tab) {
@@ -127,21 +80,6 @@ screenbreak.extension.ui.bg.button = (() => {
 
 	function onCancelled(tab) {
 		refreshTab(tab);
-	}
-
-	function onSaveProgress(tabId, index, maxIndex) {
-		onProgress(tabId, index, maxIndex, BUTTON_SAVE_PROGRESS_TOOLTIP_MESSAGE);
-	}
-
-	function onUploadProgress(tabId, index, maxIndex) {
-		onProgress(tabId, index, maxIndex, BUTTON_UPLOAD_PROGRESS_TOOLTIP_MESSAGE);
-	}
-
-	function onProgress(tabId, index, maxIndex, tooltipMessage) {
-		const progress = Math.max(Math.min(20, Math.floor((index / maxIndex) * 20)), 0);
-		const state = getButtonState("progress");
-		state.setTitle = { title: tooltipMessage + (progress * 5) + "%" };
-		refresh(tabId, state);
 	}
 
 	async function refreshTab(tab) {

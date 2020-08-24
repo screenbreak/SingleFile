@@ -35,26 +35,6 @@
 		"message": "SingleFile kann diese Webseite nicht speichern",
 		"description": "Button title: 'This page cannot be saved with SingleFile'"
 	},
-	"buttonInitializingTooltip": {
-		"message": "Initialisierung von SingleFile",
-		"description": "Button title during initialization: 'Initializing SingleFile (x/2)'"
-	},
-	"buttonInitializingBadge": {
-		"message": "•••",
-		"description": "Badge label during initialization: '•••'"
-	},
-	"buttonSaveProgressTooltip": {
-		"message": "Speicherung aktiviert: ",
-		"description": "Button title during save: 'Save progress: xx%'"
-	},
-	"buttonUploadProgressTooltip": {
-		"message": "Upload aktiviert: ",
-		"description": "Button title during save: 'Upload progress: xx%'"
-	},
-	"buttonOKBadge": {
-		"message": "OK",
-		"description": "Badge label: 'OK'"
-	},
 	"optionsTitle": {
 		"message": "Auswahlmenu",
 		"description": "Options page title"

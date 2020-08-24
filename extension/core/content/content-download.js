@@ -27,7 +27,6 @@ this.screenbreak.extension.core.content.download = this.screenbreak.extension.co
 			}
 			await browser.runtime.sendMessage(message);
 		}
-		await browser.runtime.sendMessage({ method: "downloads.end", taskId: options.taskId, hash: pageData.hash });
 	}
 
 })();

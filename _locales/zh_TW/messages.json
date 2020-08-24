@@ -35,26 +35,6 @@
 		"message": "screenbreak 無法保存此頁面",
 		"description": "Button title: 'This page cannot be saved'"
 	},
-	"buttonInitializingTooltip": {
-		"message": "正在初始化 screenbreak",
-		"description": "Button title during initialization: 'Initializing screenbreak (x/2)'"
-	},
-	"buttonInitializingBadge": {
-		"message": "•••",
-		"description": "Badge label during initialization: '•••'"
-	},
-	"buttonSaveProgressTooltip": {
-		"message": "保存進度：",
-		"description": "Button title during save: 'Save progress: xx%'"
-	},
-	"buttonUploadProgressTooltip": {
-		"message": "上傳進度: ",
-		"description": "Button title during save: 'Upload progress: xx%'"
-	},
-	"buttonOKBadge": {
-		"message": "完成",
-		"description": "Badge label: 'OK'"
-	},
 	"optionsTitle": {
 		"message": "選項",
 		"description": "Options page title"

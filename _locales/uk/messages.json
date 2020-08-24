@@ -35,26 +35,6 @@
 		"message": "Ця сторінка не може бути збережена з screenbreak",
 		"description": "Button title: 'This page cannot be saved'"
 	},
-	"buttonInitializingTooltip": {
-		"message": "Ініціалізація screenbreak",
-		"description": "Button title during initialization: 'Initializing screenbreak (x/2)'"
-	},
-	"buttonInitializingBadge": {
-		"message": "•••",
-		"description": "Badge label during initialization: '•••'"
-	},
-	"buttonSaveProgressTooltip": {
-		"message": "Прогрес збереження: ",
-		"description": "Button title during save: 'Save progress: xx%'"
-	},
-	"buttonUploadProgressTooltip": {
-		"message": "Upload progress: ",
-		"description": "Button title during save: 'Upload progress: xx%'"
-	},
-	"buttonOKBadge": {
-		"message": "ОК",
-		"description": "Badge label: 'OK'"
-	},
 	"optionsTitle": {
 		"message": "Параметри",
 		"description": "Options page title"

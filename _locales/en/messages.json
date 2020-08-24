@@ -35,26 +35,6 @@
 		"message": "This page cannot be saved",
 		"description": "Button title: 'This page cannot be saved'"
 	},
-	"buttonInitializingTooltip": {
-		"message": "Initializing screenbreak",
-		"description": "Button title during initialization: 'Initializing screenbreak (x/2)'"
-	},
-	"buttonInitializingBadge": {
-		"message": "•••",
-		"description": "Badge label during initialization: '•••'"
-	},
-	"buttonSaveProgressTooltip": {
-		"message": "Save progress: ",
-		"description": "Button title during save: 'Save progress: xx%'"
-	},
-	"buttonUploadProgressTooltip": {
-		"message": "Upload progress: ",
-		"description": "Button title during save: 'Upload progress: xx%'"
-	},
-	"buttonOKBadge": {
-		"message": "OK",
-		"description": "Badge label: 'OK'"
-	},
 	"optionsTitle": {
 		"message": "Options",
 		"description": "Options page title"

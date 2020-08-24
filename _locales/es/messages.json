@@ -35,26 +35,6 @@
 		"message": "Esta página no se puede guardar con screenbreak",
 		"description": "Button title: 'This page cannot be saved'"
 	},
-	"buttonInitializingTooltip": {
-		"message": "Inicializando screenbreak",
-		"description": "Button title during initialization: 'Initializing screenbreak (x/2)'"
-	},
-	"buttonInitializingBadge": {
-		"message": "•••",
-		"description": "Badge label during initialization: '•••'"
-	},
-	"buttonSaveProgressTooltip": {
-		"message": "Progresión del guardado: ",
-		"description": "Button title during save: 'Save progress: xx%'"
-	},
-	"buttonUploadProgressTooltip": {
-		"message": "Progresión del upload: ",
-		"description": "Button title during save: 'Upload progress: xx%'"
-	},
-	"buttonOKBadge": {
-		"message": "OK",
-		"description": "Badge label: 'OK'"
-	},
 	"optionsTitle": {
 		"message": "Opciones",
 		"description": "Options page title"

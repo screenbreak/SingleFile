@@ -5,8 +5,6 @@ screenbreak.extension.core.bg.business = (() => {
 	const ERROR_CONNECTION_ERROR_CHROMIUM = "Could not establish connection. Receiving end does not exist.";
 	const ERROR_CONNECTION_LOST_CHROMIUM = "The message port closed before a response was received.";
 	const ERROR_CONNECTION_LOST_GECKO = "Message manager disconnected";
-	const INJECT_SCRIPTS_STEP = 1;
-	const EXECUTE_SCRIPTS_STEP = 2;
 
 	const extensionScriptFiles = [
 		"extension/index.js",
@@ -59,10 +57,8 @@ screenbreak.extension.core.bg.business = (() => {
 			tabOptions.tabId = tabId;
 			tabOptions.tabIndex = tab.index;
 			tabOptions.extensionScriptFiles = extensionScriptFiles;
-			ui.onStart(tabId, INJECT_SCRIPTS_STEP);
 			const scriptsInjected = await screenbreak.extension.injectScript(tabId, tabOptions);
 			if (scriptsInjected) {
-				ui.onStart(tabId, EXECUTE_SCRIPTS_STEP);
 				tasks.push({ id: currentTaskId, status: "pending", tab, options: tabOptions, method: "content.save" });
 				currentTaskId++;
 			} else {
@@ -110,14 +106,11 @@ screenbreak.extension.core.bg.business = (() => {
 					const tab = await tabs.createAndWait({ url: taskInfo.tab.url, active: false });
 					taskInfo.tab.id = taskInfo.options.tabId = tab.id;
 					taskInfo.tab.index = taskInfo.options.tabIndex = tab.index;
-					ui.onStart(taskInfo.tab.id, INJECT_SCRIPTS_STEP);
 					scriptsInjected = await screenbreak.extension.injectScript(taskInfo.tab.id, taskInfo.options);
 				} catch (tabId) {
 					taskInfo.tab.id = tabId;
 				}
-				if (scriptsInjected) {
-					ui.onStart(taskInfo.tab.id, EXECUTE_SCRIPTS_STEP);
-				} else {
+				if (!scriptsInjected) {
 					taskInfo.reject();
 					return;
 				}

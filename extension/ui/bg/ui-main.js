@@ -39,9 +39,6 @@ screenbreak.extension.ui.bg.main = (() => {
 		onForbiddenDomain(tab) {
 			screenbreak.extension.ui.bg.button.onForbiddenDomain(tab);
 		},
-		onStart(tabId, step) {
-			screenbreak.extension.ui.bg.button.onStart(tabId, step);
-		},
 		onUploadStart(tabId) {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadProgress", progress: 0 });
 		},
@@ -54,7 +51,6 @@ screenbreak.extension.ui.bg.main = (() => {
 		},
 		onEnd(tabId) {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadEnd" });
-			screenbreak.extension.ui.bg.button.onEnd(tabId);
 		},
 		onCancelled(tabId) {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadCancelled" });

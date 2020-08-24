@@ -107,7 +107,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 	async function processPage(options) {
 		const frames = singlefile.lib.processors.frameTree.content.frames;
 		singlefile.lib.helper.initDoc(document);
-		ui.onStartPage(options);
+		ui.onStartPage();
 		processor = new singlefile.lib.SingleFile(options);
 		const preInitializationPromises = [];
 		options.insertSingleFileComment = true;
@@ -119,22 +119,10 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 			} else {
 				frameTreePromise = frames.getAsync(options);
 			}
-			ui.onLoadingFrames(options);
-			frameTreePromise.then(() => {
-				if (!processor.cancelled) {
-					ui.onLoadFrames(options);
-				}
-			});
 			preInitializationPromises.push(frameTreePromise);
 		}
 		if (options.loadDeferredImages) {
 			const lazyLoadPromise = singlefile.lib.processors.lazy.content.loader.process(options);
-			ui.onLoadingDeferResources(options);
-			lazyLoadPromise.then(() => {
-				if (!processor.cancelled) {
-					ui.onLoadDeferResources(options);
-				}
-			});
 			preInitializationPromises.push(lazyLoadPromise);
 		}
 		let index = 0, maxIndex = 0;
@@ -147,26 +135,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 					if (event.type == event.RESOURCE_LOADED) {
 						index++;
 					}
-					browser.runtime.sendMessage({ method: "ui.processProgress", index, maxIndex });
 					ui.onLoadResource(index, maxIndex, options);
-				} else if (!event.detail.frame) {
-					if (event.type == event.PAGE_LOADING) {
-						ui.onPageLoading();
-					} else if (event.type == event.PAGE_LOADED) {
-						ui.onLoadPage();
-					} else if (event.type == event.STAGE_STARTED) {
-						if (event.detail.step < 3) {
-							ui.onStartStage(event.detail.step, options);
-						}
-					} else if (event.type == event.STAGE_ENDED) {
-						if (event.detail.step < 3) {
-							ui.onEndStage(event.detail.step, options);
-						}
-					} else if (event.type == event.STAGE_TASK_STARTED) {
-						ui.onStartStageTask(event.detail.step, event.detail.task);
-					} else if (event.type == event.STAGE_TASK_ENDED) {
-						ui.onEndStageTask(event.detail.step, event.detail.task);
-					}
 				}
 			}
 		};
@@ -178,6 +147,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				resolve([[]]);
 			};
 			preInitializationAllPromises.then(() => resolve(preInitializationAllPromises));
+
 		});
 		const selectedFrame = options.frames && options.frames.find(frameData => frameData.requestedFrame);
 		options.win = window;
@@ -207,7 +177,6 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 			if (options.selected || options.optionallySelected) {
 				ui.unmarkSelection();
 			}
-			ui.onEndPage();
 		}
 		return page;
 	}

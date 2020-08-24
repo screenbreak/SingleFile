@@ -33,12 +33,12 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 
 	const SINGLE_FILE_UI_ELEMENT_CLASS = "single-file-ui-element";
 	const SELECTION_ZONE_TAGNAME = "screenbreak-selection-zone";
-	const LOGS_WINDOW_TAGNAME = "screenbreak-overlay";
+	const OVERLAY_TAGNAME = "screenbreak-overlay";
 	const SELECT_PX_THRESHOLD = 8;
 
 	let selectedAreaElement;
 
-	let overlayIframeElement, overlayElement = createOverlayElement();
+	let overlayIframeElement, overlayElement;
 	const allProperties = new Set();
 	Array.from(getComputedStyle(document.body)).forEach(property => allProperties.add(property));
 
@@ -49,16 +49,12 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 			return prompt(message, defaultValue);
 		},
 		onStartPage() {
-			setLogsWindowStyle();
+			createOverlayElement();
+			setOverlayStyle();
 			document.body.appendChild(overlayElement);
-			// overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.saveProgress", index: 0 }), "*");
-		},
-		onEndPage() {
-			// overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.uploadProgress", index: 0, maxIndex: 1 }), "*");
 		},
 		onError(error, details) {
 			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details }));
-			// overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.displayError", error, details }), "*");
 		},
 		onUploadProgress(index, maxIndex) {
 			overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.uploadProgress", index, maxIndex }), "*");
@@ -71,17 +67,7 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		},
 		onCancelled() {
 			overlayElement.remove();
-		},
-		onLoadingDeferResources() { },
-		onLoadDeferResources() { },
-		onLoadingFrames() { },
-		onLoadFrames() { },
-		onStartStage() { },
-		onEndStage() { },
-		onPageLoading() { },
-		onLoadPage() { },
-		onStartStageTask() { },
-		onEndStageTask() { }
+		}
 	};
 
 	async function markSelection(optionallySelected) {
@@ -305,18 +291,12 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	}
 
 	function createOverlayElement() {
-		let overlayElement = document.querySelector(LOGS_WINDOW_TAGNAME);
-		if (!overlayElement) {
-			overlayElement = document.createElement(LOGS_WINDOW_TAGNAME);
-			overlayElement.className = SINGLE_FILE_UI_ELEMENT_CLASS;
-		}
-		return overlayElement;
+		overlayElement = document.createElement(OVERLAY_TAGNAME);
+		overlayElement.className = SINGLE_FILE_UI_ELEMENT_CLASS;
 	}
 
-	function setLogsWindowStyle() {
+	function setOverlayStyle() {
 		initStyle(overlayElement);
-		// overlayElement.style.setProperty("opacity", "0.9", "important");
-		// overlayElement.style.setProperty("padding", "4px", "important");
 		overlayElement.style.setProperty("position", "fixed", "important");
 		overlayElement.style.setProperty("z-index", 2147483647, "important");
 		overlayElement.style.setProperty("background-color", "transparent", "important");
