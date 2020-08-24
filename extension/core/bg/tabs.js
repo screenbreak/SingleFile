@@ -15,27 +15,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 			const tabs = await browser.tabs.query(options);
 			return tabs.sort((tab1, tab2) => tab1.index - tab2.index);
 		},
-		create: createProperties => browser.tabs.create(createProperties),
-		createAndWait: async createProperties => {
-			const tab = await browser.tabs.create(createProperties);
-			return new Promise((resolve, reject) => {
-				browser.tabs.onUpdated.addListener(onTabUpdated);
-				browser.tabs.onRemoved.addListener(onTabRemoved);
-				function onTabUpdated(tabId, changeInfo) {
-					if (tabId == tab.id && changeInfo.status == "complete") {
-						resolve(tab);
-						browser.tabs.onUpdated.removeListener(onTabUpdated);
-						browser.tabs.onRemoved.removeListener(onTabRemoved);
-					}
-				}
-				function onTabRemoved(tabId) {
-					if (tabId == tab.id) {
-						reject(tabId);
-						browser.tabs.onRemoved.removeListener(onTabRemoved);
-					}
-				}
-			});
-		},
 		sendMessage: (tabId, message, options) => browser.tabs.sendMessage(tabId, message, options),
 		launchWebAuthFlow: async (pageTabId, url) => {
 			const tab = await browser.tabs.create({ url, active: true });
