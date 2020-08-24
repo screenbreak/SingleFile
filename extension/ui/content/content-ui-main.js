@@ -21,7 +21,7 @@
  *   Source.
  */
 
-/* global browser, document, prompt, getComputedStyle, addEventListener, removeEventListener, requestAnimationFrame, setTimeout, getSelection, Node */
+/* global browser, document, getComputedStyle, addEventListener, removeEventListener, requestAnimationFrame, setTimeout, getSelection, Node */
 
 this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.content.main || (() => {
 
