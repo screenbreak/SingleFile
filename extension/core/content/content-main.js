@@ -23,8 +23,13 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		}
 	});
 	window.addEventListener("message", event => {
-		const message = JSON.parse(event.data);
-		if (message.method == "screenbreak.cancel") {
+		let message;
+		try {
+			message = JSON.parse(event.data);
+		} catch (error) {
+			// ignored
+		}
+		if (message && message.method == "screenbreak.cancel") {
 			browser.runtime.sendMessage({ method: "downloads.cancel" });
 			cancelSave();
 		}

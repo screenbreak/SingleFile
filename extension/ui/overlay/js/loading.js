@@ -12,14 +12,21 @@
 	refreshStatus(data.defaultDetails, data.defaultTitle);
 
 	window.onmessage = event => {
-		const message = JSON.parse(event.data);
-		if (message.method == "screenbreak.saveProgress") {
-			const progressLabel = message.titleLabel + " " + Math.min(Math.floor(100 * message.index / message.maxIndex || 1), 100) + "% …";
-			refreshStatus(message.detailsLabel, progressLabel, message.index, message.maxIndex);
+		let message;
+		try {
+			message = JSON.parse(event.data);
+		} catch (error) {
+			// ignored
 		}
-		if (message.method == "screenbreak.uploadProgress") {
-			const progressLabel = message.titleLabel + " " + Math.min(Math.floor(100 * message.index / message.maxIndex || 1), 100) + "% …";
-			refreshStatus(message.detailsLabel, progressLabel, message.index, message.maxIndex);
+		if (message) {
+			if (message.method == "screenbreak.saveProgress") {
+				const progressLabel = message.titleLabel + " " + Math.min(Math.floor(100 * message.index / message.maxIndex || 1), 100) + "% …";
+				refreshStatus(message.detailsLabel, progressLabel, message.index, message.maxIndex);
+			}
+			if (message.method == "screenbreak.uploadProgress") {
+				const progressLabel = message.titleLabel + " " + Math.min(Math.floor(100 * message.index / message.maxIndex || 1), 100) + "% …";
+				refreshStatus(message.detailsLabel, progressLabel, message.index, message.maxIndex);
+			}
 		}
 	};
 
