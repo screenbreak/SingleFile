@@ -8,8 +8,8 @@
 		"description": "Command (Ctrl+Shift+Y): 'Save the current tab or the selected content'"
 	},
 	"menuSavePage": {
-		"message": "Speichern der Webseite mit SingleFile",
-		"description": "Menu entry: 'Save page with SingleFile'"
+		"message": "Speichern der Webseite mit screenbreak",
+		"description": "Menu entry: 'Save page with screenbreak'"
 	},
 	"menuSaveSelection": {
 		"message": "Auswahl speichern",
@@ -20,16 +20,16 @@
 		"description": "Menu entry: 'Save frame'"
 	},
 	"buttonDefaultTooltip": {
-		"message": "Webseite mit SingleFile abspeichern",
-		"description": "Button title: 'Save page with SingleFile'"
+		"message": "Webseite mit screenbreak abspeichern",
+		"description": "Button title: 'Save page with screenbreak'"
 	},
 	"buttonBlockedBadge": {
 		"message": "🚫",
 		"description": "Button badge when the page is blocked: '🚫'"
 	},
 	"buttonBlockedTooltip": {
-		"message": "SingleFile kann diese Webseite nicht speichern",
-		"description": "Button title: 'This page cannot be saved with SingleFile'"
+		"message": "screenbreak kann diese Webseite nicht speichern",
+		"description": "Button title: 'This page cannot be saved with screenbreak'"
 	},
 	"optionsTitle": {
 		"message": "Auswahlmenu",
