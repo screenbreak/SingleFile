@@ -36,6 +36,15 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	const OVERLAY_TAGNAME = "screenbreak-overlay";
 	const SELECT_PX_THRESHOLD = 8;
 
+	const initializationTitleLabel = browser.i18n.getMessage("overlayInitializationTitle");
+	const overlaySuccessTitleLabel = browser.i18n.getMessage("overlaySuccessTitle");
+	const savingTitleLabel = browser.i18n.getMessage("overlaySavingTitle");
+	const savingDetailsLabel = browser.i18n.getMessage("overlaySavingDetails");
+	const uploadingTitleLabel = browser.i18n.getMessage("overlayUploadingTitle");
+	const uploadingDetailsLabel = browser.i18n.getMessage("overlayUploadingDetails");
+	const cancelButtonLabel = browser.i18n.getMessage("overlayCancelButton");
+	const closeButtonLabel = browser.i18n.getMessage("overlayCloseButton");
+
 	let selectedAreaElement;
 
 	let overlayIframeElement, overlayElement;
@@ -51,16 +60,28 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 			document.body.appendChild(overlayElement);
 		},
 		onError(error, details) {
-			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details }));
+			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details, closeButtonLabel }));
 		},
 		onUploadProgress(index, maxIndex) {
-			overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.uploadProgress", index, maxIndex }), "*");
+			overlayIframeElement.contentWindow.postMessage(JSON.stringify({
+				method: "screenbreak.uploadProgress",
+				index,
+				maxIndex,
+				titleLabel: uploadingTitleLabel,
+				detailsLabel: uploadingDetailsLabel
+			}), "*");
 		},
 		onUploadEnd() {
-			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL);
+			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL + "?" + JSON.stringify({ titleLabel: overlaySuccessTitleLabel }));
 		},
 		onLoadResource(index, maxIndex) {
-			overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.saveProgress", index, maxIndex }), "*");
+			overlayIframeElement.contentWindow.postMessage(JSON.stringify({
+				method: "screenbreak.saveProgress",
+				index,
+				maxIndex,
+				titleLabel: savingTitleLabel,
+				detailsLabel: savingDetailsLabel
+			}), "*");
 		},
 		onCancelled() {
 			overlayElement.remove();
@@ -311,7 +332,7 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		overlayIframeElement.style.setProperty("background-color", "transparent", "important");
 		overlayIframeElement.style.setProperty("overflow", "hidden", "important");
 		overlayElement.appendChild(overlayIframeElement);
-		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL);
+		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL + "?" + JSON.stringify({ defaultTitle: initializationTitleLabel, defaultDetails: savingDetailsLabel, cancelButtonLabel }));
 	}
 
 	function getMatchedParents(target, property) {

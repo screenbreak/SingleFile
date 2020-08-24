@@ -31,6 +31,38 @@
 		"message": "Esta página no se puede guardar con screenbreak",
 		"description": "Button title: 'This page cannot be saved'"
 	},
+	"overlayInitializationTitle": {
+		"message": "Initialization…",
+		"description": "Overlay label: 'Initialization…'"
+	},
+	"overlaySavingTitle": {
+		"message": "Saving",
+		"description": "Overlay label: 'Saving'"
+	},
+	"overlaySavingDetails": {
+		"message": "Saving the article",
+		"description": "Overlay label: 'Saving the article'"
+	},
+	"overlayUploadingTitle": {
+		"message": "Uploading",
+		"description": "Overlay label: 'Saving'"
+	},
+	"overlayUploadingDetails": {
+		"message": "Uploading the article",
+		"description": "Overlay label: 'Saving the article'"
+	},
+	"overlayCancelButton": {
+		"message": "Cancel",
+		"description": "Overlay button: 'Cancel'"
+	},
+	"overlayCloseButton": {
+		"message": "Close",
+		"description": "Overlay button: 'Close'"
+	},
+	"overlaySuccessTitle": {
+		"message": "Article successfully saved",
+		"description": "Overlay title: 'Article successfully saved'"
+	},
 	"optionsTitle": {
 		"message": "Opciones",
 		"description": "Options page title"
