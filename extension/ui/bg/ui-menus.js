@@ -43,18 +43,6 @@ screenbreak.extension.ui.bg.menus = (() => {
 			if (options.browserActionMenuEnabled) {
 				defaultContextsDisabled.push("browser_action");
 			}
-			if (options.tabMenuEnabled) {
-				try {
-					menus.create({
-						id: "temporary-id",
-						contexts: ["tab"],
-						title: "title"
-					});
-					defaultContextsDisabled.push("tab");
-				} catch (error) {
-					options.tabMenuEnabled = false;
-				}
-			}
 			await menus.removeAll();
 			const defaultContextsEnabled = defaultContextsDisabled.concat(...pageContextsEnabled);
 			const defaultContexts = options.contextMenuEnabled ? defaultContextsEnabled : defaultContextsDisabled;

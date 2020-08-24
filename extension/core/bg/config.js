@@ -16,7 +16,6 @@ screenbreak.extension.core.bg.config = (() => {
 		loadDeferredImages: true,
 		loadDeferredImagesMaxIdleTime: 1500,
 		contextMenuEnabled: true,
-		tabMenuEnabled: true,
 		browserActionMenuEnabled: true,
 		maxResourceSizeEnabled: false,
 		maxResourceSize: 10,
