@@ -1,4 +1,4 @@
-/* global window, document, location */
+/* global document, location */
 
 (() => {
 
