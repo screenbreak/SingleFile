@@ -18,8 +18,6 @@ screenbreak.extension.core.bg.config = (() => {
 		contextMenuEnabled: true,
 		tabMenuEnabled: true,
 		browserActionMenuEnabled: true,
-		logsEnabled: true,
-		progressBarEnabled: true,
 		maxResourceSizeEnabled: false,
 		maxResourceSize: 10,
 		removeAudioSrc: true,
