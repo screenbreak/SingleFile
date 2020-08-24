@@ -182,21 +182,5 @@
 	"optionsCancelButton": {
 		"message": "Anuluj",
 		"description": "Options confirm button: 'Cancel'"
-	},
-	"logPanelDeferredImages": {
-		"message": "Odroczone obrazy",
-		"description": "Label 'Deferred images' in the log panel"
-	},
-	"logPanelFrameContents": {
-		"message": "Zawartość ramki",
-		"description": "Label 'Frame contents' in the log panel"
-	},
-	"logPanelStep": {
-		"message": "Krok",
-		"description": "Label 'Step' (for 'Step x / 4') in the log panel"
-	},
-	"logPanelWidth": {
-		"message": "130",
-		"description": "Width of the log panel in pixels, it should be adjusted for the longest label beginning with 'log' (e.g. 'logPanelDeferredImages')"
 	}
 }

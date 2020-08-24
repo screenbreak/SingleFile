@@ -182,29 +182,5 @@
 	"optionsCancelButton": {
 		"message": "Abbrechen",
 		"description": "Options confirm button: 'Cancel'"
-	},
-	"optionsExportButton": {
-		"message": "Exportieren",
-		"description": "Options button: 'Export'"
-	},
-	"optionsImportButton": {
-		"message": "Importieren",
-		"description": "Options button: 'Import'"
-	},
-	"logPanelDeferredImages": {
-		"message": "Zurückgestellte Bilder",
-		"description": "Label 'Deferred images' in the log panel"
-	},
-	"logPanelFrameContents": {
-		"message": "Rahmeninhalte",
-		"description": "Label 'Frame contents' in the log panel"
-	},
-	"logPanelStep": {
-		"message": "Schritt",
-		"description": "Label 'Step' (for 'Step x / 4') in the log panel"
-	},
-	"logPanelWidth": {
-		"message": "150",
-		"description": "Width of the log panel in pixels, it should be adjusted for the longest label beginning with 'log' (e.g. 'logPanelDeferredImages')"
 	}
 }
