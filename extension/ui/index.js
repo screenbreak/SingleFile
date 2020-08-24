@@ -21,7 +21,7 @@
  *   Source.
  */
 
-this.singlefile.extension.ui = this.singlefile.extension.ui || {
+this.screenbreak.extension.ui = this.screenbreak.extension.ui || {
 	bg: {},
 	content: {}
 };

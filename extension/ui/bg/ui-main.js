@@ -21,50 +21,50 @@
  *   Source.
  */
 
-/* global singlefile */
+/* global screenbreak */
 
-singlefile.extension.ui.bg.main = (() => {
+screenbreak.extension.ui.bg.main = (() => {
 
 	return {
 		onMessage(message, sender) {
 			if (message.method.endsWith(".refreshMenu")) {
-				return singlefile.extension.ui.bg.menus.onMessage(message, sender);
+				return screenbreak.extension.ui.bg.menus.onMessage(message, sender);
 			} else {
-				return singlefile.extension.ui.bg.button.onMessage(message, sender);
+				return screenbreak.extension.ui.bg.button.onMessage(message, sender);
 			}
 		},
 		async refreshTab(tab) {
-			return Promise.all([singlefile.extension.ui.bg.menus.refreshTab(tab), singlefile.extension.ui.bg.button.refreshTab(tab)]);
+			return Promise.all([screenbreak.extension.ui.bg.menus.refreshTab(tab), screenbreak.extension.ui.bg.button.refreshTab(tab)]);
 		},
 		onForbiddenDomain(tab) {
-			singlefile.extension.ui.bg.button.onForbiddenDomain(tab);
+			screenbreak.extension.ui.bg.button.onForbiddenDomain(tab);
 		},
-		onStart(tabId, step, autoSave) {
-			singlefile.extension.ui.bg.button.onStart(tabId, step, autoSave);
+		onStart(tabId, step) {
+			screenbreak.extension.ui.bg.button.onStart(tabId, step);
+		},
+		onUploadStart(tabId) {
+			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadProgress", progress: 0 });
+		},
+		onUploadProgress(tabId, progress) {
+			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadProgress", progress });
 		},
 		onError(tabId) {
-			singlefile.extension.ui.bg.button.onError(tabId);
+			screenbreak.extension.ui.bg.button.onError(tabId);
 		},
-		onEdit(tabId) {
-			singlefile.extension.ui.bg.button.onEdit(tabId);
-		},
-		onEnd(tabId, autoSave) {
-			singlefile.extension.ui.bg.button.onEnd(tabId, autoSave);
+		onEnd(tabId) {
+			screenbreak.extension.ui.bg.button.onEnd(tabId);
 		},
 		onCancelled(tabId) {
-			singlefile.extension.ui.bg.button.onCancelled(tabId);
-		},
-		onUploadProgress(tabId, index, maxIndex) {
-			singlefile.extension.ui.bg.button.onUploadProgress(tabId, index, maxIndex);
+			screenbreak.extension.ui.bg.button.onCancelled(tabId);
 		},
 		onTabCreated(tab) {
-			singlefile.extension.ui.bg.menus.onTabCreated(tab);
+			screenbreak.extension.ui.bg.menus.onTabCreated(tab);
 		},
-		onTabActivated(tab, activeInfo) {
-			singlefile.extension.ui.bg.menus.onTabActivated(tab, activeInfo);
+		onTabActivated(tab) {
+			screenbreak.extension.ui.bg.menus.onTabActivated(tab);
 		},
 		onInit(tab) {
-			singlefile.extension.ui.bg.menus.onInit(tab);
+			screenbreak.extension.ui.bg.menus.onInit(tab);
 		}
 	};
 

@@ -21,9 +21,9 @@
  *   Source.
  */
 
-/* global browser, singlefile */
+/* global browser, screenbreak */
 
-singlefile.extension.ui.bg.commands = (() => {
+screenbreak.extension.ui.bg.commands = (() => {
 
 	const commands = browser.commands;
 	const BROWSER_COMMANDS_API_SUPPORTED = commands && commands.onCommand && commands.onCommand.addListener;
@@ -31,13 +31,9 @@ singlefile.extension.ui.bg.commands = (() => {
 	if (BROWSER_COMMANDS_API_SUPPORTED) {
 		commands.onCommand.addListener(async command => {
 			if (command == "save-tab") {
-				const allTabs = await singlefile.extension.core.bg.tabs.get({ currentWindow: true, active: true });
+				const allTabs = await screenbreak.extension.core.bg.tabs.get({ currentWindow: true, active: true });
 				allTabs.length = 1;
-				singlefile.extension.core.bg.business.saveTabs(allTabs, { optionallySelected: true });
-			}
-			if (command == "save-all-tabs") {
-				const allTabs = await singlefile.extension.core.bg.tabs.get({ currentWindow: true });
-				singlefile.extension.core.bg.business.saveTabs(allTabs);
+				screenbreak.extension.core.bg.business.saveTabs(allTabs, { optionallySelected: true });
 			}
 		});
 	}

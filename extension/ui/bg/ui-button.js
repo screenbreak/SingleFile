@@ -21,12 +21,12 @@
  *   Source.
  */
 
-/* global browser, singlefile */
+/* global browser, screenbreak */
 
-singlefile.extension.ui.bg.button = (() => {
+screenbreak.extension.ui.bg.button = (() => {
 
 	const DEFAULT_ICON_PATH = "/extension/ui/resources/icon_128.png";
-	const WAIT_ICON_PATH_PREFIX = "/extension/ui/resources/icon_128_wait";
+	// const WAIT_ICON_PATH_PATH = "/extension/ui/resources/icon_128_wait.png";
 	const BUTTON_DEFAULT_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonDefaultTooltip");
 	const BUTTON_BLOCKED_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonBlockedTooltip");
 	const BUTTON_DEFAULT_BADGE_MESSAGE = "";
@@ -37,14 +37,10 @@ singlefile.extension.ui.bg.button = (() => {
 	const BUTTON_OK_BADGE_MESSAGE = browser.i18n.getMessage("buttonOKBadge");
 	const BUTTON_SAVE_PROGRESS_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonSaveProgressTooltip");
 	const BUTTON_UPLOAD_PROGRESS_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonUploadProgressTooltip");
-	const BUTTON_AUTOSAVE_ACTIVE_BADGE_MESSAGE = browser.i18n.getMessage("buttonAutoSaveActiveBadge");
-	const BUTTON_AUTOSAVE_ACTIVE_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonAutoSaveActiveTooltip");
 	const DEFAULT_COLOR = [2, 147, 20, 192];
 	const ACTIVE_COLOR = [4, 229, 36, 192];
 	const FORBIDDEN_COLOR = [255, 255, 255, 1];
 	const ERROR_COLOR = [229, 4, 12, 192];
-	const AUTOSAVE_DEFAULT_COLOR = [208, 208, 208, 192];
-	const AUTOSAVE_INITIALIZING_COLOR = [64, 64, 64, 192];
 	const INJECT_SCRIPTS_STEP = 1;
 
 	const BUTTON_STATES = {
@@ -67,12 +63,6 @@ singlefile.extension.ui.bg.button = (() => {
 			setBadgeBackgroundColor: { color: ACTIVE_COLOR },
 			setBadgeText: { text: BUTTON_DEFAULT_BADGE_MESSAGE }
 		},
-		edit: {
-			setBadgeBackgroundColor: { color: DEFAULT_COLOR },
-			setBadgeText: { text: BUTTON_DEFAULT_BADGE_MESSAGE },
-			setTitle: { title: BUTTON_DEFAULT_TOOLTIP_MESSAGE },
-			setIcon: { path: DEFAULT_ICON_PATH }
-		},
 		end: {
 			setBadgeBackgroundColor: { color: ACTIVE_COLOR },
 			setBadgeText: { text: BUTTON_OK_BADGE_MESSAGE },
@@ -90,26 +80,12 @@ singlefile.extension.ui.bg.button = (() => {
 			setBadgeText: { text: BUTTON_BLOCKED_BADGE_MESSAGE },
 			setTitle: { title: BUTTON_BLOCKED_TOOLTIP_MESSAGE },
 			setIcon: { path: DEFAULT_ICON_PATH }
-		},
-		autosave: {
-			inject: {
-				setBadgeBackgroundColor: { color: AUTOSAVE_INITIALIZING_COLOR },
-				setBadgeText: { text: BUTTON_AUTOSAVE_ACTIVE_BADGE_MESSAGE },
-				setTitle: { title: BUTTON_AUTOSAVE_ACTIVE_TOOLTIP_MESSAGE },
-				setIcon: { path: DEFAULT_ICON_PATH }
-			},
-			default: {
-				setBadgeBackgroundColor: { color: AUTOSAVE_DEFAULT_COLOR },
-				setBadgeText: { text: BUTTON_AUTOSAVE_ACTIVE_BADGE_MESSAGE },
-				setTitle: { title: BUTTON_AUTOSAVE_ACTIVE_TOOLTIP_MESSAGE },
-				setIcon: { path: DEFAULT_ICON_PATH }
-			}
 		}
 	};
 
 	browser.browserAction.onClicked.addListener(async tab => {
-		const business = singlefile.extension.core.bg.business;
-		const allTabs = await singlefile.extension.core.bg.tabs.get({ currentWindow: true, highlighted: true });
+		const business = screenbreak.extension.core.bg.business;
+		const allTabs = await screenbreak.extension.core.bg.tabs.get({ currentWindow: true, highlighted: true });
 		if (allTabs.length <= 1) {
 			toggleSaveTab(tab);
 		} else {
@@ -131,7 +107,6 @@ singlefile.extension.ui.bg.button = (() => {
 		onUploadProgress,
 		onForbiddenDomain,
 		onError,
-		onEdit,
 		onEnd,
 		onCancelled,
 		refreshTab
@@ -139,7 +114,7 @@ singlefile.extension.ui.bg.button = (() => {
 
 	function onMessage(message, sender) {
 		if (message.method.endsWith(".processInit")) {
-			const tabsData = singlefile.extension.core.bg.tabsData.getTemporary(sender.tab.id);
+			const tabsData = screenbreak.extension.core.bg.tabsData.getTemporary(sender.tab.id);
 			delete tabsData[sender.tab.id].button;
 			refreshTab(sender.tab);
 		}
@@ -163,15 +138,11 @@ singlefile.extension.ui.bg.button = (() => {
 		return Promise.resolve({});
 	}
 
-	function onStart(tabId, step, autoSave) {
+	function onStart(tabId, step) {
 		let state;
-		if (autoSave) {
-			state = getButtonState("inject", true);
-		} else {
-			state = step == INJECT_SCRIPTS_STEP ? getButtonState("inject") : getButtonState("execute");
-			state.setTitle = { title: BUTTON_INITIALIZING_TOOLTIP_MESSAGE + " (" + step + "/2)" };
-			state.setIcon = { path: WAIT_ICON_PATH_PREFIX + "0.png" };
-		}
+		state = step == INJECT_SCRIPTS_STEP ? getButtonState("inject") : getButtonState("execute");
+		state.setTitle = { title: BUTTON_INITIALIZING_TOOLTIP_MESSAGE + " (" + step + "/2)" };
+		// state.setIcon = { path: WAIT_ICON_PATH_PATH };
 		refresh(tabId, state);
 	}
 
@@ -179,12 +150,8 @@ singlefile.extension.ui.bg.button = (() => {
 		refresh(tabId, getButtonState("error"));
 	}
 
-	function onEdit(tabId) {
-		refresh(tabId, getButtonState("edit"));
-	}
-
-	function onEnd(tabId, autoSave) {
-		refresh(tabId, autoSave ? getButtonState("default", true) : getButtonState("end"));
+	function onEnd(tabId) {
+		refresh(tabId, getButtonState("end"));
 	}
 
 	function onForbiddenDomain(tab) {
@@ -205,22 +172,21 @@ singlefile.extension.ui.bg.button = (() => {
 
 	function onProgress(tabId, index, maxIndex, tooltipMessage) {
 		const progress = Math.max(Math.min(20, Math.floor((index / maxIndex) * 20)), 0);
-		const barProgress = Math.min(Math.floor((index / maxIndex) * 8), 8);
-		const path = WAIT_ICON_PATH_PREFIX + barProgress + ".png";
+		// const barProgress = Math.min(Math.floor((index / maxIndex) * 8), 8);
+		// const path = WAIT_ICON_PATH_PREFIX + barProgress + ".png";
 		const state = getButtonState("progress");
 		state.setTitle = { title: tooltipMessage + (progress * 5) + "%" };
-		state.setIcon = { path };
+		// state.setIcon = { path };
 		refresh(tabId, state);
 	}
 
 	async function refreshTab(tab) {
-		const autoSave = await singlefile.extension.core.bg.autosave.isEnabled(tab);
-		const state = getButtonState("default", autoSave);
+		const state = getButtonState("default");
 		await refresh(tab.id, state);
 	}
 
 	async function refresh(tabId, state) {
-		const tabsData = singlefile.extension.core.bg.tabsData.getTemporary(tabId);
+		const tabsData = screenbreak.extension.core.bg.tabsData.getTemporary(tabId);
 		if (state) {
 			if (!tabsData[tabId].button) {
 				tabsData[tabId].button = { lastState: null };
@@ -253,8 +219,8 @@ singlefile.extension.ui.bg.button = (() => {
 		}
 	}
 
-	function getButtonState(name, autoSave) {
-		return JSON.parse(JSON.stringify(autoSave ? BUTTON_STATES.autosave[name] : BUTTON_STATES[name]));
+	function getButtonState(name) {
+		return JSON.parse(JSON.stringify(BUTTON_STATES[name]));
 	}
 
 })();

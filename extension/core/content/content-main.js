@@ -1,41 +1,19 @@
-/*
- * Copyright 2010-2020 Gildas Lormeau
- * contact : gildas.lormeau <at> gmail.com
- * 
- * This file is part of SingleFile.
- *
- *   The code in this file is free software: you can redistribute it and/or 
- *   modify it under the terms of the GNU Affero General Public License 
- *   (GNU AGPL) as published by the Free Software Foundation, either version 3
- *   of the License, or (at your option) any later version.
- * 
- *   The code in this file is distributed in the hope that it will be useful, 
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of 
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero 
- *   General Public License for more details.
- *
- *   As additional permission under GNU AGPL version 3 section 7, you may 
- *   distribute UNMODIFIED VERSIONS OF THIS file without the copy of the GNU 
- *   AGPL normally required by section 4, provided you include this license 
- *   notice and a URL through which recipients can access the Corresponding 
- *   Source.
- */
-
 /* global browser, document, window, location, setTimeout */
 
-this.singlefile.extension.core.content.main = this.singlefile.extension.core.content.main || (() => {
+this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.content.main || (() => {
 
+	const screenbreak = this.screenbreak;
 	const singlefile = this.singlefile;
 	const MOZ_EXTENSION_PROTOCOL = "moz-extension:";
 
 	let ui, processor;
 
 	singlefile.lib.main.init({
-		fetch: singlefile.extension.lib.fetch.content.resources.fetch,
-		frameFetch: singlefile.extension.lib.fetch.content.resources.frameFetch
+		fetch: screenbreak.extension.lib.fetch.content.resources.fetch,
+		frameFetch: screenbreak.extension.lib.fetch.content.resources.frameFetch
 	});
 	browser.runtime.onMessage.addListener(message => {
-		if (message.method == "content.save" || message.method == "content.cancelSave" || message.method == "content.getSelectedLinks") {
+		if (message.method == "content.save" || message.method == "content.cancelSave" || message.method == "downloads.uploadProgress") {
 			return onMessage(message);
 		}
 	});
@@ -43,7 +21,7 @@ this.singlefile.extension.core.content.main = this.singlefile.extension.core.con
 
 	async function onMessage(message) {
 		if (!ui) {
-			ui = singlefile.extension.ui.content.main;
+			ui = screenbreak.extension.ui.content.main;
 		}
 		if (!location.href.startsWith(MOZ_EXTENSION_PROTOCOL)) {
 			if (message.method == "content.save") {
@@ -56,23 +34,20 @@ this.singlefile.extension.core.content.main = this.singlefile.extension.core.con
 					ui.onEndPage();
 					browser.runtime.sendMessage({ method: "ui.processCancelled" });
 				}
-				if (message.resetZoomLevel) {
-					singlefile.lib.processors.lazy.content.loader.resetZoomLevel();
-				}
 				return {};
 			}
-			if (message.method == "content.getSelectedLinks") {
-				return {
-					urls: ui.getSelectedLinks()
-				};
+			if (message.method == "downloads.uploadProgress") {
+				// TODO
+				console.log(message);
+				return {};
 			}
 		}
 	}
 
 	async function savePage(message) {
 		const options = message.options;
-		if (!singlefile.extension.core.processing) {
-			options.updatedResources = singlefile.extension.core.content.updatedResources || {};
+		if (!screenbreak.extension.core.processing) {
+			options.updatedResources = screenbreak.extension.core.content.updatedResources || {};
 			Object.keys(options.updatedResources).forEach(url => options.updatedResources[url].retrieved = false);
 			let selectionFound;
 			if (options.selected || options.optionallySelected) {
@@ -82,14 +57,11 @@ this.singlefile.extension.core.content.main = this.singlefile.extension.core.con
 				options.selected = true;
 			}
 			if (!options.selected || selectionFound) {
-				singlefile.extension.core.processing = true;
+				screenbreak.extension.core.processing = true;
 				try {
 					const pageData = await processPage(options);
 					if (pageData) {
-						if (((!options.backgroundSave && !options.saveToClipboard) || options.saveToGDrive) && options.confirmFilename) {
-							pageData.filename = ui.prompt("Save as", pageData.filename) || pageData.filename;
-						}
-						await singlefile.extension.core.content.download.downloadPage(pageData, options);
+						await screenbreak.extension.core.content.download.downloadPage(pageData, options);
 					}
 				} catch (error) {
 					if (!processor.cancelled) {
@@ -100,7 +72,7 @@ this.singlefile.extension.core.content.main = this.singlefile.extension.core.con
 			} else {
 				browser.runtime.sendMessage({ method: "ui.processCancelled" });
 			}
-			singlefile.extension.core.processing = false;
+			screenbreak.extension.core.processing = false;
 		}
 	}
 
@@ -112,41 +84,36 @@ this.singlefile.extension.core.content.main = this.singlefile.extension.core.con
 		const preInitializationPromises = [];
 		options.insertSingleFileComment = true;
 		options.insertCanonicalLink = true;
-		if (!options.saveRawPage) {
-			if (!options.removeFrames && frames && window.frames && window.frames.length) {
-				let frameTreePromise;
-				if (options.loadDeferredImages) {
-					frameTreePromise = new Promise(resolve => setTimeout(() => resolve(frames.getAsync(options)), options.loadDeferredImagesMaxIdleTime - frames.TIMEOUT_INIT_REQUEST_MESSAGE));
-				} else {
-					frameTreePromise = frames.getAsync(options);
-				}
-				ui.onLoadingFrames(options);
-				frameTreePromise.then(() => {
-					if (!processor.cancelled) {
-						ui.onLoadFrames(options);
-					}
-				});
-				preInitializationPromises.push(frameTreePromise);
-			}
+		if (!options.removeFrames && frames && window.frames && window.frames.length) {
+			let frameTreePromise;
 			if (options.loadDeferredImages) {
-				const lazyLoadPromise = singlefile.lib.processors.lazy.content.loader.process(options);
-				ui.onLoadingDeferResources(options);
-				lazyLoadPromise.then(() => {
-					if (!processor.cancelled) {
-						ui.onLoadDeferResources(options);
-					}
-				});
-				preInitializationPromises.push(lazyLoadPromise);
+				frameTreePromise = new Promise(resolve => setTimeout(() => resolve(frames.getAsync(options)), options.loadDeferredImagesMaxIdleTime - frames.TIMEOUT_INIT_REQUEST_MESSAGE));
+			} else {
+				frameTreePromise = frames.getAsync(options);
 			}
+			ui.onLoadingFrames(options);
+			frameTreePromise.then(() => {
+				if (!processor.cancelled) {
+					ui.onLoadFrames(options);
+				}
+			});
+			preInitializationPromises.push(frameTreePromise);
+		}
+		if (options.loadDeferredImages) {
+			const lazyLoadPromise = singlefile.lib.processors.lazy.content.loader.process(options);
+			ui.onLoadingDeferResources(options);
+			lazyLoadPromise.then(() => {
+				if (!processor.cancelled) {
+					ui.onLoadDeferResources(options);
+				}
+			});
+			preInitializationPromises.push(lazyLoadPromise);
 		}
 		let index = 0, maxIndex = 0;
 		options.onprogress = event => {
 			if (!processor.cancelled) {
 				if (event.type == event.RESOURCES_INITIALIZED) {
 					maxIndex = event.detail.max;
-					if (options.loadDeferredImagesKeepZoomLevel) {
-						singlefile.lib.processors.lazy.content.loader.resetZoomLevel();
-					}
 				}
 				if (event.type == event.RESOURCES_INITIALIZED || event.type == event.RESOURCE_LOADED) {
 					if (event.type == event.RESOURCE_LOADED) {
@@ -203,23 +170,16 @@ this.singlefile.extension.core.content.main = this.singlefile.extension.core.con
 		if (!processor.cancelled) {
 			await processor.run();
 		}
-		if (!options.saveRawPage && !options.removeFrames && frames) {
+		if (!options.removeFrames && frames) {
 			frames.cleanup(options);
 		}
 		let page;
 		if (!processor.cancelled) {
-			if (options.confirmInfobarContent) {
-				options.infobarContent = ui.prompt("Infobar content", options.infobarContent) || "";
-			}
 			page = await processor.getPageData();
 			if (options.selected || options.optionallySelected) {
 				ui.unmarkSelection();
 			}
 			ui.onEndPage();
-			if (options.displayStats) {
-				console.log("SingleFile stats"); // eslint-disable-line no-console
-				console.table(page.stats); // eslint-disable-line no-console
-			}
 		}
 		return page;
 	}

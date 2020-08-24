@@ -9,10 +9,6 @@ body {
     margin-right: auto;
 }
 
-.side-panel body {
-    background-color: #fbfbfb;
-}
-
 button {
     padding-top: 5px;
     padding-bottom: 5px;
@@ -101,14 +97,6 @@ h3 a {
     white-space: nowrap;
 }
 
-.profiles {
-    float: right;
-    margin-right: 12px;
-    position: relative;
-    top: 3px;
-    max-width: calc(100% - 115px);
-}
-
 .help-icon {
     vertical-align: middle;
     display: inline-block;
@@ -165,142 +153,10 @@ h3 a {
     margin: 2px;
 }
 
-.rules-table-container {
-    width: 100%;
-    border-spacing: 0;
-    border-color: rgb(191, 191, 191);
-    border-style: solid;
-    border-width: 1px;
-    margin-top: 24px;
-}
-
-.rules-table-container .tr {
-    height: 26px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 58px;
-}
-
-.rules-table-container.compact .tr {
-    grid-template-columns: 1fr 1fr 58px;
-}
-
-.rules-table-container.compact .tr .rule-autosave-profile {
-    display: none;
-}
-
-.rules-table-container .tr[hidden] {
-    display: none;
-}
-
-.rules-table-container .thead {
-    text-align: left;
-    border-color: rgb(225, 225, 225);
-    border-style: solid;
-    border-width: 0;
-    border-bottom-width: 1px;
-}
-
-.rules-table-container .th,
-.rules-table-container .td {
-    padding: 4px;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    align-self: center;
-}
-
-.rules-table .td:first-of-type {
-    padding-right: 8px;
-}
-
-.rules-table .td:last-of-type {
-    text-align: right;
-}
-
-.rules-data {
-    max-height: 552px;
-    overflow-y: auto;
-    padding-top: 2px;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
-}
 
 ::-webkit-scrollbar {
     width: 6px;
     background-color: #cdcdcd;
-}
-
-.profiles button,
-.rules-table-container button {
-    padding: 0;
-    margin: 0;
-    width: 22px;
-    text-align: center;
-}
-
-.rules-table-container .thead .tr {
-    min-height: 32px;
-}
-
-.rules-table-container .thead .th:last-of-type {
-    text-align: right;
-}
-
-.profiles button,
-.profiles select,
-.rules-table-container button,
-.rules-table-container select,
-.rules-table-container input {
-    height: 22px;
-    vertical-align: top;
-}
-
-.rules-table-container input {
-    width: 100%;
-    height: 20px;
-    margin: 0;
-    padding: 0;
-    padding-left: 2px;
-    padding-right: 2px;
-}
-
-.rules-table-container .rule-create {
-    margin-top: 8px;
-    margin-bottom: 3px;
-}
-
-.profiles select {
-    max-width: calc(100% - 78px);
-}
-
-.rules-table-container select {
-    max-width: 100%;
-}
-
-.profiles button:disabled,
-.rules-table-container button:disabled {
-    opacity: .25;
-}
-
-.profiles button>img,
-.rules-table-container button>img {
-    width: 14px;
-    height: auto;
-    vertical-align: middle;
-    padding: 2px;
-    box-sizing: content-box;
-}
-
-.rules-table-container+.option label,
-.rules-table-container+.option+.option label {
-    text-align: right;
-    width: 100%;
-}
-
-#profilesLabel {
-    font-weight: normal;
-    padding-top: 5px;
-    margin-right: 5px;
 }
 
 details {
@@ -339,7 +195,7 @@ a {
     margin-left: 10px;
 }
 
-.option {
+.option:not([hidden]) {
     display: flex;
     justify-content: space-between;
     margin-top: 3px;
@@ -464,24 +320,6 @@ a {
     margin-bottom: 10px;
 }
 
-.side-panel .profiles {
-    max-width: unset;
-}
-
-.side-panel .profiles {
-    top: 0px;
-    min-width: calc(100% - 12px);
-}
-
-.side-panel .profiles select {
-    min-width: calc(100% - 78px);
-}
-
-.side-panel .options-title,
-.side-panel .option.bottom {
-    display: none;
-}
-
 .maximized body {
     margin-top: 8px;
 }
@@ -494,11 +332,6 @@ a {
 
 html.maximized {
     background-color: #f0f0f0;
-}
-
-.maximized .profiles {
-    top: -4px;
-    max-width: calc(100% - 90px);
 }
 
 .maximized #helpLabel {
@@ -541,36 +374,12 @@ html.maximized {
         color: #fdfdfd;
     }
 
-    .side-panel,
-    .side-panel main,
-    .side-panel details>summary,
-    .side-panel button,
-    .side-panel select,
-    .side-panel .popup-content {
-        background-color: #38383d;
-    }
-
     .maximized main {
         border-color: rgb(81, 81, 81);
     }
 
     .new-window-link img,
-    .profiles button img {
-        filter: invert(100%);
-    }
-
-    .profiles button img:hover {
-        filter: invert(0%);
-    }
-
-    .profiles button[disabled] {
-        opacity: .4;
-    }
-
-    .profiles button[disabled] img {
-        filter: invert(50%);
-    }
-
+    
     .help-icon>img {
         opacity: .6;
         border-color: #ccc;
@@ -597,12 +406,7 @@ html.maximized {
     .help-content {
         background-color: rgb(85, 85, 97);
     }
-
-    .rules-table-container,
-    .rules-table-container .thead {
-        border-color: rgb(85, 85, 97);
-    }
-
+    
     a,
     a:visited {
         color: white;

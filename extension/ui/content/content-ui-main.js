@@ -23,7 +23,7 @@
 
 /* global browser, document, prompt, getComputedStyle, addEventListener, removeEventListener, requestAnimationFrame, setTimeout, getSelection, Node */
 
-this.singlefile.extension.ui.content.main = this.singlefile.extension.ui.content.main || (() => {
+this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.content.main || (() => {
 
 	const SELECTED_CONTENT_ATTRIBUTE_NAME = this.singlefile.lib.helper.SELECTED_CONTENT_ATTRIBUTE_NAME;
 
@@ -48,7 +48,6 @@ this.singlefile.extension.ui.content.main = this.singlefile.extension.ui.content
 	Array.from(getComputedStyle(document.body)).forEach(property => allProperties.add(property));
 
 	return {
-		getSelectedLinks,
 		markSelection,
 		unmarkSelection,
 		prompt(message, defaultValue) {
@@ -61,16 +60,14 @@ this.singlefile.extension.ui.content.main = this.singlefile.extension.ui.content
 					setLogsWindowStyle();
 					document.body.appendChild(logsWindowElement);
 				}
-				if (options.shadowEnabled) {
-					const maskElement = createMaskElement();
-					if (options.progressBarEnabled) {
-						createProgressBarElement(maskElement);
-					}
-					maskElement.offsetWidth;
-					maskElement.style.setProperty("background-color", "black", "important");
-					maskElement.style.setProperty("opacity", .3, "important");
-					document.body.offsetWidth;
+				const maskElement = createMaskElement();
+				if (options.progressBarEnabled) {
+					createProgressBarElement(maskElement);
 				}
+				maskElement.offsetWidth;
+				maskElement.style.setProperty("background-color", "black", "important");
+				maskElement.style.setProperty("opacity", .3, "important");
+				document.body.offsetWidth;
 			}
 		},
 		onEndPage() {
@@ -83,7 +80,7 @@ this.singlefile.extension.ui.content.main = this.singlefile.extension.ui.content
 			clearLogs();
 		},
 		onLoadResource(index, maxIndex, options) {
-			if (options.shadowEnabled && options.progressBarEnabled) {
+			if (options.progressBarEnabled) {
 				const progressBarElement = document.querySelector(PROGRESS_BAR_TAGNAME);
 				if (progressBarElement && maxIndex) {
 					const width = Math.floor((index / maxIndex) * 100) + "%";
@@ -116,44 +113,6 @@ this.singlefile.extension.ui.content.main = this.singlefile.extension.ui.content
 		onStartStageTask() { },
 		onEndStageTask() { }
 	};
-
-	function getSelectedLinks() {
-		let selectionFound;
-		const links = [];
-		const selection = getSelection();
-		for (let indexRange = 0; indexRange < selection.rangeCount; indexRange++) {
-			let range = selection.getRangeAt(indexRange);
-			if (range && range.commonAncestorContainer) {
-				const treeWalker = document.createTreeWalker(range.commonAncestorContainer);
-				let rangeSelectionFound = false;
-				let finished = false;
-				while (!finished) {
-					if (rangeSelectionFound || treeWalker.currentNode == range.startContainer || treeWalker.currentNode == range.endContainer) {
-						rangeSelectionFound = true;
-						if (range.startContainer != range.endContainer || range.startOffset != range.endOffset) {
-							selectionFound = true;
-							if (treeWalker.currentNode.tagName == "A" && treeWalker.currentNode.href) {
-								links.push(treeWalker.currentNode.href);
-							}
-						}
-					}
-					if (treeWalker.currentNode == range.endContainer) {
-						finished = true;
-					} else {
-						treeWalker.nextNode();
-					}
-				}
-				if (selectionFound && treeWalker.currentNode == range.endContainer && treeWalker.currentNode.querySelectorAll) {
-					treeWalker.currentNode.querySelectorAll("*").forEach(descendantElement => {
-						if (descendantElement.tagName == "A" && descendantElement.href) {
-							links.push(treeWalker.currentNode.href);
-						}
-					});
-				}
-			}
-		}
-		return Array.from(new Set(links));
-	}
 
 	async function markSelection(optionallySelected) {
 		let selectionFound = markSelectedContent();
