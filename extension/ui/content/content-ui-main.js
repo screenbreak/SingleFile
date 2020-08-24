@@ -45,9 +45,6 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	return {
 		markSelection,
 		unmarkSelection,
-		prompt(message, defaultValue) {
-			return prompt(message, defaultValue);
-		},
 		onStartPage() {
 			createOverlayElement();
 			setOverlayStyle();
