@@ -11,10 +11,6 @@
 		"message": "Guardar página con screenbreak",
 		"description": "Menu entry: 'Save page'"
 	},
-	"menuSaveSelectedLinks": {
-		"message": "Guardar los links seleccionados",
-		"description": "Menu entry: 'Save selected links'"
-	},
 	"menuSaveSelection": {
 		"message": "Guardar selección",
 		"description": "Menu entry: 'Save selection'"

@@ -11,10 +11,6 @@
 		"message": "Sauver la page avec screenbreak",
 		"description": "Menu entry: 'Save page'"
 	},
-	"menuSaveSelectedLinks": {
-		"message": "Sauver les liens selectionnés",
-		"description": "Menu entry: 'Save selected links'"
-	},
 	"menuSaveSelection": {
 		"message": "Sauver la sélection",
 		"description": "Menu entry: 'Save selection'"

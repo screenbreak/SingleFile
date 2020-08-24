@@ -11,10 +11,6 @@
 		"message": "Speichern der Webseite mit SingleFile",
 		"description": "Menu entry: 'Save page with SingleFile'"
 	},
-	"menuSaveSelectedLinks": {
-		"message": "Speichern ausgewählter Links",
-		"description": "Menu entry: 'Save selected links'"
-	},
 	"menuSaveSelection": {
 		"message": "Auswahl speichern",
 		"description": "Menu entry: 'Save selection'"

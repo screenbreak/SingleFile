@@ -11,10 +11,6 @@
 		"message": "Save page",
 		"description": "Menu entry: 'Save page'"
 	},
-	"menuSaveSelectedLinks": {
-		"message": "Save selected links",
-		"description": "Menu entry: 'Save selected links'"
-	},
 	"menuSaveSelection": {
 		"message": "Save selection",
 		"description": "Menu entry: 'Save selection'"
