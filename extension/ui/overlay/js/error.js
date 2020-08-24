@@ -10,11 +10,6 @@
 	closeButton.textContent = data.closeButtonLabel;
 	refreshStatus(data.error, data.details);
 
-	closeButton.onclick = event => {
-		window.parent.postMessage(JSON.stringify({ method: "screenbreak.cancel" }), "*");
-		event.preventDefault();
-	};
-
 	function refreshStatus(label, errorLabel) {
 		labelElement.textContent = label;
 		errorLabelElement.textContent = errorLabel;
