@@ -12,7 +12,7 @@ screenbreak.extension.core.bg.api = (() => {
 		saveArticle
 	};
 
-	async function saveArticle(url, title, blob, uploadHandlers) {
+	async function saveArticle(tabId, url, title, blob, uploadHandlers) {
 		if (!csrfToken) {
 			csrfToken = await getCSRFToken();
 		}
@@ -52,9 +52,9 @@ screenbreak.extension.core.bg.api = (() => {
 
 		async function handlResponse(response) {
 			if (response.status == 403) {
-				await screenbreak.extension.core.bg.tabs.launchWebAuthFlow(LOGIN_PAGE_URL);
+				await screenbreak.extension.core.bg.tabs.launchWebAuthFlow(tabId, LOGIN_PAGE_URL);
 				csrfToken = null;
-				await saveArticle(url, title, blob, uploadHandlers);
+				await saveArticle(tabId, url, title, blob, uploadHandlers);
 			} else if (response.status >= 400) {
 				throw new Error(response.status);
 			}

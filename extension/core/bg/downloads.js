@@ -36,7 +36,7 @@ screenbreak.extension.core.bg.downloads = (() => {
 		}
 		if (!message.truncated || message.finished) {
 			try {
-				await screenbreak.extension.core.bg.api.saveArticle(message.url, message.title, new Blob([contents], { type: MIMETYPE_HTML }), {
+				await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, new Blob([contents], { type: MIMETYPE_HTML }), {
 					onloadstart: () => {
 						screenbreak.extension.ui.bg.main.onUploadStart(tab.id, 0);
 					},

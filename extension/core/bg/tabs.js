@@ -37,10 +37,10 @@ screenbreak.extension.core.bg.tabs = (() => {
 			});
 		},
 		sendMessage: (tabId, message, options) => browser.tabs.sendMessage(tabId, message, options),
-		launchWebAuthFlow: async url => {
+		launchWebAuthFlow: async (pageTabId, url) => {
 			const tab = await browser.tabs.create({ url, active: true });
 			return new Promise((resolve, reject) => {
-				pendingAuthInfo = { tabId: tab.id, resolve };
+				pendingAuthInfo = { pageTabId, tabId: tab.id, resolve };
 				browser.tabs.onRemoved.addListener(onTabRemoved);
 				function onTabRemoved(tabId) {
 					if (pendingAuthInfo && tabId == tab.id) {
@@ -65,9 +65,10 @@ screenbreak.extension.core.bg.tabs = (() => {
 		if (message.method.endsWith(".loggedIn")) {
 			const tabId = sender.tab.id;
 			if (pendingAuthInfo && tabId == pendingAuthInfo.tabId) {
+				await browser.tabs.update(pendingAuthInfo.pageTabId, { highlighted: true });
 				pendingAuthInfo.resolve();
 				pendingAuthInfo = null;
-				browser.tabs.remove(tabId);
+				await browser.tabs.remove(tabId);
 			}
 		}
 	}
