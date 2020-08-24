@@ -55,10 +55,6 @@
 		"message": "完成",
 		"description": "Badge label: 'OK'"
 	},
-	"buttonErrorBadge": {
-		"message": "错误",
-		"description": "Badge label for unexpected errors"
-	},
 	"optionsTitle": {
 		"message": "选项",
 		"description": "Options page title"

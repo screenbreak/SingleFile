@@ -55,10 +55,6 @@
 		"message": "OK",
 		"description": "Badge label: 'OK'"
 	},
-	"buttonErrorBadge": {
-		"message": "エラー",
-		"description": "Badge label for unexpected errors"
-	},
 	"optionsTitle": {
 		"message": "オプション（設定）",
 		"description": "Options page title"

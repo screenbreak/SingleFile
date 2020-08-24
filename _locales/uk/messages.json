@@ -55,10 +55,6 @@
 		"message": "ОК",
 		"description": "Badge label: 'OK'"
 	},
-	"buttonErrorBadge": {
-		"message": "ERROR",
-		"description": "Badge label for unexpected errors"
-	},
 	"optionsTitle": {
 		"message": "Параметри",
 		"description": "Options page title"
