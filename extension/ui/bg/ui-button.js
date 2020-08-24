@@ -74,22 +74,10 @@ screenbreak.extension.ui.bg.button = (() => {
 		}
 	};
 
-	browser.browserAction.onClicked.addListener(async tab => {
+	browser.browserAction.onClicked.addListener(async () => {
 		const business = screenbreak.extension.core.bg.business;
 		const allTabs = await screenbreak.extension.core.bg.tabs.get({ currentWindow: true, highlighted: true });
-		if (allTabs.length <= 1) {
-			toggleSaveTab(tab);
-		} else {
-			business.saveTabs(allTabs);
-		}
-
-		function toggleSaveTab(tab) {
-			if (business.isSavingTab(tab)) {
-				business.cancelTab(tab.id);
-			} else {
-				business.saveTabs([tab]);
-			}
-		}
+		business.saveTabs(allTabs);
 	});
 
 	return {
