@@ -100,21 +100,6 @@ screenbreak.extension.core.bg.business = (() => {
 				reject(error);
 				runTasks();
 			};
-			if (!taskInfo.tab.id) {
-				let scriptsInjected;
-				try {
-					const tab = await tabs.createAndWait({ url: taskInfo.tab.url, active: false });
-					taskInfo.tab.id = taskInfo.options.tabId = tab.id;
-					taskInfo.tab.index = taskInfo.options.tabIndex = tab.index;
-					scriptsInjected = await screenbreak.extension.injectScript(taskInfo.tab.id, taskInfo.options);
-				} catch (tabId) {
-					taskInfo.tab.id = tabId;
-				}
-				if (!scriptsInjected) {
-					taskInfo.reject();
-					return;
-				}
-			}
 			taskInfo.options.taskId = taskId;
 			tabs.sendMessage(taskInfo.tab.id, { method: taskInfo.method, options: taskInfo.options })
 				.catch(error => {
