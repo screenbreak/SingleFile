@@ -40,9 +40,7 @@ screenbreak.extension.ui.bg.menus = (() => {
 		if (BROWSER_MENUS_API_SUPPORTED && options) {
 			const pageContextsEnabled = ["page", "frame", "image", "link", "video", "audio", "selection"];
 			const defaultContextsDisabled = [];
-			if (options.browserActionMenuEnabled) {
-				defaultContextsDisabled.push("browser_action");
-			}
+			defaultContextsDisabled.push("browser_action");
 			await menus.removeAll();
 			const defaultContextsEnabled = defaultContextsDisabled.concat(...pageContextsEnabled);
 			const defaultContexts = options.contextMenuEnabled ? defaultContextsEnabled : defaultContextsDisabled;
