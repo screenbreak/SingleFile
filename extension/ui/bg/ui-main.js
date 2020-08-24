@@ -48,8 +48,8 @@ screenbreak.extension.ui.bg.main = (() => {
 		onUploadProgress(tabId, progress) {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadProgress", progress });
 		},
-		onError(tabId) {
-			screenbreak.extension.ui.bg.button.onError(tabId);
+		onError(tabId, error) {
+			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadProgress", error: error.message });
 		},
 		onEnd(tabId) {
 			screenbreak.extension.ui.bg.button.onEnd(tabId);

@@ -26,13 +26,11 @@
 screenbreak.extension.ui.bg.button = (() => {
 
 	const DEFAULT_ICON_PATH = "/extension/ui/resources/icon_128.png";
-	// const WAIT_ICON_PATH_PATH = "/extension/ui/resources/icon_128_wait.png";
 	const BUTTON_DEFAULT_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonDefaultTooltip");
 	const BUTTON_BLOCKED_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonBlockedTooltip");
 	const BUTTON_DEFAULT_BADGE_MESSAGE = "";
 	const BUTTON_INITIALIZING_BADGE_MESSAGE = browser.i18n.getMessage("buttonInitializingBadge");
 	const BUTTON_INITIALIZING_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonInitializingTooltip");
-	const BUTTON_ERROR_BADGE_MESSAGE = browser.i18n.getMessage("buttonErrorBadge");
 	const BUTTON_BLOCKED_BADGE_MESSAGE = browser.i18n.getMessage("buttonBlockedBadge");
 	const BUTTON_OK_BADGE_MESSAGE = browser.i18n.getMessage("buttonOKBadge");
 	const BUTTON_SAVE_PROGRESS_TOOLTIP_MESSAGE = browser.i18n.getMessage("buttonSaveProgressTooltip");
@@ -40,7 +38,6 @@ screenbreak.extension.ui.bg.button = (() => {
 	const DEFAULT_COLOR = [2, 147, 20, 192];
 	const ACTIVE_COLOR = [4, 229, 36, 192];
 	const FORBIDDEN_COLOR = [255, 255, 255, 1];
-	const ERROR_COLOR = [229, 4, 12, 192];
 	const INJECT_SCRIPTS_STEP = 1;
 
 	const BUTTON_STATES = {
@@ -67,12 +64,6 @@ screenbreak.extension.ui.bg.button = (() => {
 			setBadgeBackgroundColor: { color: ACTIVE_COLOR },
 			setBadgeText: { text: BUTTON_OK_BADGE_MESSAGE },
 			setTitle: { title: BUTTON_DEFAULT_TOOLTIP_MESSAGE },
-			setIcon: { path: DEFAULT_ICON_PATH }
-		},
-		error: {
-			setBadgeBackgroundColor: { color: ERROR_COLOR },
-			setBadgeText: { text: BUTTON_ERROR_BADGE_MESSAGE },
-			setTitle: { title: BUTTON_DEFAULT_BADGE_MESSAGE },
 			setIcon: { path: DEFAULT_ICON_PATH }
 		},
 		forbidden: {
@@ -106,7 +97,6 @@ screenbreak.extension.ui.bg.button = (() => {
 		onStart,
 		onUploadProgress,
 		onForbiddenDomain,
-		onError,
 		onEnd,
 		onCancelled,
 		refreshTab
@@ -126,12 +116,6 @@ screenbreak.extension.ui.bg.button = (() => {
 		if (message.method.endsWith(".processEnd")) {
 			onEnd(sender.tab.id);
 		}
-		if (message.method.endsWith(".processError")) {
-			if (message.error) {
-				console.error("Initialization error", message.error); // eslint-disable-line no-console
-			}
-			onError(sender.tab.id);
-		}
 		if (message.method.endsWith(".processCancelled")) {
 			onCancelled(sender.tab);
 		}
@@ -142,12 +126,7 @@ screenbreak.extension.ui.bg.button = (() => {
 		let state;
 		state = step == INJECT_SCRIPTS_STEP ? getButtonState("inject") : getButtonState("execute");
 		state.setTitle = { title: BUTTON_INITIALIZING_TOOLTIP_MESSAGE + " (" + step + "/2)" };
-		// state.setIcon = { path: WAIT_ICON_PATH_PATH };
 		refresh(tabId, state);
-	}
-
-	function onError(tabId) {
-		refresh(tabId, getButtonState("error"));
 	}
 
 	function onEnd(tabId) {
@@ -172,11 +151,8 @@ screenbreak.extension.ui.bg.button = (() => {
 
 	function onProgress(tabId, index, maxIndex, tooltipMessage) {
 		const progress = Math.max(Math.min(20, Math.floor((index / maxIndex) * 20)), 0);
-		// const barProgress = Math.min(Math.floor((index / maxIndex) * 8), 8);
-		// const path = WAIT_ICON_PATH_PREFIX + barProgress + ".png";
 		const state = getButtonState("progress");
 		state.setTitle = { title: tooltipMessage + (progress * 5) + "%" };
-		// state.setIcon = { path };
 		refresh(tabId, state);
 	}
 
