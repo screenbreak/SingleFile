@@ -72,7 +72,7 @@ screenbreak.extension.core.bg.api = (() => {
 		});
 		const parser = new DOMParser();
 		const document = parser.parseFromString(await response.text(), "text/html");
-		const script = Array.from(document.querySelectorAll("script")).find(scriptElement => scriptElement.textContent.match(/window\.drf\s*=\s(.*)/gi));
+		const script = Array.from(document.querySelectorAll("script")).find(scriptElement => scriptElement.textContent.match(/window\.drf\s*=\s*(.*)/gi));
 		const csrfObjectMatch = script.textContent.replace(/\n/g, "").trim().match(/window\.drf\s*=\s({.*})/);
 		if (csrfObjectMatch && csrfObjectMatch[1]) {
 			const csrfValueMatch = csrfObjectMatch[1].match(/csrfToken: "(.*?)"/);
