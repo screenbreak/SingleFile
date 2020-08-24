@@ -27,23 +27,18 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 
 	const SELECTED_CONTENT_ATTRIBUTE_NAME = this.singlefile.lib.helper.SELECTED_CONTENT_ATTRIBUTE_NAME;
 
-	const MASK_TAGNAME = "singlefile-mask";
-	const PROGRESS_BAR_TAGNAME = "singlefile-progress-bar";
-	const PROGRESS_CURSOR_TAGNAME = "singlefile-progress-cursor";
-	const SELECTION_ZONE_TAGNAME = "single-file-selection-zone";
-	const LOGS_WINDOW_TAGNAME = "singlefile-logs-window";
-	const LOGS_LINE_TAGNAME = "singlefile-logs-line";
-	const LOGS_LINE_ELEMENT_TAGNAME = "singlefile-logs-element";
+	const LOADING_PAGE_URL = "/extension/ui/overlay/loading.html";
+	const ERROR_PAGE_URL = "/extension/ui/overlay/error.html";
+	const SUCCESS_PAGE_URL = "/extension/ui/overlay/success.html";
+
 	const SINGLE_FILE_UI_ELEMENT_CLASS = "single-file-ui-element";
+	const SELECTION_ZONE_TAGNAME = "screenbreak-selection-zone";
+	const LOGS_WINDOW_TAGNAME = "screenbreak-overlay";
 	const SELECT_PX_THRESHOLD = 8;
-	const LOG_PANEL_DEFERRED_IMAGES_MESSAGE = browser.i18n.getMessage("logPanelDeferredImages");
-	const LOG_PANEL_FRAME_CONTENTS_MESSAGE = browser.i18n.getMessage("logPanelFrameContents");
-	const LOG_PANEL_STEP_MESSAGE = browser.i18n.getMessage("logPanelStep");
-	const LOG_PANEL_WIDTH = browser.i18n.getMessage("logPanelWidth");
 
 	let selectedAreaElement;
 
-	let logsWindowElement = createLogsWindowElement();
+	let overlayIframeElement, overlayElement = createOverlayElement();
 	const allProperties = new Set();
 	Array.from(getComputedStyle(document.body)).forEach(property => allProperties.add(property));
 
@@ -53,61 +48,36 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		prompt(message, defaultValue) {
 			return prompt(message, defaultValue);
 		},
-		onStartPage(options) {
-			let maskElement = document.querySelector(MASK_TAGNAME);
-			if (!maskElement) {
-				if (options.logsEnabled) {
-					setLogsWindowStyle();
-					document.body.appendChild(logsWindowElement);
-				}
-				const maskElement = createMaskElement();
-				if (options.progressBarEnabled) {
-					createProgressBarElement(maskElement);
-				}
-				maskElement.offsetWidth;
-				maskElement.style.setProperty("background-color", "black", "important");
-				maskElement.style.setProperty("opacity", .3, "important");
-				document.body.offsetWidth;
-			}
+		onStartPage() {
+			setLogsWindowStyle();
+			document.body.appendChild(overlayElement);
+			// overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.saveProgress", index: 0 }), "*");
 		},
 		onEndPage() {
-			const maskElement = document.querySelector(MASK_TAGNAME);
-			if (maskElement) {
-				maskElement.remove();
-			}
-
-			logsWindowElement.remove();
-			clearLogs();
+			// overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.uploadProgress", index: 0, maxIndex: 1 }), "*");
 		},
-		onLoadResource(index, maxIndex, options) {
-			if (options.progressBarEnabled) {
-				const progressBarElement = document.querySelector(PROGRESS_BAR_TAGNAME);
-				if (progressBarElement && maxIndex) {
-					const width = Math.floor((index / maxIndex) * 100) + "%";
-					if (progressBarElement.style.getPropertyValue("width") != width) {
-						requestAnimationFrame(() => progressBarElement.style.setProperty("width", Math.floor((index / maxIndex) * 100) + "%", "important"));
-					}
-				}
-			}
+		onError(error, details) {
+			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details }));
+			// overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.displayError", error, details }), "*");
 		},
-		onLoadingDeferResources(options) {
-			updateLog("load-deferred-images", LOG_PANEL_DEFERRED_IMAGES_MESSAGE, "…", options);
+		onUploadProgress(index, maxIndex) {
+			overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.uploadProgress", index, maxIndex }), "*");
 		},
-		onLoadDeferResources(options) {
-			updateLog("load-deferred-images", LOG_PANEL_DEFERRED_IMAGES_MESSAGE, "✓", options);
+		onUploadEnd() {
+			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL);
 		},
-		onLoadingFrames(options) {
-			updateLog("load-frames", LOG_PANEL_FRAME_CONTENTS_MESSAGE, "…", options);
+		onLoadResource(index, maxIndex) {
+			overlayIframeElement.contentWindow.postMessage(JSON.stringify({ method: "screenbreak.saveProgress", index, maxIndex }), "*");
 		},
-		onLoadFrames(options) {
-			updateLog("load-frames", LOG_PANEL_FRAME_CONTENTS_MESSAGE, "✓", options);
+		onCancelled() {
+			overlayElement.remove();
 		},
-		onStartStage(step, options) {
-			updateLog("step-" + step, `${LOG_PANEL_STEP_MESSAGE} ${step + 1} / 3`, "…", options);
-		},
-		onEndStage(step, options) {
-			updateLog("step-" + step, `${LOG_PANEL_STEP_MESSAGE} ${step + 1} / 3`, "✓", options);
-		},
+		onLoadingDeferResources() { },
+		onLoadDeferResources() { },
+		onLoadingFrames() { },
+		onLoadFrames() { },
+		onStartStage() { },
+		onEndStage() { },
 		onPageLoading() { },
 		onLoadPage() { },
 		onStartStageTask() { },
@@ -334,128 +304,37 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		return selectorElement;
 	}
 
-	function createMaskElement() {
-		let maskElement = document.querySelector(MASK_TAGNAME);
-		if (!maskElement) {
-			maskElement = createElement(MASK_TAGNAME);
-			maskElement.style.setProperty("opacity", 0, "important");
-			maskElement.style.setProperty("background-color", "transparent", "important");
-			maskElement.style.setProperty("position", "fixed", "important");
-			maskElement.style.setProperty("top", "0", "important");
-			maskElement.style.setProperty("left", "0", "important");
-			maskElement.style.setProperty("width", "100%", "important");
-			maskElement.style.setProperty("height", "100%", "important");
-			maskElement.style.setProperty("z-index", 2147483646, "important");
-			maskElement.style.setProperty("transition", "opacity 250ms", "important");
-			document.body.appendChild(maskElement);
-			maskElement.offsetWidth;
+	function createOverlayElement() {
+		let overlayElement = document.querySelector(LOGS_WINDOW_TAGNAME);
+		if (!overlayElement) {
+			overlayElement = document.createElement(LOGS_WINDOW_TAGNAME);
+			overlayElement.className = SINGLE_FILE_UI_ELEMENT_CLASS;
 		}
-		return maskElement;
-	}
-
-	function createProgressBarElement(maskElement) {
-		let progressBarElementContainer = document.querySelector(PROGRESS_BAR_TAGNAME);
-		if (!progressBarElementContainer) {
-			progressBarElementContainer = createElement(PROGRESS_BAR_TAGNAME, maskElement);
-			const styleElement = document.createElement("style");
-			styleElement.textContent = "@keyframes single-file-progress { 0% { left: -50px } 100% { left: 0 }";
-			maskElement.appendChild(styleElement);
-			progressBarElementContainer.style.setProperty("position", "fixed", "important");
-			progressBarElementContainer.style.setProperty("top", "0", "important");
-			progressBarElementContainer.style.setProperty("left", "0", "important");
-			progressBarElementContainer.style.setProperty("width", "0", "important");
-			progressBarElementContainer.style.setProperty("height", "8px", "important");
-			progressBarElementContainer.style.setProperty("overflow", "hidden", "important");
-			progressBarElementContainer.style.setProperty("transition", "width 200ms", "important");
-			progressBarElementContainer.style.setProperty("will-change", "width", "important");
-			const progressBarElement = createElement(PROGRESS_CURSOR_TAGNAME, progressBarElementContainer);
-			progressBarElement.style.setProperty("position", "absolute", "important");
-			progressBarElement.style.setProperty("left", "0");
-			progressBarElement.style.setProperty("animation", "single-file-progress 5s linear infinite reverse", "important");
-			progressBarElement.style.setProperty("background", "white linear-gradient(-45deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%, transparent 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.1) 75%, transparent 75%, transparent) repeat scroll 0% 0% / 50px 50px padding-box border-box", "important");
-			progressBarElement.style.setProperty("width", "calc(100% + 50px)", "important");
-			progressBarElement.style.setProperty("height", "100%", "important");
-			progressBarElement.style.setProperty("inset-inline-start", "auto");
-		}
-		return progressBarElementContainer;
-	}
-
-	function createLogsWindowElement() {
-		let logsWindowElement = document.querySelector(LOGS_WINDOW_TAGNAME);
-		if (!logsWindowElement) {
-			logsWindowElement = document.createElement(LOGS_WINDOW_TAGNAME);
-			logsWindowElement.className = SINGLE_FILE_UI_ELEMENT_CLASS;
-		}
-		const styleElement = document.createElement("style");
-		logsWindowElement.appendChild(styleElement);
-		styleElement.textContent = "@keyframes single-file-pulse { 0% { opacity: .5 } 100% { opacity: 1 }";
-		return logsWindowElement;
+		return overlayElement;
 	}
 
 	function setLogsWindowStyle() {
-		initStyle(logsWindowElement);
-		logsWindowElement.style.setProperty("opacity", "0.9", "important");
-		logsWindowElement.style.setProperty("padding", "4px", "important");
-		logsWindowElement.style.setProperty("position", "fixed", "important");
-		logsWindowElement.style.setProperty("bottom", "24px", "important");
-		logsWindowElement.style.setProperty("left", "8px", "important");
-		logsWindowElement.style.setProperty("z-index", 2147483647, "important");
-		logsWindowElement.style.setProperty("background-color", "white", "important");
-		logsWindowElement.style.setProperty("min-width", LOG_PANEL_WIDTH + "px", "important");
-		logsWindowElement.style.setProperty("min-height", "16px", "important");
-		logsWindowElement.style.setProperty("transition", "height 100ms", "important");
-		logsWindowElement.style.setProperty("will-change", "height", "important");
-	}
-
-	function updateLog(id, textContent, textStatus, options) {
-		if (options.logsEnabled) {
-			let lineElement = logsWindowElement.querySelector("[data-id='" + id + "']");
-			if (!lineElement) {
-				lineElement = createElement(LOGS_LINE_TAGNAME, logsWindowElement);
-				lineElement.setAttribute("data-id", id);
-				lineElement.style.setProperty("display", "flex", "important");
-				lineElement.style.setProperty("justify-content", "space-between", "important");
-				lineElement.style.setProperty("padding", "2px", "important");
-				const textElement = createElement(LOGS_LINE_ELEMENT_TAGNAME, lineElement);
-				textElement.style.setProperty("font-size", "13px", "important");
-				textElement.style.setProperty("font-family", "arial, sans-serif", "important");
-				textElement.style.setProperty("color", "black", "important");
-				textElement.style.setProperty("background-color", "white", "important");
-				textElement.style.setProperty("opacity", "1", "important");
-				textElement.style.setProperty("transition", "opacity 200ms", "important");
-				textElement.textContent = textContent;
-				const statusElement = createElement(LOGS_LINE_ELEMENT_TAGNAME, lineElement);
-				statusElement.style.setProperty("font-size", "11px", "important");
-				statusElement.style.setProperty("font-family", "arial, sans-serif", "important");
-				statusElement.style.setProperty("color", "black", "important");
-				statusElement.style.setProperty("background-color", "white", "important");
-				statusElement.style.setProperty("min-width", "15px", "important");
-				statusElement.style.setProperty("text-align", "center", "important");
-				statusElement.style.setProperty("position", "relative", "important");
-				statusElement.style.setProperty("top", "1px", "important");
-				statusElement.style.setProperty("will-change", "opacity", "important");
-			}
-			updateLogLine(lineElement, textContent, textStatus);
-		}
-	}
-
-	function updateLogLine(lineElement, textContent, textStatus) {
-		const textElement = lineElement.childNodes[0];
-		const statusElement = lineElement.childNodes[1];
-		textElement.textContent = textContent;
-		statusElement.style.setProperty("color", textStatus == "✓" ? "#055000" : "black", "important");
-		if (textStatus == "✓") {
-			textElement.style.setProperty("opacity", ".5", "important");
-			statusElement.style.setProperty("animation", "none", "important");
-		} else {
-			statusElement.style.setProperty("opacity", ".5", "important");
-			statusElement.style.setProperty("animation", "single-file-pulse 1s linear infinite alternate", "important");
-		}
-		statusElement.textContent = textStatus;
-	}
-
-	function clearLogs() {
-		logsWindowElement = createLogsWindowElement();
+		initStyle(overlayElement);
+		// overlayElement.style.setProperty("opacity", "0.9", "important");
+		// overlayElement.style.setProperty("padding", "4px", "important");
+		overlayElement.style.setProperty("position", "fixed", "important");
+		overlayElement.style.setProperty("z-index", 2147483647, "important");
+		overlayElement.style.setProperty("background-color", "transparent", "important");
+		overlayElement.style.setProperty("top", "50%", "important");
+		overlayElement.style.setProperty("left", "50%", "important");
+		overlayElement.style.setProperty("margin-right", "-50%;", "important");
+		overlayElement.style.setProperty("transform", "translate(-50%, -50%)", "important");
+		overlayElement.style.setProperty("width", "100%", "important");
+		overlayElement.style.setProperty("height", "100%", "important");
+		overlayElement.style.setProperty("overflow", "hidden", "important");
+		overlayIframeElement = document.createElement("iframe");
+		initStyle(overlayIframeElement);
+		overlayIframeElement.style.setProperty("width", "100%", "important");
+		overlayIframeElement.style.setProperty("height", "100%", "important");
+		overlayIframeElement.style.setProperty("background-color", "transparent", "important");
+		overlayIframeElement.style.setProperty("overflow", "hidden", "important");
+		overlayElement.appendChild(overlayIframeElement);
+		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL);
 	}
 
 	function getMatchedParents(target, property) {

@@ -22,6 +22,14 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 			return onMessage(message);
 		}
 	});
+	window.addEventListener("message", event => {
+		const message = JSON.parse(event.data);
+		if (message.method == "screenbreak.cancel") {
+			browser.runtime.sendMessage({ method: "downloads.cancel" });
+			cancelSave();
+		}
+
+	}, false);
 	return {};
 
 	async function onMessage(message) {
@@ -34,34 +42,34 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				return {};
 			}
 			if (message.method == "content.cancelSave") {
-				if (processor) {
-					processor.cancel();
-					ui.onEndPage();
-					browser.runtime.sendMessage({ method: "ui.processCancelled" });
-				}
+				cancelSave();
 				return {};
 			}
 			if (message.method == "downloads.uploadProgress") {
-				// TODO
-				console.log(message);
+				ui.onUploadProgress(message.progress, 1);
 				return {};
 			}
 			if (message.method == "downloads.uploadEnd") {
-				// TODO
-				console.log(message);
+				ui.onUploadEnd(message.progress);
 				return {};
 			}
 			if (message.method == "downloads.uploadCancelled") {
-				// TODO
-				console.log(message);
+				cancelSave();
 				return {};
 			}
 			if (message.method == "downloads.uploadError") {
-				// TODO
-				console.log(message);
+				ui.onError("Upload error", message.error);
 				return {};
 			}
 		}
+	}
+
+	function cancelSave() {
+		if (processor) {
+			processor.cancel();
+		}
+		ui.onCancelled();
+		browser.runtime.sendMessage({ method: "ui.processCancelled" });
 	}
 
 	async function savePage(message) {
@@ -86,7 +94,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				} catch (error) {
 					if (!processor.cancelled) {
 						console.error(error); // eslint-disable-line no-console
-						// TODO display error
+						ui.onError("Save error", error.message);
 					}
 				}
 			} else {

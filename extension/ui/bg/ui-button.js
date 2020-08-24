@@ -163,7 +163,7 @@ screenbreak.extension.ui.bg.button = (() => {
 
 	async function refresh(tabId, state) {
 		const tabsData = screenbreak.extension.core.bg.tabsData.getTemporary(tabId);
-		if (state) {
+		if (tabsData[tabId] && state) {
 			if (!tabsData[tabId].button) {
 				tabsData[tabId].button = { lastState: null };
 			}

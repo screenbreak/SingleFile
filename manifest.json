@@ -116,7 +116,11 @@
 		"lib/single-file/index.js",
 		"lib/single-file/modules/html-serializer.js",
 		"lib/single-file/processors/hooks/content/content-hooks-web.js",
-		"lib/single-file/processors/hooks/content/content-hooks-frames-web.js"
+		"lib/single-file/processors/hooks/content/content-hooks-frames-web.js",
+		"extension/ui/overlay/loading.html",
+		"extension/ui/overlay/success.html",
+		"extension/ui/overlay/error.html",
+		"extension/ui/overlay/book.html"
 	],
 	"permissions": [
 		"menus",

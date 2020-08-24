@@ -35,26 +35,29 @@ screenbreak.extension.core.bg.api = (() => {
 			const xhr = new XMLHttpRequest();
 			xhr.open("POST", `${API_URL}${refId}/`, true);
 			xhr.setRequestHeader("x-csrftoken", csrfToken);
-			return new Promise((resolve, reject) => {
-				xhr.upload.onloadstart = uploadHandlers.onloadstart;
-				xhr.upload.onprogress = uploadHandlers.onprogress;
-				xhr.upload.onabort = uploadHandlers.onabort;
-				xhr.upload.onerror = uploadHandlers.onerror;
-				xhr.upload.onload = uploadHandlers.onload;
-				xhr.upload.ontimeout = uploadHandlers.ontimeout;
-				xhr.onload = () => handlResponse(xhr.response).then(resolve).catch(reject);
-				xhr.onerror = reject;
-				xhr.send(formData);
-			});
+			return {
+				promise: new Promise((resolve, reject) => {
+					xhr.upload.onloadstart = uploadHandlers.onloadstart;
+					xhr.upload.onprogress = uploadHandlers.onprogress;
+					xhr.upload.onabort = uploadHandlers.onabort;
+					xhr.upload.onerror = uploadHandlers.onerror;
+					xhr.upload.onload = uploadHandlers.onload;
+					xhr.upload.ontimeout = uploadHandlers.ontimeout;
+					xhr.onload = () => handlResponse(xhr.response).then(resolve).catch(reject);
+					xhr.onerror = reject;
+					xhr.send(formData);
+				}),
+				cancel: () => xhr.abort()
+			};
 		} else {
-			await handlResponse(response);
+			return handlResponse(response);
 		}
 
 		async function handlResponse(response) {
 			if (response.status == 403) {
 				await screenbreak.extension.core.bg.tabs.launchWebAuthFlow(tabId, LOGIN_PAGE_URL);
 				csrfToken = null;
-				await saveArticle(tabId, url, title, blob, uploadHandlers);
+				return saveArticle(tabId, url, title, blob, uploadHandlers);
 			} else if (response.status >= 400) {
 				throw new Error(response.status);
 			}

@@ -2,7 +2,7 @@
 
 screenbreak.extension.core.bg.downloads = (() => {
 
-	const partialContents = new Map();
+	const partialContents = new Map(), currentUploads = {};
 	const MIMETYPE_HTML = "text/html";
 
 	return {
@@ -13,8 +13,12 @@ screenbreak.extension.core.bg.downloads = (() => {
 		if (message.method.endsWith(".download")) {
 			return downloadTabPage(message, sender.tab);
 		}
-		if (message.method.endsWith(".end")) {
-			screenbreak.extension.core.bg.business.onSaveEnd(message.taskId);
+		if (message.method.endsWith(".cancel")) {
+			const tabId = sender.tab.id;
+			screenbreak.extension.core.bg.business.cancelTab(tabId);
+			if (currentUploads[tabId]) {
+				currentUploads[tabId].cancel();
+			}
 			return {};
 		}
 	}
@@ -36,7 +40,7 @@ screenbreak.extension.core.bg.downloads = (() => {
 		}
 		if (!message.truncated || message.finished) {
 			try {
-				await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, new Blob([contents], { type: MIMETYPE_HTML }), {
+				const eventHandlers = {
 					onloadstart: () => {
 						screenbreak.extension.ui.bg.main.onUploadStart(tab.id, 0);
 					},
@@ -57,7 +61,10 @@ screenbreak.extension.core.bg.downloads = (() => {
 					ontimeout: () => {
 						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Timeout error"));
 					}
-				});
+				};
+				const uploadTask = await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, new Blob([contents], { type: MIMETYPE_HTML }), eventHandlers);
+				currentUploads[tab.id] = uploadTask;
+				await uploadTask.promise;
 				screenbreak.extension.ui.bg.main.onEnd(tab.id);
 			} catch (error) {
 				console.error(error); // eslint-disable-line no-console
@@ -66,6 +73,8 @@ screenbreak.extension.core.bg.downloads = (() => {
 				if (message.url) {
 					URL.revokeObjectURL(message.url);
 				}
+				currentUploads[tab.id] = null;
+				screenbreak.extension.core.bg.business.onSaveEnd(message.taskId);
 			}
 		}
 		return {};

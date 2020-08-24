@@ -146,7 +146,7 @@ screenbreak.extension.core.bg.business = (() => {
 		if (taskInfo.cancel) {
 			taskInfo.cancel();
 		}
-		screenbreak.extension.ui.bg.main.onCancelled(taskInfo.tab);
+		screenbreak.extension.ui.bg.main.onCancelled(tabId);
 		tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
 		if (taskInfo.resolve) {
 			taskInfo.resolve();
