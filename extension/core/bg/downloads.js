@@ -46,25 +46,22 @@ screenbreak.extension.core.bg.downloads = (() => {
 						}
 					},
 					onabort: () => {
-						debugger;
-						// TODO
+						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Upload aborted"));
 					},
 					onerror: () => {
-						debugger;
-						// TODO
+						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Upload error"));
 					},
 					onload: () => {
 						screenbreak.extension.ui.bg.main.onUploadProgress(tab.id, 1);
 					},
 					ontimeout: () => {
-						debugger;
-						// TODO
+						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Timeout error"));
 					}
 				});
 				screenbreak.extension.ui.bg.main.onEnd(tab.id);
 			} catch (error) {
 				console.error(error); // eslint-disable-line no-console
-				screenbreak.extension.ui.bg.main.onError(tab.id);
+				screenbreak.extension.ui.bg.main.onError(tab.id, error);
 			} finally {
 				if (message.url) {
 					URL.revokeObjectURL(message.url);

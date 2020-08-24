@@ -50,11 +50,14 @@ screenbreak.extension.ui.bg.main = (() => {
 		},
 		onError(tabId, error) {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadError", error: error.message });
+			screenbreak.extension.ui.bg.button.onCancelled(tabId);
 		},
 		onEnd(tabId) {
+			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadEnd" });
 			screenbreak.extension.ui.bg.button.onEnd(tabId);
 		},
 		onCancelled(tabId) {
+			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadCancelled" });
 			screenbreak.extension.ui.bg.button.onCancelled(tabId);
 		},
 		onTabCreated(tab) {

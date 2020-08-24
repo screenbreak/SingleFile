@@ -13,7 +13,12 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		frameFetch: screenbreak.extension.lib.fetch.content.resources.frameFetch
 	});
 	browser.runtime.onMessage.addListener(message => {
-		if (message.method == "content.save" || message.method == "content.cancelSave" || message.method == "downloads.uploadProgress") {
+		if (message.method == "content.save" ||
+			message.method == "content.cancelSave" ||
+			message.method == "downloads.uploadProgress" ||
+			message.method == "downloads.uploadEnd" ||
+			message.method == "downloads.uploadCancelled" ||
+			message.method == "downloads.uploadError") {
 			return onMessage(message);
 		}
 	});
@@ -37,6 +42,21 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				return {};
 			}
 			if (message.method == "downloads.uploadProgress") {
+				// TODO
+				console.log(message);
+				return {};
+			}
+			if (message.method == "downloads.uploadEnd") {
+				// TODO
+				console.log(message);
+				return {};
+			}
+			if (message.method == "downloads.uploadCancelled") {
+				// TODO
+				console.log(message);
+				return {};
+			}
+			if (message.method == "downloads.uploadError") {
 				// TODO
 				console.log(message);
 				return {};
@@ -66,7 +86,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				} catch (error) {
 					if (!processor.cancelled) {
 						console.error(error); // eslint-disable-line no-console
-						browser.runtime.sendMessage({ method: "ui.processError", error });
+						// TODO display error
 					}
 				}
 			} else {
