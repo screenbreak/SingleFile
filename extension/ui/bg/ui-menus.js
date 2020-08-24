@@ -38,7 +38,7 @@ screenbreak.extension.ui.bg.menus = (() => {
 		const config = screenbreak.extension.core.bg.config;
 		const options = await config.getOptions(tab && tab.url);
 		if (BROWSER_MENUS_API_SUPPORTED && options) {
-			const pageContextsEnabled = ["page", "frame", "image", "link", "video", "audio", "selection"];
+			const pageContextsEnabled = ["page", "frame", "image", "video", "audio", "selection"];
 			const defaultContextsDisabled = [];
 			defaultContextsDisabled.push("browser_action");
 			await menus.removeAll();
@@ -83,11 +83,7 @@ screenbreak.extension.ui.bg.menus = (() => {
 			createMenus();
 			menus.onClicked.addListener(async (event, tab) => {
 				if (event.menuItemId == MENU_ID_SAVE_PAGE) {
-					if (event.linkUrl) {
-						business.saveUrls([event.linkUrl]);
-					} else {
-						business.saveTabs([tab]);
-					}
+					business.saveTabs([tab]);
 				}
 				if (event.menuItemId == MENU_ID_SAVE_SELECTED) {
 					business.saveTabs([tab], { selected: true });

@@ -22,7 +22,6 @@ screenbreak.extension.core.bg.business = (() => {
 	return {
 		isSavingTab: tab => Boolean(tasks.find(taskInfo => taskInfo.tab.id == tab.id)),
 		saveTabs,
-		saveUrls,
 		cancelTab,
 		onSaveEnd: taskId => {
 			const taskInfo = tasks.find(taskInfo => taskInfo.id == taskId);
@@ -33,18 +32,6 @@ screenbreak.extension.core.bg.business = (() => {
 		onInit: tab => cancelTab(tab.id),
 		onTabRemoved: cancelTab
 	};
-
-	async function saveUrls(urls, options = {}) {
-		await initMaxParallelWorkers();
-		await Promise.all(urls.map(async url => {
-			const tabOptions = await screenbreak.extension.core.bg.config.getOptions(url);
-			Object.keys(options).forEach(key => tabOptions[key] = options[key]);
-			tabOptions.extensionScriptFiles = extensionScriptFiles;
-			tasks.push({ id: currentTaskId, status: "pending", tab: { url }, options: tabOptions, method: "content.save" });
-			currentTaskId++;
-		}));
-		runTasks();
-	}
 
 	async function saveTabs(tabs, options = {}) {
 		const config = screenbreak.extension.core.bg.config;
