@@ -157,7 +157,7 @@
 				removeHiddenElements: removeHiddenElementsInput.checked,
 				removeUnusedStyles: removeUnusedStylesInput.checked,
 				removeUnusedFonts: removeUnusedFontsInput.checked,
-				removeFrames: removeFramesInput.checked,				
+				removeFrames: removeFramesInput.checked,
 				loadDeferredImages: loadDeferredImagesInput.checked,
 				loadDeferredImagesMaxIdleTime: Math.max(loadDeferredImagesMaxIdleTimeInput.value, 0),
 				contextMenuEnabled: contextMenuEnabledInput.checked,
