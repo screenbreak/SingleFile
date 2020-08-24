@@ -120,7 +120,22 @@
 		"extension/ui/overlay/loading.html",
 		"extension/ui/overlay/success.html",
 		"extension/ui/overlay/error.html",
-		"extension/ui/overlay/book.html"
+		"extension/ui/overlay/book.html",
+		"extension/ui/overlay/css/style.css",
+		"extension/ui/overlay/fonts/work-s,ans-v8-latin-regular.eot",
+		"extension/ui/overlay/fonts/work-sans-v8-latin-regular.svg",
+		"extension/ui/overlay/fonts/work-sans-v8-latin-regular.ttf",
+		"extension/ui/overlay/fonts/work-sans-v8-latin-regular.woff",
+		"extension/ui/overlay/fonts/work-sans-v8-latin-regular.woff2",
+		"extension/ui/overlay/images/error.png",
+		"extension/ui/overlay/images/logo.png",
+		"extension/ui/overlay/images/more.png",
+		"extension/ui/overlay/images/more-dark.png",
+		"extension/ui/overlay/images/success.png",
+		"extension/ui/overlay/js/base.js",
+		"extension/ui/overlay/js/error.js",
+		"extension/ui/overlay/js/loading.js",
+		"extension/ui/overlay/js/success.js"
 	],
 	"permissions": [
 		"menus",
