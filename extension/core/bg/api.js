@@ -5,6 +5,7 @@ screenbreak.extension.core.bg.api = (() => {
 	const CSRF_URL = "https://app.myscreenbreak.com/api/v1/csrf/";
 	const API_URL = "https://app.myscreenbreak.com/api/v1/article/";
 	const LOGIN_PAGE_URL = "https://app.myscreenbreak.com/login/";
+	const ARTICLES_URL = "https://app.myscreenbreak.com/articles/";
 
 	let csrfToken;
 
@@ -47,7 +48,8 @@ screenbreak.extension.core.bg.api = (() => {
 					xhr.onerror = reject;
 					xhr.send(formData);
 				}),
-				cancel: () => xhr.abort()
+				cancel: () => xhr.abort(),
+				url: ARTICLES_URL + refId + "/"
 			};
 		} else {
 			return handlResponse(response);

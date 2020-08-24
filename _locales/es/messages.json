@@ -63,6 +63,14 @@
 		"message": "Article successfully saved",
 		"description": "Overlay title: 'Article successfully saved'"
 	},
+	"overlayDownloadButton": {
+		"message": "Download page",
+		"description": "Overlay button: 'Download page'"
+	},
+	"overlayLink": {
+		"message": "Go to my articles",
+		"description": "Overlay link: 'Go to my articles'"
+	},
 	"optionsTitle": {
 		"message": "Opciones",
 		"description": "Options page title"

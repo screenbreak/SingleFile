@@ -65,7 +65,7 @@ screenbreak.extension.core.bg.downloads = (() => {
 				const uploadTask = await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, new Blob([contents], { type: MIMETYPE_HTML }), eventHandlers);
 				currentUploads[tab.id] = uploadTask;
 				await uploadTask.promise;
-				screenbreak.extension.ui.bg.main.onEnd(tab.id);
+				screenbreak.extension.ui.bg.main.onEnd(tab.id, uploadTask.url);
 			} catch (error) {
 				console.error(error); // eslint-disable-line no-console
 				screenbreak.extension.ui.bg.main.onError(tab.id, error);

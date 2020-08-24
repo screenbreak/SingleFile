@@ -55,7 +55,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				return {};
 			}
 			if (message.method == "downloads.uploadEnd") {
-				ui.onUploadEnd(message.progress);
+				ui.onUploadEnd(message.downloadURL);
 				return {};
 			}
 			if (message.method == "downloads.uploadCancelled") {

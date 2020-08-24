@@ -21,6 +21,8 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	const uploadingDetailsLabel = browser.i18n.getMessage("overlayUploadingDetails");
 	const cancelButtonLabel = browser.i18n.getMessage("overlayCancelButton");
 	const closeButtonLabel = browser.i18n.getMessage("overlayCloseButton");
+	const downloadButtonLabel = browser.i18n.getMessage("overlayDownloadButton");
+	const linkLabel = browser.i18n.getMessage("overlayLink");
 
 	let selectedAreaElement;
 
@@ -48,8 +50,8 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 				detailsLabel: uploadingDetailsLabel
 			}), "*");
 		},
-		onUploadEnd() {
-			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL + "?" + JSON.stringify({ titleLabel: overlaySuccessTitleLabel }));
+		onUploadEnd(downloadURL) {
+			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL + "?" + JSON.stringify({ titleLabel: overlaySuccessTitleLabel, downloadButtonLabel, linkLabel, downloadURL }));
 		},
 		onLoadResource(index, maxIndex) {
 			overlayIframeElement.contentWindow.postMessage(JSON.stringify({
@@ -308,7 +310,7 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		overlayIframeElement.style.setProperty("height", "100%", "important");
 		overlayIframeElement.style.setProperty("background-color", "transparent", "important");
 		overlayIframeElement.style.setProperty("overflow", "hidden", "important");
-		overlayIframeElement.sandbox = "allow-scripts";
+		overlayIframeElement.sandbox = "allow-scripts allow-popups";
 		overlayElement.appendChild(overlayIframeElement);
 		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL + "?" + JSON.stringify({ defaultTitle: initializationTitleLabel, defaultDetails: savingDetailsLabel, cancelButtonLabel }));
 	}
