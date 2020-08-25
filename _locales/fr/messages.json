@@ -36,39 +36,39 @@
 		"description": "Overlay label: 'Initialization…'"
 	},
 	"overlaySavingTitle": {
-		"message": "Saving",
+		"message": "Sauvegarde",
 		"description": "Overlay label: 'Saving'"
 	},
 	"overlaySavingDetails": {
-		"message": "Saving the article",
+		"message": "Sauvegarde de l'article",
 		"description": "Overlay label: 'Saving the article'"
 	},
 	"overlayUploadingTitle": {
-		"message": "Uploading",
+		"message": "Envoi",
 		"description": "Overlay label: 'Saving'"
 	},
 	"overlayUploadingDetails": {
-		"message": "Uploading the article",
+		"message": "Envoi de l'article",
 		"description": "Overlay label: 'Saving the article'"
 	},
 	"overlayCancelButton": {
-		"message": "Cancel",
+		"message": "Annuler",
 		"description": "Overlay button: 'Cancel'"
 	},
 	"overlayCloseButton": {
-		"message": "Close",
+		"message": "Fermer",
 		"description": "Overlay button: 'Close'"
 	},
 	"overlaySuccessTitle": {
-		"message": "Article successfully saved",
+		"message": "Article sauvegardé avec succès",
 		"description": "Overlay title: 'Article successfully saved'"
 	},
 	"overlayDownloadButton": {
-		"message": "Download page",
+		"message": "Télécharger la page",
 		"description": "Overlay button: 'Download page'"
 	},
 	"overlayLink": {
-		"message": "Go to my articles",
+		"message": "Voir mes articles",
 		"description": "Overlay link: 'Go to my articles'"
 	},
 	"optionsTitle": {
