@@ -80,8 +80,6 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 	async function savePage(message) {
 		const options = message.options;
 		if (!screenbreak.extension.core.processing) {
-			options.updatedResources = screenbreak.extension.core.content.updatedResources || {};
-			Object.keys(options.updatedResources).forEach(url => options.updatedResources[url].retrieved = false);
 			let selectionFound;
 			if (options.selected || options.optionallySelected) {
 				selectionFound = await ui.markSelection(options.optionallySelected);

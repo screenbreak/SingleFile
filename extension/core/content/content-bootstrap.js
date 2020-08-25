@@ -7,7 +7,6 @@ this.screenbreak.extension.core.content.bootstrap = this.screenbreak.extension.c
 	const screenbreak = this.screenbreak;
 
 	let previousLocationHref;
-	screenbreak.extension.core.content.updatedResources = {};
 	document.addEventListener("DOMContentLoaded", init, false);
 	return {};
 
