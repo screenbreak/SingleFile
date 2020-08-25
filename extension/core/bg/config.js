@@ -84,7 +84,7 @@ screenbreak.extension.core.bg.config = (() => {
 			await resetProfiles();
 		}
 		if (message.method.endsWith(".updateProfile")) {
-			await updateProfile(message.profileName, message.profile);
+			await updateProfile(message.profile);
 		}
 		if (message.method.endsWith(".getConstants")) {
 			return {
@@ -125,16 +125,12 @@ screenbreak.extension.core.bg.config = (() => {
 
 	async function getOptions() {
 		const config = await getConfig();
-		const tabProfileName = DEFAULT_PROFILE_NAME;
-		return config.profiles[tabProfileName];
+		return config.profiles[DEFAULT_PROFILE_NAME];
 	}
 
-	async function updateProfile(profileName, profile) {
+	async function updateProfile(profile) {
 		const config = await getConfig();
-		if (!Object.keys(config.profiles).includes(profileName)) {
-			throw new Error("Profile not found");
-		}
-		Object.keys(profile).forEach(key => config.profiles[profileName][key] = profile[key]);
+		Object.keys(profile).forEach(key => config.profiles[DEFAULT_PROFILE_NAME][key] = profile[key]);
 		await configStorage.set({ profiles: config.profiles });
 	}
 

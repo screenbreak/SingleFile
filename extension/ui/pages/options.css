@@ -94,7 +94,8 @@ h3 a {
 }
 
 .buttons {
-    white-space: nowrap;
+    white-space: nowrap;    
+    width: 100%;
 }
 
 .help-icon {
