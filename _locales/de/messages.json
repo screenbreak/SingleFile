@@ -64,8 +64,8 @@
 		"description": "Overlay title: 'Article successfully saved'"
 	},
 	"overlayDownloadButton": {
-		"message": "Download page",
-		"description": "Overlay button: 'Download page'"
+		"message": "Download as PDF",
+		"description": "Overlay button: 'Download as PDF'"
 	},
 	"overlayLink": {
 		"message": "Go to my articles",
