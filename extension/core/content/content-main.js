@@ -70,6 +70,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 	}
 
 	function cancelSave() {
+		screenbreak.extension.core.processing = false;
 		if (processor) {
 			processor.cancel();
 		}
