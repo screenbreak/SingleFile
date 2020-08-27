@@ -8,7 +8,19 @@ this.screenbreak.extension.core.content.bootstrap = this.screenbreak.extension.c
 
 	let previousLocationHref;
 	document.addEventListener("DOMContentLoaded", init, false);
+	browser.runtime.onMessage.addListener(message => {
+		if (message.method == "content.maybeInit") {
+			return onMessage(message);
+		}
+	});
 	return {};
+
+	async function onMessage(message) {
+		if (message.method == "content.maybeInit") {
+			init();
+			return {};
+		}
+	}
 
 	function init() {
 		if (previousLocationHref != location.href && !screenbreak.extension.core.processing) {
