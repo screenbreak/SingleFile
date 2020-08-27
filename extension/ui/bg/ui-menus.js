@@ -5,15 +5,7 @@ screenbreak.extension.ui.bg.menus = (() => {
 	const menus = browser.menus || browser.contextMenus;
 	const BROWSER_MENUS_API_SUPPORTED = menus && menus.onClicked && menus.create && menus.update && menus.removeAll;
 	const MENU_ID_SAVE_PAGE = "save-page";
-	const MENU_ID_SAVE_SELECTED = "save-selected";
-	const MENU_ID_SAVE_FRAME = "save-frame";
 	const MENU_SAVE_PAGE_MESSAGE = browser.i18n.getMessage("menuSavePage");
-	const MENU_SAVE_SELECTION_MESSAGE = browser.i18n.getMessage("menuSaveSelection");
-	const MENU_SAVE_FRAME_MESSAGE = browser.i18n.getMessage("menuSaveFrame");
-	const MENU_TOP_VISIBLE_ENTRIES = [
-		MENU_ID_SAVE_SELECTED,
-		MENU_ID_SAVE_FRAME
-	];
 
 	let contextMenuVisibleState = true;
 	let allMenuVisibleState = true;
@@ -38,7 +30,7 @@ screenbreak.extension.ui.bg.menus = (() => {
 		const config = screenbreak.extension.core.bg.config;
 		const options = await config.getOptions(tab && tab.url);
 		if (BROWSER_MENUS_API_SUPPORTED && options) {
-			const pageContextsEnabled = ["page", "frame", "image", "video", "audio", "selection"];
+			const pageContextsEnabled = ["page", "image", "video", "audio"];
 			const defaultContextsDisabled = [];
 			defaultContextsDisabled.push("browser_action");
 			await menus.removeAll();
@@ -49,25 +41,6 @@ screenbreak.extension.ui.bg.menus = (() => {
 				contexts: defaultContexts,
 				title: MENU_SAVE_PAGE_MESSAGE
 			});
-			if (options.contextMenuEnabled) {
-				menus.create({
-					id: "separator-1",
-					contexts: pageContextsEnabled,
-					type: "separator"
-				});
-			}
-			menus.create({
-				id: MENU_ID_SAVE_SELECTED,
-				contexts: defaultContexts,
-				title: MENU_SAVE_SELECTION_MESSAGE
-			});
-			if (options.contextMenuEnabled) {
-				menus.create({
-					id: MENU_ID_SAVE_FRAME,
-					contexts: ["frame"],
-					title: MENU_SAVE_FRAME_MESSAGE
-				});
-			}
 		}
 		menusCreated = true;
 		if (pendingRefresh) {
@@ -84,12 +57,6 @@ screenbreak.extension.ui.bg.menus = (() => {
 			menus.onClicked.addListener(async (event, tab) => {
 				if (event.menuItemId == MENU_ID_SAVE_PAGE) {
 					business.saveTabs([tab]);
-				}
-				if (event.menuItemId == MENU_ID_SAVE_SELECTED) {
-					business.saveTabs([tab], { selected: true });
-				}
-				if (event.menuItemId == MENU_ID_SAVE_FRAME) {
-					business.saveTabs([tab], { frameId: event.frameId });
 				}
 			});
 			if (menusCreated) {
@@ -108,7 +75,6 @@ screenbreak.extension.ui.bg.menus = (() => {
 			if (tab && tab.url) {
 				const options = await config.getOptions(tab.url);
 				promises.push(updateVisibleValue(tab, options.contextMenuEnabled));
-				promises.push(menus.update(MENU_ID_SAVE_SELECTED, { visible: true }));
 			}
 			await Promise.all(promises);
 		}
@@ -120,7 +86,7 @@ screenbreak.extension.ui.bg.menus = (() => {
 		if (lastVisibleState === undefined || lastVisibleState != visible) {
 			const promises = [];
 			try {
-				MENU_TOP_VISIBLE_ENTRIES.forEach(id => promises.push(menus.update(id, { visible })));
+				[MENU_ID_SAVE_PAGE].forEach(id => promises.push(menus.update(id, { visible })));
 				await Promise.all(promises);
 			} catch (error) {
 				// ignored

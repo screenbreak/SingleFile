@@ -10,7 +10,7 @@ screenbreak.extension.ui.bg.commands = (() => {
 			if (command == "save-tab") {
 				const allTabs = await screenbreak.extension.core.bg.tabs.get({ currentWindow: true, active: true });
 				allTabs.length = 1;
-				screenbreak.extension.core.bg.business.saveTabs(allTabs, { optionallySelected: true });
+				screenbreak.extension.core.bg.business.saveTabs(allTabs);
 			}
 		});
 	}

@@ -81,28 +81,17 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 	async function savePage(message) {
 		const options = message.options;
 		if (!screenbreak.extension.core.processing) {
-			let selectionFound;
-			if (options.selected || options.optionallySelected) {
-				selectionFound = await ui.markSelection(options.optionallySelected);
-			}
-			if (options.optionallySelected && selectionFound) {
-				options.selected = true;
-			}
-			if (!options.selected || selectionFound) {
-				screenbreak.extension.core.processing = true;
-				try {
-					const pageData = await processPage(options);
-					if (pageData) {
-						await screenbreak.extension.core.content.download.downloadPage(pageData, options);
-					}
-				} catch (error) {
-					if (!processor.cancelled) {
-						console.error(error); // eslint-disable-line no-console
-						ui.onError("Save error", error.message);
-					}
+			screenbreak.extension.core.processing = true;
+			try {
+				const pageData = await processPage(options);
+				if (pageData) {
+					await screenbreak.extension.core.content.download.downloadPage(pageData, options);
 				}
-			} else {
-				browser.runtime.sendMessage({ method: "ui.processCancelled" });
+			} catch (error) {
+				if (!processor.cancelled) {
+					console.error(error); // eslint-disable-line no-console
+					ui.onError("Save error", error.message);
+				}
 			}
 			screenbreak.extension.core.processing = false;
 		}
@@ -153,22 +142,8 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 			preInitializationAllPromises.then(() => resolve(preInitializationAllPromises));
 
 		});
-		const selectedFrame = options.frames && options.frames.find(frameData => frameData.requestedFrame);
 		options.win = window;
-		if (selectedFrame) {
-			options.content = selectedFrame.content;
-			options.url = selectedFrame.baseURI;
-			options.canvases = selectedFrame.canvases;
-			options.fonts = selectedFrame.fonts;
-			options.stylesheets = selectedFrame.stylesheets;
-			options.images = selectedFrame.images;
-			options.posters = selectedFrame.posters;
-			options.usedFonts = selectedFrame.usedFonts;
-			options.shadowRoots = selectedFrame.shadowRoots;
-			options.imports = selectedFrame.imports;
-		} else {
-			options.doc = document;
-		}
+		options.doc = document;
 		if (!processor.cancelled) {
 			await processor.run();
 		}
@@ -178,9 +153,6 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		let page;
 		if (!processor.cancelled) {
 			page = await processor.getPageData();
-			if (options.selected || options.optionallySelected) {
-				ui.unmarkSelection();
-			}
 		}
 		return page;
 	}

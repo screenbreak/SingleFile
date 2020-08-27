@@ -4,20 +4,12 @@
 		"description": "Description of the extension."
 	},
 	"commandSaveTab": {
-		"message": "Save the current tab or the selected content",
-		"description": "Command (Ctrl+Shift+Y): 'Save the current tab or the selected content'"
+		"message": "Save the current tab",
+		"description": "Command (Ctrl+Shift+Y): 'Save the current tab'"
 	},
 	"menuSavePage": {
 		"message": "Save page",
 		"description": "Menu entry: 'Save page'"
-	},
-	"menuSaveSelection": {
-		"message": "Save selection",
-		"description": "Menu entry: 'Save selection'"
-	},
-	"menuSaveFrame": {
-		"message": "Save frame",
-		"description": "Menu entry: 'Save frame'"
 	},
 	"buttonDefaultTooltip": {
 		"message": "Save page",

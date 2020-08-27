@@ -4,20 +4,12 @@
 		"description": "Description of the extension."
 	},
 	"commandSaveTab": {
-		"message": "Sauver l'onglet courant ou le contenu sélectionné",
-		"description": "Command (Ctrl+Shift+Y): 'Save the current tab or the selected content'"
+		"message": "Sauver l'onglet courant",
+		"description": "Command (Ctrl+Shift+Y): 'Save the current tab'"
 	},
 	"menuSavePage": {
 		"message": "Sauver la page avec screenbreak",
 		"description": "Menu entry: 'Save page'"
-	},
-	"menuSaveSelection": {
-		"message": "Sauver la sélection",
-		"description": "Menu entry: 'Save selection'"
-	},
-	"menuSaveFrame": {
-		"message": "Sauver le cadre",
-		"description": "Menu entry: 'Save frame'"
 	},
 	"buttonDefaultTooltip": {
 		"message": "Sauver la page avec screenbreak",

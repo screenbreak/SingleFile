@@ -4,20 +4,12 @@
 		"description": "Description of the extension."
 	},
 	"commandSaveTab": {
-		"message": "Guardar la pestaña actual o el contenido seleccionado",
-		"description": "Command (Ctrl+Shift+Y): 'Save the current tab or the selected content'"
+		"message": "Guardar la pestaña actual",
+		"description": "Command (Ctrl+Shift+Y): 'Save the current tab'"
 	},
 	"menuSavePage": {
 		"message": "Guardar página con screenbreak",
 		"description": "Menu entry: 'Save page'"
-	},
-	"menuSaveSelection": {
-		"message": "Guardar selección",
-		"description": "Menu entry: 'Save selection'"
-	},
-	"menuSaveFrame": {
-		"message": "Guardar marco (frame)",
-		"description": "Menu entry: 'Save frame'"
 	},
 	"buttonDefaultTooltip": {
 		"message": "Guardar página con screenbreak",
