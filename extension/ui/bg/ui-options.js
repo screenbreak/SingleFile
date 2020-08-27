@@ -128,8 +128,7 @@
 
 	async function refresh() {
 		const profiles = await browser.runtime.sendMessage({ method: "config.getProfiles" });
-		const selectedProfileName = DEFAULT_PROFILE_NAME;
-		const profileOptions = profiles[selectedProfileName];
+		const profileOptions = profiles[DEFAULT_PROFILE_NAME];
 		removeHiddenElementsInput.checked = profileOptions.removeHiddenElements;
 		removeUnusedStylesInput.checked = profileOptions.removeUnusedStyles;
 		removeUnusedFontsInput.checked = profileOptions.removeUnusedFonts;
