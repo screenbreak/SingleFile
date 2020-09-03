@@ -25,8 +25,8 @@ screenbreak.extension.core.bg.business = (() => {
 		cancelTab,
 		onSaveEnd: taskId => {
 			const taskInfo = tasks.find(taskInfo => taskInfo.id == taskId);
-			if (taskInfo) {
-				taskInfo.resolve();
+			if (taskInfo && taskInfo.done) {
+				taskInfo.done();
 			}
 		},
 		onInit: tab => cancelTab(tab.id),
@@ -76,28 +76,20 @@ screenbreak.extension.core.bg.business = (() => {
 		const ui = screenbreak.extension.ui.bg.main;
 		const tabs = screenbreak.extension.core.bg.tabs;
 		const taskId = taskInfo.id;
-		return new Promise((resolve, reject) => {
-			taskInfo.status = "processing";
-			taskInfo.resolve = () => {
-				tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
-				resolve();
-				runTasks();
-			};
-			taskInfo.reject = error => {
-				tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
-				reject(error);
-				runTasks();
-			};
-			taskInfo.options.taskId = taskId;
-			tabs.sendMessage(taskInfo.tab.id, { method: taskInfo.method, options: taskInfo.options }, taskInfo.messageOptions)
-				.catch(error => {
-					if (error && (!error.message || (error.message != ERROR_CONNECTION_LOST_CHROMIUM && error.message != ERROR_CONNECTION_ERROR_CHROMIUM && error.message != ERROR_CONNECTION_LOST_GECKO))) {
-						console.log(error); // eslint-disable-line no-console
-						ui.onError(taskInfo.tab.id, error);
-						taskInfo.reject(error);
-					}
-				});
-		});
+		taskInfo.status = "processing";
+		taskInfo.done = () => {
+			tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
+			runTasks();
+		};
+		taskInfo.options.taskId = taskId;
+		tabs.sendMessage(taskInfo.tab.id, { method: taskInfo.method, options: taskInfo.options }, taskInfo.messageOptions)
+			.catch(error => {
+				if (error && (!error.message || (error.message != ERROR_CONNECTION_LOST_CHROMIUM && error.message != ERROR_CONNECTION_ERROR_CHROMIUM && error.message != ERROR_CONNECTION_LOST_GECKO))) {
+					console.log(error); // eslint-disable-line no-console
+					ui.onError(taskInfo.tab.id, error);
+					taskInfo.done();
+				}
+			});
 	}
 
 	function cancelTab(tabId) {
@@ -114,8 +106,8 @@ screenbreak.extension.core.bg.business = (() => {
 		}
 		screenbreak.extension.ui.bg.main.onCancelled(tabId);
 		tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
-		if (taskInfo.resolve) {
-			taskInfo.resolve();
+		if (taskInfo.done) {
+			taskInfo.done();
 		}
 	}
 

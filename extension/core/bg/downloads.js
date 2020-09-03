@@ -74,7 +74,7 @@ screenbreak.extension.core.bg.downloads = (() => {
 					URL.revokeObjectURL(message.url);
 				}
 				currentUploads[tab.id] = null;
-				screenbreak.extension.core.bg.business.onSaveEnd(message.taskId);
+				screenbreak.extension.core.bg.business.onSaveEnd();
 			}
 		}
 		return {};
