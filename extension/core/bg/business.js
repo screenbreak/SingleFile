@@ -28,7 +28,7 @@ screenbreak.extension.core.bg.business = (() => {
 		cancelTab,
 		onSaveEnd: taskId => {
 			const taskInfo = tasks.find(taskInfo => taskInfo.id == taskId);
-			if (taskInfo && taskInfo.done) {
+			if (taskInfo) {
 				taskInfo.done();
 			}
 		},
@@ -50,7 +50,16 @@ screenbreak.extension.core.bg.business = (() => {
 			const scriptsInjected = await screenbreak.extension.injectScript(tabId, tabOptions);
 			if (scriptsInjected) {
 				await screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.initSave" }, MESSAGE_OPTIONS_MAIN_PAGE);
-				tasks.push({ id: currentTaskId, status: TASK_PENDING_STATE, tab, options: tabOptions });
+				tasks.push({
+					id: currentTaskId,
+					status: TASK_PENDING_STATE,
+					tab,
+					options: tabOptions,
+					done: () => {
+						tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == currentTaskId), 1);
+						runTasks();
+					}
+				});
 				currentTaskId++;
 			} else {
 				ui.onForbiddenDomain(tab);
@@ -80,10 +89,6 @@ screenbreak.extension.core.bg.business = (() => {
 		const tabs = screenbreak.extension.core.bg.tabs;
 		const taskId = taskInfo.id;
 		taskInfo.status = TASK_PROCESSING_STATE;
-		taskInfo.done = () => {
-			tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
-			runTasks();
-		};
 		taskInfo.options.taskId = taskId;
 		tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, MESSAGE_OPTIONS_MAIN_PAGE)
 			.catch(error => {
@@ -107,17 +112,13 @@ screenbreak.extension.core.bg.business = (() => {
 
 	function cancelTask(taskInfo) {
 		const tabId = taskInfo.tab.id;
-		const taskId = taskInfo.id;
 		taskInfo.cancelled = true;
 		screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.cancelSave" }, MESSAGE_OPTIONS_MAIN_PAGE);
 		if (taskInfo.cancel) {
 			taskInfo.cancel();
 		}
 		screenbreak.extension.ui.bg.main.onCancelled(tabId);
-		tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
-		if (taskInfo.done) {
-			taskInfo.done();
-		}
+		taskInfo.done();
 	}
 
 })();
