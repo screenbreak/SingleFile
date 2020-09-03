@@ -47,7 +47,7 @@ screenbreak.extension.core.bg.business = (() => {
 			const scriptsInjected = await screenbreak.extension.injectScript(tabId, tabOptions);
 			if (scriptsInjected) {
 				await screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.initSave" }, { frameId: 0 });
-				tasks.push({ id: currentTaskId, status: "pending", tab, options: tabOptions, method: "content.save", messageOptions: { frameId: 0 } });
+				tasks.push({ id: currentTaskId, status: "pending", tab, options: tabOptions, messageOptions: { frameId: 0 } });
 				currentTaskId++;
 			} else {
 				ui.onForbiddenDomain(tab);
@@ -82,7 +82,7 @@ screenbreak.extension.core.bg.business = (() => {
 			runTasks();
 		};
 		taskInfo.options.taskId = taskId;
-		tabs.sendMessage(taskInfo.tab.id, { method: taskInfo.method, options: taskInfo.options }, taskInfo.messageOptions)
+		tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, taskInfo.messageOptions)
 			.catch(error => {
 				if (error && (!error.message || (error.message != ERROR_CONNECTION_LOST_CHROMIUM && error.message != ERROR_CONNECTION_ERROR_CHROMIUM && error.message != ERROR_CONNECTION_LOST_GECKO))) {
 					console.log(error); // eslint-disable-line no-console
