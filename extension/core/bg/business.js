@@ -76,7 +76,7 @@ screenbreak.extension.core.bg.business = (() => {
 		const ui = screenbreak.extension.ui.bg.main;
 		const tabs = screenbreak.extension.core.bg.tabs;
 		const taskId = taskInfo.id;
-		return new Promise(async (resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			taskInfo.status = "processing";
 			taskInfo.resolve = () => {
 				tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
