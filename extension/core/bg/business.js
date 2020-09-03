@@ -56,7 +56,7 @@ screenbreak.extension.core.bg.business = (() => {
 					tab,
 					options: tabOptions,
 					done: () => {
-						tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == currentTaskId), 1);
+						tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == this.id), 1);
 						runTasks();
 					}
 				});
