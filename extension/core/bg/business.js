@@ -87,12 +87,18 @@ screenbreak.extension.core.bg.business = (() => {
 		taskInfo.options.taskId = taskId;
 		tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, MESSAGE_OPTIONS_MAIN_PAGE)
 			.catch(error => {
-				if (error && (!error.message || (error.message != ERROR_CONNECTION_LOST_CHROMIUM && error.message != ERROR_CONNECTION_ERROR_CHROMIUM && error.message != ERROR_CONNECTION_LOST_GECKO))) {
+				if (error && (!error.message || !isIgnoredError(error))) {
 					console.log(error); // eslint-disable-line no-console
 					ui.onError(taskInfo.tab.id, error);
 					taskInfo.done();
 				}
 			});
+	}
+
+	function isIgnoredError(error) {
+		return error.message == ERROR_CONNECTION_LOST_CHROMIUM ||
+			error.message == ERROR_CONNECTION_ERROR_CHROMIUM ||
+			error.message == ERROR_CONNECTION_LOST_GECKO;
 	}
 
 	function cancelTab(tabId) {
