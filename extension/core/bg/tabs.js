@@ -22,10 +22,12 @@ screenbreak.extension.core.bg.tabs = (() => {
 				pendingAuthInfo = { pageTabId, tabId: tab.id, resolve };
 				browser.tabs.onRemoved.addListener(onTabRemoved);
 				function onTabRemoved(tabId) {
-					if (pendingAuthInfo && tabId == tab.id) {
-						pendingAuthInfo = null;
+					if (tabId == tab.id) {
 						browser.tabs.onRemoved.removeListener(onTabRemoved);
-						reject(new Error("Forbidden"));
+						if (pendingAuthInfo) {
+							pendingAuthInfo = null;
+							reject(new Error("Forbidden"));
+						}
 					}
 				}
 			});
