@@ -107,14 +107,12 @@ screenbreak.extension.core.bg.business = (() => {
 
 	function cancelTask(taskInfo) {
 		const tabId = taskInfo.tab.id;
-		const taskId = taskInfo.id;
 		taskInfo.cancelled = true;
 		screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.cancelSave" }, MESSAGE_OPTIONS_MAIN_PAGE);
 		if (taskInfo.cancel) {
 			taskInfo.cancel();
 		}
 		screenbreak.extension.ui.bg.main.onCancelled(tabId);
-		tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
 		if (taskInfo.done) {
 			taskInfo.done();
 		}
