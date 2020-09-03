@@ -5,6 +5,9 @@ screenbreak.extension.core.bg.business = (() => {
 	const ERROR_CONNECTION_ERROR_CHROMIUM = "Could not establish connection. Receiving end does not exist.";
 	const ERROR_CONNECTION_LOST_CHROMIUM = "The message port closed before a response was received.";
 	const ERROR_CONNECTION_LOST_GECKO = "Message manager disconnected";
+	const MESSAGE_OPTIONS_MAIN_PAGE = { frameId: 0 };
+	const TASK_PENDING_STATE = "pending";
+	const TASK_PROCESSING_STATE = "processing";
 
 	const extensionScriptFiles = [
 		"extension/index.js",
@@ -46,8 +49,8 @@ screenbreak.extension.core.bg.business = (() => {
 			tabOptions.extensionScriptFiles = extensionScriptFiles;
 			const scriptsInjected = await screenbreak.extension.injectScript(tabId, tabOptions);
 			if (scriptsInjected) {
-				await screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.initSave" }, { frameId: 0 });
-				tasks.push({ id: currentTaskId, status: "pending", tab, options: tabOptions, messageOptions: { frameId: 0 } });
+				await screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.initSave" }, MESSAGE_OPTIONS_MAIN_PAGE);
+				tasks.push({ id: currentTaskId, status: TASK_PENDING_STATE, tab, options: tabOptions });
 				currentTaskId++;
 			} else {
 				ui.onForbiddenDomain(tab);
@@ -63,9 +66,9 @@ screenbreak.extension.core.bg.business = (() => {
 	}
 
 	function runTasks() {
-		const processingCount = tasks.filter(taskInfo => taskInfo.status == "processing").length;
+		const processingCount = tasks.filter(taskInfo => taskInfo.status == TASK_PROCESSING_STATE).length;
 		for (let index = 0; index < Math.min(tasks.length - processingCount, (maxParallelWorkers - processingCount)); index++) {
-			const taskInfo = tasks.find(taskInfo => taskInfo.status == "pending");
+			const taskInfo = tasks.find(taskInfo => taskInfo.status == TASK_PENDING_STATE);
 			if (taskInfo) {
 				runTask(taskInfo);
 			}
@@ -76,13 +79,13 @@ screenbreak.extension.core.bg.business = (() => {
 		const ui = screenbreak.extension.ui.bg.main;
 		const tabs = screenbreak.extension.core.bg.tabs;
 		const taskId = taskInfo.id;
-		taskInfo.status = "processing";
+		taskInfo.status = TASK_PROCESSING_STATE;
 		taskInfo.done = () => {
 			tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == taskId), 1);
 			runTasks();
 		};
 		taskInfo.options.taskId = taskId;
-		tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, taskInfo.messageOptions)
+		tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, MESSAGE_OPTIONS_MAIN_PAGE)
 			.catch(error => {
 				if (error && (!error.message || (error.message != ERROR_CONNECTION_LOST_CHROMIUM && error.message != ERROR_CONNECTION_ERROR_CHROMIUM && error.message != ERROR_CONNECTION_LOST_GECKO))) {
 					console.log(error); // eslint-disable-line no-console
@@ -100,7 +103,7 @@ screenbreak.extension.core.bg.business = (() => {
 		const tabId = taskInfo.tab.id;
 		const taskId = taskInfo.id;
 		taskInfo.cancelled = true;
-		screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.cancelSave" });
+		screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.cancelSave" }, MESSAGE_OPTIONS_MAIN_PAGE);
 		if (taskInfo.cancel) {
 			taskInfo.cancel();
 		}
