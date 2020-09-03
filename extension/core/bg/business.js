@@ -46,6 +46,7 @@ screenbreak.extension.core.bg.business = (() => {
 			tabOptions.extensionScriptFiles = extensionScriptFiles;
 			const scriptsInjected = await screenbreak.extension.injectScript(tabId, tabOptions);
 			if (scriptsInjected) {
+				await screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "content.initSave" }, { frameId: 0 });
 				tasks.push({ id: currentTaskId, status: "pending", tab, options: tabOptions, method: "content.save", messageOptions: { frameId: 0 } });
 				currentTaskId++;
 			} else {

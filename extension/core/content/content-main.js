@@ -13,7 +13,8 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		frameFetch: screenbreak.extension.lib.fetch.content.resources.frameFetch
 	});
 	browser.runtime.onMessage.addListener(message => {
-		if (message.method == "content.save" ||
+		if (message.method == "content.initSave" ||
+			message.method == "content.save" ||
 			message.method == "content.cancelSave" ||
 			message.method == "downloads.uploadProgress" ||
 			message.method == "downloads.uploadEnd" ||
@@ -42,6 +43,10 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 			ui = screenbreak.extension.ui.content.main;
 		}
 		if (!location.href.startsWith(MOZ_EXTENSION_PROTOCOL)) {
+			if (message.method == "content.initSave") {
+				initSave();
+				return {};
+			}
 			if (message.method == "content.save") {
 				await savePage(message);
 				return {};
@@ -78,29 +83,32 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		browser.runtime.sendMessage({ method: "ui.processCancelled" });
 	}
 
-	async function savePage(message) {
-		const options = message.options;
+	function initSave() {
 		if (!screenbreak.extension.core.processing) {
 			screenbreak.extension.core.processing = true;
-			try {
-				const pageData = await processPage(options);
-				if (pageData) {
-					await screenbreak.extension.core.content.download.downloadPage(pageData, options);
-				}
-			} catch (error) {
-				if (!processor.cancelled) {
-					console.error(error); // eslint-disable-line no-console
-					ui.onError("Save error", error.message);
-				}
-			}
-			screenbreak.extension.core.processing = false;
+			ui.onStartPage();
 		}
+	}
+
+	async function savePage(message) {
+		const options = message.options;
+		try {
+			const pageData = await processPage(options);
+			if (pageData) {
+				await screenbreak.extension.core.content.download.downloadPage(pageData, options);
+			}
+		} catch (error) {
+			if (!processor.cancelled) {
+				console.error(error); // eslint-disable-line no-console
+				ui.onError("Save error", error.message);
+			}
+		}
+		screenbreak.extension.core.processing = false;
 	}
 
 	async function processPage(options) {
 		const frames = singlefile.lib.processors.frameTree.content.frames;
 		singlefile.lib.helper.initDoc(document);
-		ui.onStartPage();
 		processor = new singlefile.lib.SingleFile(options);
 		const preInitializationPromises = [];
 		options.insertSingleFileComment = true;
