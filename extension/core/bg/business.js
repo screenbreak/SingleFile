@@ -93,7 +93,7 @@ screenbreak.extension.core.bg.business = (() => {
 				.catch(error => {
 					if (error && (!error.message || (error.message != ERROR_CONNECTION_LOST_CHROMIUM && error.message != ERROR_CONNECTION_ERROR_CHROMIUM && error.message != ERROR_CONNECTION_LOST_GECKO))) {
 						console.log(error); // eslint-disable-line no-console
-						ui.onError(taskInfo.tab.id);
+						ui.onError(taskInfo.tab.id, error);
 						taskInfo.reject(error);
 					}
 				});
