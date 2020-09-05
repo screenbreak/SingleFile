@@ -55,7 +55,7 @@ screenbreak.extension.core.bg.business = (() => {
 					status: TASK_PENDING_STATE,
 					tab,
 					options: tabOptions,
-					done: () => {
+					done: function () {
 						tasks.splice(tasks.findIndex(taskInfo => taskInfo.id == this.id), 1);
 						runTasks();
 					}
