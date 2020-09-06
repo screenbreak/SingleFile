@@ -49,7 +49,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 		}
 	}
 
-
 	function onTabUpdated(tabId, changeInfo) {
 		if (changeInfo.status == "complete") {
 			setTimeout(async () => {
