@@ -33,7 +33,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 
 	async function onMessage(message, sender) {
 		if (message.method.endsWith(".init")) {
-			await onInit(sender.tab, message);
 			screenbreak.extension.core.bg.business.onInit(sender.tab);
 		}
 		if (message.method.endsWith(".getOptions")) {
@@ -50,12 +49,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 		}
 	}
 
-	async function onInit(tab, options) {
-		await screenbreak.extension.core.bg.tabsData.remove(tab.id);
-		const tabsData = await screenbreak.extension.core.bg.tabsData.get(tab.id);
-		tabsData[tab.id].savedPageDetected = options.savedPageDetected;
-		await screenbreak.extension.core.bg.tabsData.set(tabsData);
-	}
 
 	function onTabUpdated(tabId, changeInfo) {
 		if (changeInfo.status == "complete") {
