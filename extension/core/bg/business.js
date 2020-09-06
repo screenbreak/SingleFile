@@ -20,7 +20,8 @@ screenbreak.extension.core.bg.business = (() => {
 	];
 
 	const tasks = [];
-	let currentTaskId = 0, maxParallelWorkers;
+	const config = screenbreak.extension.core.bg.config.get();
+	let currentTaskId = 0;
 
 	return {
 		isSavingTab: tab => Boolean(tasks.find(taskInfo => taskInfo.tab.id == tab.id)),
@@ -37,12 +38,10 @@ screenbreak.extension.core.bg.business = (() => {
 	};
 
 	async function saveTabs(tabs, options = {}) {
-		const config = screenbreak.extension.core.bg.config;
 		const ui = screenbreak.extension.ui.bg.main;
-		await initMaxParallelWorkers();
 		await Promise.all(tabs.map(async tab => {
 			const tabId = tab.id;
-			const tabOptions = await config.getOptions(tab.url);
+			const tabOptions = JSON.parse(JSON.stringify(config));
 			Object.keys(options).forEach(key => tabOptions[key] = options[key]);
 			tabOptions.tabId = tabId;
 			tabOptions.tabIndex = tab.index;
@@ -68,15 +67,9 @@ screenbreak.extension.core.bg.business = (() => {
 		runTasks();
 	}
 
-	async function initMaxParallelWorkers() {
-		if (!maxParallelWorkers) {
-			maxParallelWorkers = (await screenbreak.extension.core.bg.config.get()).maxParallelWorkers;
-		}
-	}
-
 	function runTasks() {
 		const processingCount = tasks.filter(taskInfo => taskInfo.status == TASK_PROCESSING_STATE).length;
-		for (let index = 0; index < Math.min(tasks.length - processingCount, (maxParallelWorkers - processingCount)); index++) {
+		for (let index = 0; index < Math.min(tasks.length - processingCount, (config.maxParallelWorkers - processingCount)); index++) {
 			const taskInfo = tasks.find(taskInfo => taskInfo.status == TASK_PENDING_STATE);
 			if (taskInfo) {
 				runTask(taskInfo);

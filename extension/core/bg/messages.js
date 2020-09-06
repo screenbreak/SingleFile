@@ -12,9 +12,6 @@ screenbreak.extension.core.bg.messages = (() => {
 		if (message.method.startsWith("ui.")) {
 			return screenbreak.extension.ui.bg.main.onMessage(message, sender);
 		}
-		if (message.method.startsWith("config.")) {
-			return screenbreak.extension.core.bg.config.onMessage(message, sender);
-		}
 		if (message.method.startsWith("tabsData.")) {
 			return screenbreak.extension.core.bg.tabsData.onMessage(message, sender);
 		}
