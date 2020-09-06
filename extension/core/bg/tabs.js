@@ -35,9 +35,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 		if (message.method.endsWith(".init")) {
 			screenbreak.extension.core.bg.business.onInit(sender.tab);
 		}
-		if (message.method.endsWith(".getOptions")) {
-			return screenbreak.extension.core.bg.config.getOptions(message.url);
-		}
 		if (message.method.endsWith(".loggedIn")) {
 			const tabId = sender.tab.id;
 			if (pendingAuthInfo && tabId == pendingAuthInfo.tabId) {
