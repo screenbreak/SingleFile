@@ -11,7 +11,7 @@ this.screenbreak.extension.core.content.download = this.screenbreak.extension.co
 			const message = {
 				method: "downloads.download",
 				taskId: options.taskId,
-				compressHTML: options.compressHTML,
+				gzip: options.gzip,
 				url: options.url,
 				title: pageData.title
 			};

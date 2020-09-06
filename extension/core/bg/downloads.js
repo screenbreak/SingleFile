@@ -1,9 +1,10 @@
-/* global screenbreak, Blob, URL */
+/* global screenbreak, Blob, URL, pako */
 
 screenbreak.extension.core.bg.downloads = (() => {
 
 	const partialContents = new Map(), currentUploads = {};
 	const MIMETYPE_HTML = "text/html";
+	const MIMETYPE_GZIP = "application/gzip";
 
 	return {
 		onMessage
@@ -62,7 +63,10 @@ screenbreak.extension.core.bg.downloads = (() => {
 						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Timeout error"));
 					}
 				};
-				const uploadTask = await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, new Blob([contents], { type: MIMETYPE_HTML }), eventHandlers);
+				const content = message.gzip ?
+					new Blob(pako.gzip(contents.join("")), { type: MIMETYPE_GZIP }) :
+					new Blob([contents], { type: MIMETYPE_HTML });
+				const uploadTask = await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, content, eventHandlers);
 				currentUploads[tab.id] = uploadTask;
 				await uploadTask.promise;
 				screenbreak.extension.ui.bg.main.onEnd(tab.id, uploadTask.url);
