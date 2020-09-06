@@ -135,7 +135,6 @@
 	"permissions": [
 		"menus",
 		"contextMenus",
-		"storage",
 		"tabs",
 		"<all_urls>"
 	],
