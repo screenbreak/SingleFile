@@ -15,7 +15,6 @@ screenbreak.extension.core.bg.config = (() => {
 		compressCSS: false,
 		loadDeferredImages: true,
 		loadDeferredImagesMaxIdleTime: 1000,
-		contextMenuEnabled: true,
 		maxResourceSizeEnabled: false,
 		maxResourceSize: 10,
 		removeAudioSrc: true,

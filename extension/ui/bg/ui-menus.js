@@ -3,55 +3,26 @@
 screenbreak.extension.ui.bg.menus = (() => {
 
 	const menus = browser.menus || browser.contextMenus;
-	const BROWSER_MENUS_API_SUPPORTED = menus && menus.onClicked && menus.create && menus.update && menus.removeAll;
+	const BROWSER_MENUS_API_SUPPORTED = menus && menus.onClicked && menus.create && menus.removeAll;
 	const MENU_ID_SAVE_PAGE = "save-page";
 	const MENU_SAVE_PAGE_MESSAGE = browser.i18n.getMessage("menuSavePage");
 
-	let contextMenuVisibleState = true;
-	let allMenuVisibleState = true;
-	let menusCreated, pendingRefresh;
 	initialize();
-	return {
-		onMessage,
-		onTabCreated: refreshTab,
-		onTabActivated: refreshTab,
-		onInit: tab => refreshTab(tab),
-		refreshTab: createMenus
-	};
+	return {};
 
-	function onMessage(message) {
-		if (message.method.endsWith("refreshMenu")) {
-			createMenus();
-			return Promise.resolve({});
-		}
-	}
-
-	async function createMenus(tab) {
-		const config = screenbreak.extension.core.bg.config;
-		const options = await config.getOptions(tab && tab.url);
-		if (BROWSER_MENUS_API_SUPPORTED && options) {
-			const pageContextsEnabled = ["page", "image", "video", "audio"];
-			const defaultContextsDisabled = [];
-			defaultContextsDisabled.push("browser_action");
+	async function createMenus() {
+		if (BROWSER_MENUS_API_SUPPORTED) {
 			await menus.removeAll();
-			const defaultContextsEnabled = defaultContextsDisabled.concat(...pageContextsEnabled);
-			const defaultContexts = options.contextMenuEnabled ? defaultContextsEnabled : defaultContextsDisabled;
 			menus.create({
 				id: MENU_ID_SAVE_PAGE,
-				contexts: defaultContexts,
+				contexts: ["page", "image", "video", "audio", "browser_action"],
 				title: MENU_SAVE_PAGE_MESSAGE
 			});
-		}
-		menusCreated = true;
-		if (pendingRefresh) {
-			pendingRefresh = false;
-			(await screenbreak.extension.core.bg.tabs.get({})).forEach(async tab => await refreshTab(tab));
 		}
 	}
 
 	async function initialize() {
 		const business = screenbreak.extension.core.bg.business;
-		const tabs = screenbreak.extension.core.bg.tabs;
 		if (BROWSER_MENUS_API_SUPPORTED) {
 			createMenus();
 			menus.onClicked.addListener(async (event, tab) => {
@@ -59,46 +30,6 @@ screenbreak.extension.ui.bg.menus = (() => {
 					business.saveTabs([tab]);
 				}
 			});
-			if (menusCreated) {
-				pendingRefresh = true;
-			} else {
-				(await tabs.get({})).forEach(async tab => await refreshTab(tab));
-			}
-		}
-	}
-
-	async function refreshTab(tab) {
-		const config = screenbreak.extension.core.bg.config;
-		if (BROWSER_MENUS_API_SUPPORTED && menusCreated) {
-			const promises = [];
-			updateAllVisibleValues(true);
-			if (tab && tab.url) {
-				const options = await config.getOptions(tab.url);
-				promises.push(updateVisibleValue(tab, options.contextMenuEnabled));
-			}
-			await Promise.all(promises);
-		}
-	}
-
-	async function updateAllVisibleValues(visible) {
-		const lastVisibleState = allMenuVisibleState;
-		allMenuVisibleState = visible;
-		if (lastVisibleState === undefined || lastVisibleState != visible) {
-			const promises = [];
-			try {
-				[MENU_ID_SAVE_PAGE].forEach(id => promises.push(menus.update(id, { visible })));
-				await Promise.all(promises);
-			} catch (error) {
-				// ignored
-			}
-		}
-	}
-
-	async function updateVisibleValue(tab, visible) {
-		const lastVisibleState = contextMenuVisibleState;
-		contextMenuVisibleState = visible;
-		if (lastVisibleState === undefined || lastVisibleState != visible) {
-			await createMenus(tab);
 		}
 	}
 

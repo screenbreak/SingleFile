@@ -115,15 +115,6 @@
 					addListener: listener => nativeAPI.contextMenus.onClicked.addListener(listener)
 				},
 				create: options => nativeAPI.contextMenus.create(options),
-				update: (menuItemId, options) => new Promise((resolve, reject) => {
-					nativeAPI.contextMenus.update(menuItemId, options, () => {
-						if (nativeAPI.runtime.lastError) {
-							reject(nativeAPI.runtime.lastError);
-						} else {
-							resolve();
-						}
-					});
-				}),
 				removeAll: () => new Promise((resolve, reject) => {
 					nativeAPI.contextMenus.removeAll(() => {
 						if (nativeAPI.runtime.lastError) {

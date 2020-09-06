@@ -5,9 +5,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 	const DELAY_MAYBE_INIT = 1500;
 	let pendingAuthInfo;
 
-	browser.tabs.onCreated.addListener(tab => onTabCreated(tab));
-	browser.tabs.onActivated.addListener(activeInfo => onTabActivated(activeInfo));
-	browser.tabs.onRemoved.addListener(tabId => onTabRemoved(tabId));
 	browser.tabs.onUpdated.addListener((tabId, changeInfo) => onTabUpdated(tabId, changeInfo));
 	return {
 		onMessage,
@@ -37,7 +34,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 	async function onMessage(message, sender) {
 		if (message.method.endsWith(".init")) {
 			await onInit(sender.tab, message);
-			screenbreak.extension.ui.bg.main.onInit(sender.tab);
 			screenbreak.extension.core.bg.business.onInit(sender.tab);
 		}
 		if (message.method.endsWith(".getOptions")) {
@@ -72,20 +68,6 @@ screenbreak.extension.core.bg.tabs = (() => {
 				}
 			}, DELAY_MAYBE_INIT);
 		}
-	}
-
-	function onTabCreated(tab) {
-		screenbreak.extension.ui.bg.main.onTabCreated(tab);
-	}
-
-	async function onTabActivated(activeInfo) {
-		const tab = await browser.tabs.get(activeInfo.tabId);
-		screenbreak.extension.ui.bg.main.onTabActivated(tab);
-	}
-
-	function onTabRemoved(tabId) {
-		screenbreak.extension.core.bg.tabsData.remove(tabId);
-		screenbreak.extension.core.bg.business.onTabRemoved(tabId);
 	}
 
 })();

@@ -4,14 +4,10 @@ screenbreak.extension.ui.bg.main = (() => {
 
 	return {
 		onMessage(message, sender) {
-			if (message.method.endsWith(".refreshMenu")) {
-				return screenbreak.extension.ui.bg.menus.onMessage(message, sender);
-			} else {
-				return screenbreak.extension.ui.bg.button.onMessage(message, sender);
-			}
+			return screenbreak.extension.ui.bg.button.onMessage(message, sender);
 		},
 		async refreshTab(tab) {
-			return Promise.all([screenbreak.extension.ui.bg.menus.refreshTab(tab), screenbreak.extension.ui.bg.button.refreshTab(tab)]);
+			return Promise.all([screenbreak.extension.ui.bg.button.refreshTab(tab)]);
 		},
 		onForbiddenDomain(tab) {
 			screenbreak.extension.ui.bg.button.onForbiddenDomain(tab);
@@ -32,15 +28,6 @@ screenbreak.extension.ui.bg.main = (() => {
 		onCancelled(tabId) {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadCancelled" });
 			screenbreak.extension.ui.bg.button.onCancelled(tabId);
-		},
-		onTabCreated(tab) {
-			screenbreak.extension.ui.bg.menus.onTabCreated(tab);
-		},
-		onTabActivated(tab) {
-			screenbreak.extension.ui.bg.menus.onTabActivated(tab);
-		},
-		onInit(tab) {
-			screenbreak.extension.ui.bg.menus.onInit(tab);
 		}
 	};
 
