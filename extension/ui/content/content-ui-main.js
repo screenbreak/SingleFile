@@ -79,7 +79,8 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		overlayIframeElement.style.setProperty("background-color", "transparent", "important");
 		overlayIframeElement.style.setProperty("overflow", "hidden", "important");
 		overlayIframeElement.sandbox = "allow-scripts allow-popups allow-popups-to-escape-sandbox";
-		overlayElement.appendChild(overlayIframeElement);
+		const shadowRoot = overlayElement.attachShadow({ mode: "closed" });
+		shadowRoot.appendChild(overlayIframeElement);
 		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL + "?" + JSON.stringify({ defaultTitle: initializationTitleLabel, defaultDetails: savingDetailsLabel, cancelButtonLabel }));
 	}
 
