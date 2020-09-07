@@ -38,7 +38,6 @@ screenbreak.extension.core.bg.business = (() => {
 	};
 
 	async function saveTabs(tabs, options = {}) {
-		const ui = screenbreak.extension.ui.bg.main;
 		await Promise.all(tabs.map(async tab => {
 			const tabId = tab.id;
 			const tabOptions = JSON.parse(JSON.stringify(config));
@@ -61,7 +60,7 @@ screenbreak.extension.core.bg.business = (() => {
 				});
 				currentTaskId++;
 			} else {
-				ui.onForbiddenDomain(tab);
+				screenbreak.extension.ui.bg.main.onForbiddenDomain(tab);
 			}
 		}));
 		runTasks();
@@ -78,16 +77,14 @@ screenbreak.extension.core.bg.business = (() => {
 	}
 
 	function runTask(taskInfo) {
-		const ui = screenbreak.extension.ui.bg.main;
-		const tabs = screenbreak.extension.core.bg.tabs;
 		const taskId = taskInfo.id;
 		taskInfo.status = TASK_PROCESSING_STATE;
 		taskInfo.options.taskId = taskId;
-		tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, MESSAGE_OPTIONS_MAIN_PAGE)
+		screenbreak.extension.core.bg.tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, MESSAGE_OPTIONS_MAIN_PAGE)
 			.catch(error => {
 				if (error && (!error.message || !isIgnoredError(error))) {
 					console.log(error); // eslint-disable-line no-console
-					ui.onError(taskInfo.tab.id, error);
+					screenbreak.extension.ui.bg.main.onError(taskInfo.tab.id, error);
 					taskInfo.done();
 				}
 			});
