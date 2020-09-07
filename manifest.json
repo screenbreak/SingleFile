@@ -36,7 +36,6 @@
 			"js": [
 				"lib/single-file/index.js",
 				"lib/single-file/processors/hooks/content/content-hooks.js",
-				"lib/single-file/modules/html-serializer.js",
 				"extension/index.js",
 				"extension/lib/screenbreak/index.js",
 				"extension/core/index.js",
