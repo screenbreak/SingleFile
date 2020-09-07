@@ -52,7 +52,7 @@
 	display: block;
 	font-size: 24px;
 	text-align: center;
-	width: 465px; 
+	width: 460px; 
 }
 .box .progress_bar {
 	margin: 0px auto 0px auto;
@@ -81,13 +81,13 @@
 	display: block;
 	font-size: 12px;
 	text-align: center;
-	width: 465px;
+	width: 460px;
 	color: #8b8b8b;
 }
 .box .text {
 	margin: 12px auto 0px auto;
 	display: block;
-	width: 463px;
+	width: 460px;
 	color: #324c4a; 
 	font-size: 14px;
 	font-weight: normal;
