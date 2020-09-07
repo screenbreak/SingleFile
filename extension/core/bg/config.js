@@ -24,7 +24,7 @@ screenbreak.extension.core.bg.config = (() => {
 		groupDuplicateImages: true,
 		resolveFragmentIdentifierURLs: false,
 		saveFavicon: true,
-		gzip: false
+		gzip: true
 	};
 
 	return {
