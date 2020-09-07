@@ -5,6 +5,7 @@ screenbreak.extension.core.bg.tabs = (() => {
 	const DELAY_MAYBE_INIT = 1500;
 	let pendingAuthInfo;
 
+	browser.tabs.onRemoved.addListener(tabId => screenbreak.extension.core.bg.business.onTabRemoved(tabId));
 	browser.tabs.onUpdated.addListener((tabId, changeInfo) => onTabUpdated(tabId, changeInfo));
 	return {
 		onMessage,
