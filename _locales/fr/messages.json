@@ -56,7 +56,7 @@
 		"description": "Overlay title: 'Article successfully saved'"
 	},
 	"overlayDownloadButton": {
-		"message": "Télécharger la page",
+		"message": "Télécharger au format PDF",
 		"description": "Overlay button: 'Download page'"
 	},
 	"overlayLink": {
