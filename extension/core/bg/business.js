@@ -83,7 +83,7 @@ screenbreak.extension.core.bg.business = (() => {
 		screenbreak.extension.core.bg.tabs.sendMessage(taskInfo.tab.id, { method: "content.save", options: taskInfo.options }, MESSAGE_OPTIONS_MAIN_PAGE)
 			.catch(error => {
 				if (error && (!error.message || !isIgnoredError(error))) {
-					console.log(error); // eslint-disable-line no-console
+					console.error(error); // eslint-disable-line no-console
 					screenbreak.extension.ui.bg.main.onError(taskInfo.tab.id, error);
 					taskInfo.done();
 				}
