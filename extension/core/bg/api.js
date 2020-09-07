@@ -44,7 +44,7 @@ screenbreak.extension.core.bg.api = (() => {
 					xhr.upload.onerror = uploadHandlers.onerror;
 					xhr.upload.onload = uploadHandlers.onload;
 					xhr.upload.ontimeout = uploadHandlers.ontimeout;
-					xhr.onload = () => handlResponse(xhr.response).then(resolve).catch(reject);
+					xhr.onload = () => handlResponse(xhr).then(resolve).catch(reject);
 					xhr.onerror = reject;
 					xhr.send(formData);
 				}),
@@ -61,7 +61,7 @@ screenbreak.extension.core.bg.api = (() => {
 				csrfToken = null;
 				return saveArticle(tabId, url, title, blob, uploadHandlers);
 			} else if (response.status >= 400) {
-				throw new Error(response.status);
+				throw new Error(response.statusText || response.status);
 			}
 		}
 	}
