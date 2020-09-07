@@ -64,7 +64,7 @@ screenbreak.extension.core.bg.downloads = (() => {
 					}
 				};
 				const content = message.gzip ?
-					new Blob(pako.gzip(contents.join("")), { type: MIMETYPE_GZIP }) :
+					new Blob([pako.gzip(contents.join(""))], { type: MIMETYPE_GZIP }) :
 					new Blob([contents], { type: MIMETYPE_HTML });
 				const uploadTask = await screenbreak.extension.core.bg.api.saveArticle(tab.id, message.url, message.title, content, eventHandlers);
 				currentUploads[tab.id] = uploadTask;
