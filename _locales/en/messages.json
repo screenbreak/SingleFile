@@ -1,6 +1,6 @@
 {
 	"extensionDescription": {
-		"message": "Save a complete page into a single HTML file",
+		"message": "Save a complete webpage into your Screenbreak account",
 		"description": "Description of the extension."
 	},
 	"commandSaveTab": {
