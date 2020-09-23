@@ -1,7 +1,7 @@
 {
 	"extensionDescription": {
-		"message": "Save a complete webpage into your Screenbreak account",
-		"description": "Description of the extension."
+		"message": "Save your articles into your Screenbreak account",
+		"description": "Screenbreak is the best extension for printing longform content."
 	},
 	"commandSaveTab": {
 		"message": "Save the current tab",
