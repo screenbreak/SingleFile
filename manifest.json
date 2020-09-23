@@ -134,7 +134,6 @@
 	"permissions": [
 		"menus",
 		"contextMenus",
-		"tabs",
 		"<all_urls>"
 	],
 	"incognito": "spanning",
