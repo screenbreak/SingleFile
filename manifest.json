@@ -134,7 +134,8 @@
 	"permissions": [
 		"menus",
 		"contextMenus",
-		"<all_urls>"
+		"<all_urls>",
+		"activeTab"
 	],
 	"incognito": "spanning",
 	"manifest_version": 2,
