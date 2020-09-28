@@ -16,6 +16,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		if (message.method == "content.initSave" ||
 			message.method == "content.save" ||
 			message.method == "content.cancelSave" ||
+			message.method == "downloads.authenticating" ||
 			message.method == "downloads.uploadProgress" ||
 			message.method == "downloads.uploadEnd" ||
 			message.method == "downloads.uploadCancelled" ||
@@ -53,6 +54,10 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 			}
 			if (message.method == "content.cancelSave") {
 				cancelSave();
+				return {};
+			}
+			if (message.method == "downloads.authenticating") {
+				ui.onAuthenticating();
 				return {};
 			}
 			if (message.method == "downloads.uploadProgress") {

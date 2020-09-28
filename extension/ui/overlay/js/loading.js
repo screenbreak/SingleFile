@@ -27,6 +27,10 @@
 				const progressLabel = message.titleLabel + " " + Math.min(Math.floor(100 * message.index / message.maxIndex || 1), 100) + "% …";
 				refreshStatus(message.detailsLabel, progressLabel, message.index, message.maxIndex);
 			}
+			if (message.method == "screenbreak.authenticating") {
+				labelElement.textContent = message.titleLabel;
+				progressLabelElement.textContent = "";
+			}
 		}
 	};
 

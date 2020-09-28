@@ -1,4 +1,4 @@
-/* global screenbreak, fetch, XMLHttpRequest, FormData, DOMParser */
+/* global screenbreak, fetch, XMLHttpRequest, FormData, DOMParser, setTimeout, clearTimeout */
 
 screenbreak.extension.core.bg.api = (() => {
 
@@ -6,6 +6,7 @@ screenbreak.extension.core.bg.api = (() => {
 	const API_URL = "https://app.myscreenbreak.com/api/v1/article/";
 	const LOGIN_PAGE_URL = "https://app.myscreenbreak.com/login/";
 	const DOWNLOAD_URL = "https://app.myscreenbreak.com/download/article/";
+	const RETRY_UPLOAD_DELAY = 5000;
 
 	let csrfToken;
 
@@ -13,7 +14,7 @@ screenbreak.extension.core.bg.api = (() => {
 		saveArticle
 	};
 
-	async function saveArticle(tabId, url, title, blob, uploadHandlers) {
+	async function saveArticle(tabId, url, title, blob, uploadHandlers, loginPageAlreadyDisplayed) {
 		if (!csrfToken) {
 			csrfToken = await getCSRFToken();
 		}
@@ -44,24 +45,48 @@ screenbreak.extension.core.bg.api = (() => {
 					xhr.upload.onerror = uploadHandlers.onerror;
 					xhr.upload.onload = uploadHandlers.onload;
 					xhr.upload.ontimeout = uploadHandlers.ontimeout;
-					xhr.onload = () => handlResponse(xhr).then(resolve).catch(reject);
+					xhr.onload = () =>
+						handlResponse(xhr, loginPageAlreadyDisplayed)
+							.then(() => resolve(DOWNLOAD_URL + refId + "/"))
+							.catch(reject);
 					xhr.onerror = reject;
 					xhr.send(formData);
 				}),
-				cancel: () => xhr.abort(),
-				url: DOWNLOAD_URL + refId + "/"
+				cancel: () => cancelSave(xhr)
 			};
 		} else {
-			return handlResponse(response);
+			return {
+				promise: handlResponse(response, loginPageAlreadyDisplayed),
+				cancel: () => cancelSave(response)
+			};
 		}
 
-		async function handlResponse(response) {
+		async function handlResponse(response, loginPageAlreadyDisplayed) {
 			if (response.status == 403) {
-				await screenbreak.extension.core.bg.tabs.launchWebAuthFlow(tabId, LOGIN_PAGE_URL);
-				csrfToken = null;
-				return saveArticle(tabId, url, title, blob, uploadHandlers);
+				if (!loginPageAlreadyDisplayed) {
+					await screenbreak.extension.core.bg.tabs.launchWebAuthFlow(tabId, LOGIN_PAGE_URL);
+				}
+				return new Promise((resolve, reject) => {
+					response.timeoutSave = setTimeout(() => {
+						csrfToken = null;
+						saveArticle(tabId, url, title, blob, uploadHandlers, true)
+							.then(result => result.promise)
+							.then(resolve)
+							.catch(reject);
+					}, RETRY_UPLOAD_DELAY);
+				});
 			} else if (response.status >= 400) {
 				throw new Error(response.statusText || response.status);
+			}
+		}
+
+		function cancelSave(response) {
+			if (response.timeoutSave) {
+				clearTimeout(response.timeoutSave);
+				delete response.timeoutSave;
+			}
+			if (response.abort) {
+				response.abort();
 			}
 		}
 	}

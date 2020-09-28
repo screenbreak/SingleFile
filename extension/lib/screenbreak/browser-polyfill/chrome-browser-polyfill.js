@@ -163,12 +163,6 @@
 				}
 			},
 			tabs: {
-				onCreated: {
-					addListener: listener => nativeAPI.tabs.onCreated.addListener(listener)
-				},
-				onActivated: {
-					addListener: listener => nativeAPI.tabs.onActivated.addListener(listener)
-				},
 				onUpdated: {
 					addListener: listener => nativeAPI.tabs.onUpdated.addListener(listener),
 					removeListener: listener => nativeAPI.tabs.onUpdated.removeListener(listener)
@@ -209,33 +203,6 @@
 				}),
 				create: createProperties => new Promise((resolve, reject) => {
 					nativeAPI.tabs.create(createProperties, tab => {
-						if (nativeAPI.runtime.lastError) {
-							reject(nativeAPI.runtime.lastError);
-						} else {
-							resolve(tab);
-						}
-					});
-				}),
-				get: options => new Promise((resolve, reject) => {
-					nativeAPI.tabs.get(options, tab => {
-						if (nativeAPI.runtime.lastError) {
-							reject(nativeAPI.runtime.lastError);
-						} else {
-							resolve(tab);
-						}
-					});
-				}),
-				remove: tabId => new Promise((resolve, reject) => {
-					nativeAPI.tabs.remove(tabId, () => {
-						if (nativeAPI.runtime.lastError) {
-							reject(nativeAPI.runtime.lastError);
-						} else {
-							resolve();
-						}
-					});
-				}),
-				update: (tabId, updateProperties) => new Promise((resolve, reject) => {
-					nativeAPI.tabs.update(tabId, updateProperties, tab => {
 						if (nativeAPI.runtime.lastError) {
 							reject(nativeAPI.runtime.lastError);
 						} else {

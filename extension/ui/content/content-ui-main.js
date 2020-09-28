@@ -13,6 +13,7 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	const overlaySuccessTitleLabel = browser.i18n.getMessage("overlaySuccessTitle");
 	const savingTitleLabel = browser.i18n.getMessage("overlaySavingTitle");
 	const savingDetailsLabel = browser.i18n.getMessage("overlaySavingDetails");
+	const authenticatingTitleLabel = browser.i18n.getMessage("overlayAuthenticatingTitle");
 	const uploadingTitleLabel = browser.i18n.getMessage("overlayUploadingTitle");
 	const uploadingDetailsLabel = browser.i18n.getMessage("overlayUploadingDetails");
 	const cancelButtonLabel = browser.i18n.getMessage("overlayCancelButton");
@@ -31,6 +32,12 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		},
 		onError(error, details) {
 			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details, closeButtonLabel }));
+		},
+		onAuthenticating() {
+			overlayIframeElement.contentWindow.postMessage(JSON.stringify({
+				method: "screenbreak.authenticating",
+				titleLabel: authenticatingTitleLabel
+			}), "*");
 		},
 		onUploadProgress(index, maxIndex) {
 			overlayIframeElement.contentWindow.postMessage(JSON.stringify({

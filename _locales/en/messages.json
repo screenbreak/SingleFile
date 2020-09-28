@@ -35,6 +35,10 @@
 		"message": "Saving the article",
 		"description": "Overlay label: 'Saving the article'"
 	},
+	"overlayAuthenticatingTitle": {
+		"message": "Waiting for you to login…",
+		"description": "Overlay label: 'Waiting for you to login…'"
+	},
 	"overlayUploadingTitle": {
 		"message": "Uploading",
 		"description": "Overlay label: 'Saving'"

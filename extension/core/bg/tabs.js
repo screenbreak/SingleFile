@@ -3,7 +3,6 @@
 screenbreak.extension.core.bg.tabs = (() => {
 
 	const DELAY_MAYBE_INIT = 1500;
-	let pendingAuthInfo;
 
 	browser.tabs.onRemoved.addListener(tabId => screenbreak.extension.core.bg.business.onTabRemoved(tabId));
 	browser.tabs.onUpdated.addListener((tabId, changeInfo) => onTabUpdated(tabId, changeInfo));
@@ -15,35 +14,19 @@ screenbreak.extension.core.bg.tabs = (() => {
 		},
 		sendMessage: (tabId, message, options) => browser.tabs.sendMessage(tabId, message, options),
 		launchWebAuthFlow: async (pageTabId, url) => {
-			const tab = await browser.tabs.create({ url, active: true });
-			return new Promise((resolve, reject) => {
-				pendingAuthInfo = { pageTabId, tabId: tab.id, resolve };
-				browser.tabs.onRemoved.addListener(onTabRemoved);
-				function onTabRemoved(tabId) {
-					if (tabId == tab.id) {
-						browser.tabs.onRemoved.removeListener(onTabRemoved);
-						if (pendingAuthInfo) {
-							pendingAuthInfo = null;
-							reject(new Error("Forbidden"));
-						}
-					}
-				}
-			});
+			try {
+				await browser.tabs.sendMessage(pageTabId, { method: "downloads.authenticating" });
+			}
+			catch (error) {
+				// ignored
+			}
+			return browser.tabs.create({ url, active: true });
 		}
 	};
 
 	async function onMessage(message, sender) {
 		if (message.method.endsWith(".init")) {
 			screenbreak.extension.core.bg.business.onInit(sender.tab);
-		}
-		if (message.method.endsWith(".loggedIn")) {
-			const tabId = sender.tab.id;
-			if (pendingAuthInfo && tabId == pendingAuthInfo.tabId) {
-				await browser.tabs.update(pendingAuthInfo.pageTabId, { highlighted: true });
-				pendingAuthInfo.resolve();
-				pendingAuthInfo = null;
-				await browser.tabs.remove(tabId);
-			}
 		}
 	}
 
