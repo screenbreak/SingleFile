@@ -145,6 +145,9 @@
 					}),
 					removeListener: listener => nativeAPI.runtime.onMessage.removeListener(listener)
 				},
+				onInstalled: {
+					addListener: listener => nativeAPI.runtime.onInstalled.addListener(listener)
+				},
 				sendMessage: message => new Promise((resolve, reject) => {
 					nativeAPI.runtime.sendMessage(message, response => {
 						if (nativeAPI.runtime.lastError) {

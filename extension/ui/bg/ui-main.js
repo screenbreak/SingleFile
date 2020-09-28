@@ -1,6 +1,12 @@
-/* global screenbreak */
+/* global browser, screenbreak */
+
+const WELCOME_PAGE_URL = "https://app.myscreenbreak.com/extension/welcome/";
 
 screenbreak.extension.ui.bg.main = (() => {
+
+	browser.runtime.onInstalled.addListener(() => browser.tabs.create({
+		url: WELCOME_PAGE_URL
+	}));
 
 	return {
 		onMessage(message, sender) {
