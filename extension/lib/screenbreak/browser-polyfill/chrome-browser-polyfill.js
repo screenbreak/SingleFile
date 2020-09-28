@@ -163,7 +163,8 @@
 				getURL: (path) => nativeAPI.runtime.getURL(path),
 				get lastError() {
 					return nativeAPI.runtime.lastError;
-				}
+				},
+				getManifest: () => nativeAPI.runtime.getManifest()
 			},
 			tabs: {
 				onUpdated: {
