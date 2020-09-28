@@ -22,7 +22,8 @@ screenbreak.extension.core.bg.api = (() => {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				"x-csrftoken": csrfToken
+				"x-csrftoken": csrfToken,
+				"x-extension-version": screenbreak.extension.core.bg.config.version
 			},
 			body: JSON.stringify({
 				url: url,
@@ -37,6 +38,7 @@ screenbreak.extension.core.bg.api = (() => {
 			const xhr = new XMLHttpRequest();
 			xhr.open("POST", `${API_URL}${refId}/`, true);
 			xhr.setRequestHeader("x-csrftoken", csrfToken);
+			xhr.setRequestHeader("x-extension-version", screenbreak.extension.core.bg.config.version);
 			return {
 				promise: new Promise((resolve, reject) => {
 					xhr.upload.onloadstart = uploadHandlers.onloadstart;

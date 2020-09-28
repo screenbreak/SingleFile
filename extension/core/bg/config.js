@@ -1,4 +1,4 @@
-/* global screenbreak, navigator */
+/* global browser, screenbreak, navigator */
 
 screenbreak.extension.core.bg.config = (() => {
 
@@ -28,6 +28,7 @@ screenbreak.extension.core.bg.config = (() => {
 	};
 
 	return {
+		version: browser.runtime.getManifest().version,
 		get: () => DEFAULT_CONFIG,
 	};
 
