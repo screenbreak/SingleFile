@@ -28,7 +28,6 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	return {
 		onStartPage() {
 			createOverlayElement();
-			document.body.appendChild(overlayElement);
 		},
 		onError(error, details) {
 			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details, closeButtonLabel }));
@@ -79,6 +78,7 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		overlayElement.style.setProperty("width", "100%", "important");
 		overlayElement.style.setProperty("height", "100%", "important");
 		overlayElement.style.setProperty("overflow", "hidden", "important");
+		document.body.appendChild(overlayElement);
 		overlayIframeElement = document.createElement("iframe");
 		initStyle(overlayIframeElement);
 		overlayIframeElement.style.setProperty("width", "100%", "important");
