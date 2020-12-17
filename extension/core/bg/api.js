@@ -2,10 +2,12 @@
 
 screenbreak.extension.core.bg.api = (() => {
 
-	const CSRF_URL = "https://app.myscreenbreak.com/api/v1/csrf/";
-	const API_URL = "https://app.myscreenbreak.com/api/v1/article/";
-	const LOGIN_PAGE_URL = "https://app.myscreenbreak.com/login/";
-	const DOWNLOAD_URL = "https://app.myscreenbreak.com/download/article/";
+	const DOMAIN = "app.myscreenbreak.com";
+	const API_URL = `https://${DOMAIN}/api/v1`;
+	const CSRF_URL = `${API_URL}/csrf/`;
+	const ARTICLE_URL = `${API_URL}/article/`;
+	const LOGIN_PAGE_URL = `https://${DOMAIN}/login/`;
+	const DOWNLOAD_URL = `https://${DOMAIN}/download/article/`;
 	const DEFAULT_ERROR_TITLE = "API error";
 	const RETRY_UPLOAD_DELAY = 5000;
 
@@ -28,7 +30,7 @@ screenbreak.extension.core.bg.api = (() => {
 		if (!csrfToken) {
 			csrfToken = await getCSRFToken();
 		}
-		const response = await fetch(API_URL, {
+		const response = await fetch(ARTICLE_URL, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -46,7 +48,7 @@ screenbreak.extension.core.bg.api = (() => {
 			const formData = new FormData();
 			formData.append("html", blob);
 			const xhr = new XMLHttpRequest();
-			xhr.open("POST", `${API_URL}${refId}/`, true);
+			xhr.open("POST", `${ARTICLE_URL}${refId}/`, true);
 			xhr.setRequestHeader("x-csrftoken", csrfToken);
 			xhr.setRequestHeader("x-extension-version", screenbreak.extension.core.bg.config.version);
 			return {
