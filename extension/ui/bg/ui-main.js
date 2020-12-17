@@ -25,7 +25,7 @@ screenbreak.extension.ui.bg.main = (() => {
 			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadProgress", progress });
 		},
 		onError(tabId, error) {
-			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadError", error: error.message });
+			screenbreak.extension.core.bg.tabs.sendMessage(tabId, { method: "downloads.uploadError", error });
 			screenbreak.extension.ui.bg.button.onCancelled(tabId);
 		},
 		onEnd(tabId, downloadURL) {

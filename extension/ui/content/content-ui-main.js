@@ -30,8 +30,8 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 			createOverlayElement();
 			document.body.appendChild(overlayElement);
 		},
-		onError(error, details) {
-			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, details, closeButtonLabel }));
+		onError(error) {
+			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, closeButtonLabel }));
 		},
 		onAuthenticating() {
 			overlayIframeElement.contentWindow.postMessage(JSON.stringify({

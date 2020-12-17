@@ -6,11 +6,21 @@ screenbreak.extension.core.bg.api = (() => {
 	const API_URL = "https://app.myscreenbreak.com/api/v1/article/";
 	const LOGIN_PAGE_URL = "https://app.myscreenbreak.com/login/";
 	const DOWNLOAD_URL = "https://app.myscreenbreak.com/download/article/";
+	const DEFAULT_ERROR_TITLE = "API error";
 	const RETRY_UPLOAD_DELAY = 5000;
 
 	let csrfToken;
 
+	class APIError extends Error {
+		constructor(message) {
+			super();
+			this.message = message;
+			this.title = DEFAULT_ERROR_TITLE;
+		}
+	}
+
 	return {
+		APIError,
 		saveArticle
 	};
 
@@ -78,7 +88,17 @@ screenbreak.extension.core.bg.api = (() => {
 					}, RETRY_UPLOAD_DELAY);
 				});
 			} else if (response.status >= 400) {
-				throw new Error(response.statusText || response.status);
+				const error = new APIError(response.statusText || response.status);
+				try {
+					const details = await response.json();
+					error.title = details.title;
+					error.message = details.message;
+					error.actionLabel = details.action_label;
+					error.actionURL = details.action_url;
+				} catch (error) {
+					// ignored
+				}
+				throw error;
 			}
 		}
 

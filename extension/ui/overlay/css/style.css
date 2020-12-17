@@ -131,6 +131,26 @@
 	padding: 10px 0px;
 	border-radius: 8px;
 }
+.box .subscribe {
+	margin: 40px auto 0px auto;
+	display: block;
+	font-size: 14px;
+	font-weight: 600;	
+	font-stretch: normal;
+	font-style: normal;
+	text-align: center;
+	text-decoration: none;
+	line-height: 1.14;
+	letter-spacing: normal;	
+	width: 150px;
+	color: #ffffff;
+	background-color: #4c9b6e;
+	padding: 10px 0px;
+	border-radius: 8px;
+}
+.box a.hidden {
+	display: none;
+}
 .box a.cancel {
 	margin: 24px auto 0px auto;
 	display: block;

@@ -5,8 +5,17 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 	const screenbreak = this.screenbreak;
 	const singlefile = this.singlefile;
 	const MOZ_EXTENSION_PROTOCOL = "moz-extension:";
+	const DEFAULT_ERROR_TITLE = "Save error";
 
 	let ui, processor;
+
+	class SaveError extends Error {
+		constructor(message) {
+			super();
+			this.message = message;
+			this.title = DEFAULT_ERROR_TITLE;
+		}
+	}
 
 	singlefile.lib.main.init({
 		fetch: screenbreak.extension.lib.fetch.content.resources.fetch,
@@ -73,7 +82,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 				return {};
 			}
 			if (message.method == "downloads.uploadError") {
-				ui.onError("Upload error", message.error);
+				ui.onError(message.error);
 				return {};
 			}
 		}
@@ -105,7 +114,7 @@ this.screenbreak.extension.core.content.main = this.screenbreak.extension.core.c
 		} catch (error) {
 			if (!processor.cancelled) {
 				console.error(error); // eslint-disable-line no-console
-				ui.onError("Save error", error.message);
+				ui.onError(new SaveError(error.message));
 			}
 		}
 		screenbreak.extension.core.processing = false;

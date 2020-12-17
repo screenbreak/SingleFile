@@ -5,6 +5,15 @@ screenbreak.extension.core.bg.downloads = (() => {
 	const partialContents = new Map(), currentUploads = {};
 	const MIMETYPE_HTML = "text/html";
 	const MIMETYPE_GZIP = "application/gzip";
+	const DEFAULT_ERROR_TITLE = "Upload error";
+
+	class DownloadError extends Error {
+		constructor(message) {
+			super();
+			this.message = message;
+			this.title = DEFAULT_ERROR_TITLE;
+		}
+	}
 
 	return {
 		onMessage
@@ -51,16 +60,16 @@ screenbreak.extension.core.bg.downloads = (() => {
 						}
 					},
 					onabort: () => {
-						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Upload aborted"));
+						screenbreak.extension.ui.bg.main.onError(tab.id, new DownloadError("Upload aborted"));
 					},
 					onerror: () => {
-						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Upload error"));
+						screenbreak.extension.ui.bg.main.onError(tab.id, new DownloadError("Unknown error"));
 					},
 					onload: () => {
 						screenbreak.extension.ui.bg.main.onUploadProgress(tab.id, 1);
 					},
 					ontimeout: () => {
-						screenbreak.extension.ui.bg.main.onError(tab.id, new Error("Timeout error"));
+						screenbreak.extension.ui.bg.main.onError(tab.id, new DownloadError("Timeout error"));
 					}
 				};
 				const content = message.gzip ?
@@ -72,7 +81,8 @@ screenbreak.extension.core.bg.downloads = (() => {
 				screenbreak.extension.ui.bg.main.onEnd(tab.id, url);
 			} catch (error) {
 				console.error(error); // eslint-disable-line no-console
-				screenbreak.extension.ui.bg.main.onError(tab.id, error);
+				screenbreak.extension.ui.bg.main.onError(tab.id,
+					error instanceof screenbreak.extension.core.bg.api.APIError ? error : new DownloadError(error.message));
 			} finally {
 				if (message.url) {
 					URL.revokeObjectURL(message.url);
