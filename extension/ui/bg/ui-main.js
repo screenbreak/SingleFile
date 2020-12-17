@@ -4,9 +4,13 @@ const WELCOME_PAGE_URL = "https://app.myscreenbreak.com/extension/welcome/";
 
 screenbreak.extension.ui.bg.main = (() => {
 
-	browser.runtime.onInstalled.addListener(() => browser.tabs.create({
-		url: WELCOME_PAGE_URL
-	}));
+	browser.runtime.onInstalled.addListener(details => {
+		if (details.reason == "install") {
+			browser.tabs.create({
+				url: WELCOME_PAGE_URL
+			});
+		}
+	});
 
 	return {
 		onMessage(message, sender) {
