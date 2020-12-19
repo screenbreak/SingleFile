@@ -93,8 +93,8 @@ screenbreak.extension.core.bg.api = (() => {
 				const error = new APIError(response.statusText || response.status);
 				try {
 					const details = await response.json();
-					error.title = details.title;
-					error.message = details.message;
+					error.title = details.title || error.title;
+					error.message = details.message || details.detail || error.message;
 					error.actionLabel = details.action_label;
 					error.actionURL = details.action_url;
 				} catch (error) {
