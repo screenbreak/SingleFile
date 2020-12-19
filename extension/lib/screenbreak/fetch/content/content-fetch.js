@@ -57,10 +57,10 @@ this.screenbreak.extension.lib.fetch.content.resources = this.screenbreak.extens
 			}
 		},
 		frameFetch: async (url, options) => {
-			const response = await sendMessage({ method: "singlefile.fetchFrame", url, frameId: options.frameId, referrer: options.referrer });
+			const response = await sendMessage({ method: "singlefile.fetch", url, referrer: options.referrer });
 			return {
 				status: response.status,
-				headers: new Map(response.headers),
+				headers: { get: headerName => response.headers && response.headers[headerName] },
 				arrayBuffer: async () => new Uint8Array(response.array).buffer
 			};
 		}
