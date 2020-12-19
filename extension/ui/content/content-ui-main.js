@@ -28,10 +28,9 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 	return {
 		onStartPage() {
 			createOverlayElement();
-			document.body.appendChild(overlayElement);
 		},
 		onError(error) {
-			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL + "?" + JSON.stringify({ error, closeButtonLabel }));
+			overlayIframeElement.src = browser.runtime.getURL(ERROR_PAGE_URL) + "?" + JSON.stringify({ error, closeButtonLabel });
 		},
 		onAuthenticating() {
 			overlayIframeElement.contentWindow.postMessage(JSON.stringify({
@@ -49,7 +48,7 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 			}), "*");
 		},
 		onUploadEnd(downloadURL) {
-			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL + "?" + JSON.stringify({ titleLabel: overlaySuccessTitleLabel, downloadButtonLabel, linkLabel, downloadURL }));
+			overlayIframeElement.src = browser.runtime.getURL(SUCCESS_PAGE_URL) + "?" + JSON.stringify({ titleLabel: overlaySuccessTitleLabel, downloadButtonLabel, linkLabel, downloadURL });
 		},
 		onLoadResource(index, maxIndex) {
 			overlayIframeElement.contentWindow.postMessage(JSON.stringify({
@@ -88,7 +87,8 @@ this.screenbreak.extension.ui.content.main = this.screenbreak.extension.ui.conte
 		overlayIframeElement.sandbox = "allow-scripts allow-popups allow-popups-to-escape-sandbox";
 		const shadowRoot = overlayElement.attachShadow({ mode: "closed" });
 		shadowRoot.appendChild(overlayIframeElement);
-		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL + "?" + JSON.stringify({ defaultTitle: initializationTitleLabel, defaultDetails: savingDetailsLabel, cancelButtonLabel }));
+		overlayIframeElement.src = browser.runtime.getURL(LOADING_PAGE_URL) + "?" + JSON.stringify({ defaultTitle: initializationTitleLabel, defaultDetails: savingDetailsLabel, cancelButtonLabel });
+		document.body.appendChild(overlayElement);
 	}
 
 	function initStyle(element) {
