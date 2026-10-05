@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+	<img src="icons/logo.png" alt="Screenbreak" class="logo" width="141" height="20">
+	<button type="button" data-action="save">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+		<span><strong>Save</strong><small>Add it to your Screenbreak articles</small></span>
+	</button>
+	<button type="button" data-action="print">
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5H7zM5 9h14a2 2 0 0 1 2 2v6h-4v4H7v-4H3v-6a2 2 0 0 1 2-2zm4 7v3h6v-3z"/></svg>
+		<span><strong>Print</strong><small>A clean, print-ready version, or a PDF</small></span>
+	</button>
+	<label class="default">
+		Clicking the button
+		<select name="defaultAction">
+			<option value="ask">asks me</option>
+			<option value="save">saves</option>
+			<option value="print">prints</option>
+		</select>
+	</label>
+	<a href="options.html" target="_blank" class="settings">Settings</a>
+	<script src="popup.js"></script>
+</body>
+</html>

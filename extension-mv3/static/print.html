@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Print · Screenbreak</title>
+	<link rel="stylesheet" href="print.css">
+</head>
+<body class="font-sans size-normal columns-1">
+	<form class="toolbar" aria-label="Print options">
+		<img src="icons/logo.png" alt="Screenbreak" class="logo" width="141" height="20">
+		<fieldset>
+			<legend>Font</legend>
+			<label><input type="radio" name="font" value="serif"> Serif</label>
+			<label><input type="radio" name="font" value="sans"> Sans</label>
+		</fieldset>
+		<fieldset>
+			<legend>Size</legend>
+			<label><input type="radio" name="size" value="small"> S</label>
+			<label><input type="radio" name="size" value="normal"> M</label>
+			<label><input type="radio" name="size" value="large"> L</label>
+		</fieldset>
+		<fieldset>
+			<legend>Columns</legend>
+			<label><input type="radio" name="columns" value="1"> 1</label>
+			<label><input type="radio" name="columns" value="2"> 2</label>
+		</fieldset>
+		<fieldset>
+			<legend>Images</legend>
+			<label><input type="checkbox" name="images"> Show</label>
+		</fieldset>
+		<button type="button" class="print-button">Print</button>
+	</form>
+	<p class="message" hidden></p>
+	<article hidden>
+		<header>
+			<p class="meta"><span class="site"></span><span class="byline"></span><span class="date"></span></p>
+			<h1 class="title"></h1>
+			<p class="excerpt"></p>
+			<hr>
+			<figure class="hero" hidden><img alt=""></figure>
+		</header>
+		<section class="content"></section>
+		<footer>
+			<hr>
+			<p>Printed with Screenbreak from <a class="source"></a></p>
+		</footer>
+	</article>
+	<script src="print.js"></script>
+</body>
+</html>

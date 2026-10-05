@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Screenbreak settings</title>
+	<link rel="stylesheet" href="options.css">
+</head>
+<body>
+	<main>
+		<img src="icons/logo.png" alt="Screenbreak" width="141" height="20">
+		<h1>Settings</h1>
+		<form>
+			<section>
+				<h2>When I click the Screenbreak button</h2>
+				<label><input type="radio" name="defaultAction" value="ask"> Ask me: show Save and Print</label>
+				<label><input type="radio" name="defaultAction" value="save"> Save the article to my Screenbreak account</label>
+				<label><input type="radio" name="defaultAction" value="print"> Print the article</label>
+				<p class="hint">Whatever you pick, both actions stay one right-click away on the button and on the page.
+					Keyboard shortcuts: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> saves, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> prints
+					(<a href="#" class="shortcuts">change</a>).</p>
+			</section>
+			<section>
+				<h2>Print</h2>
+				<label>Font
+					<select name="font"><option value="sans">Sans serif</option><option value="serif">Serif</option></select></label>
+				<label>Text size
+					<select name="size"><option value="small">Small</option><option value="normal">Normal</option><option value="large">Large</option></select></label>
+				<label>Columns
+					<select name="columns"><option value="1">One</option><option value="2">Two</option></select></label>
+				<label><input type="checkbox" name="images"> Include images</label>
+				<label><input type="checkbox" name="openPrintDialog"> Open the print dialog straight away</label>
+			</section>
+			<details>
+				<summary>Advanced</summary>
+				<label>Screenbreak server <input type="url" name="serverUrl" size="40" required></label>
+			</details>
+			<p class="saved" aria-live="polite"></p>
+		</form>
+	</main>
+	<script src="options.js"></script>
+</body>
+</html>

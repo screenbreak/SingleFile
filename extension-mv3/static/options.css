@@ -1,0 +1,13 @@
+body { margin: 0; background: #f4f6f5; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d1d1b; }
+main { max-width: 620px; margin: 40px auto; padding: 28px 32px; background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0, 0, 0, .08); }
+h1 { margin: 16px 0 8px; font-size: 24px; }
+h2 { margin: 0 0 8px; font-size: 16px; }
+section { padding: 16px 0; border-bottom: 1px solid #e6e6e6; }
+label { display: block; margin: 6px 0; }
+select, input[type=url] { font: inherit; margin-left: 6px; }
+.hint { color: #666; font-size: 13px; }
+a { color: #005D4C; }
+kbd { font: 12px ui-monospace, monospace; padding: 1px 4px; border: 1px solid #ccc; border-radius: 3px; background: #fafafa; }
+details { padding: 16px 0; }
+summary { cursor: pointer; font-weight: 600; }
+.saved { min-height: 1.5em; color: #005D4C; font-size: 13px; }

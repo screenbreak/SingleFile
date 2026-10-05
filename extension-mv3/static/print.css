@@ -1,0 +1,106 @@
+/* Print-at-home layout. A port of the 1.x booklet's article layout (renderer/generic/css/Interior/article.css):
+   Work Sans body, Trirong standfirst, green quotes and links, Inconsolata code. Layouts per article type will
+   replace this file. */
+
+@font-face { font-family: "Work Sans"; font-weight: 400; src: url("fonts/WorkSans-Regular.ttf"); }
+@font-face { font-family: "Work Sans"; font-weight: 700; src: url("fonts/WorkSans-Bold.ttf"); }
+@font-face { font-family: "Trirong"; font-weight: 500; src: url("fonts/Trirong-Medium.ttf"); }
+@font-face { font-family: "Inconsolata"; font-weight: 400; src: url("fonts/Inconsolata-Regular.ttf"); }
+
+:root {
+	--accent: #005D4C;
+	--ink: #1d1d1b;
+	--rule: #c9c9c9;
+	--body-font: "Work Sans", system-ui, sans-serif;
+	--base-size: 10.5pt;
+	--sb-title: "";
+}
+
+.font-serif { --body-font: "Trirong", Georgia, serif; }
+.size-small { --base-size: 9.5pt; }
+.size-large { --base-size: 12pt; }
+
+@page {
+	margin: 18mm 16mm 20mm;
+	@top-center { content: var(--sb-title); font: 8pt "Work Sans", sans-serif; color: #777; }
+	@bottom-right { content: counter(page); font: 8pt "Work Sans", sans-serif; color: #777; }
+}
+@page :first {
+	@top-center { content: none; }
+}
+
+html { background: #e9e9e6; }
+body { margin: 0; color: var(--ink); font-family: "Work Sans", system-ui, sans-serif; }
+
+/* Screen only: options bar and a page-like preview. */
+.toolbar {
+	position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px;
+	padding: 10px 20px; background: #fff; border-bottom: 1px solid #ddd; font-size: 13px;
+}
+.toolbar .logo { margin-right: auto; }
+.toolbar fieldset { border: 0; margin: 0; padding: 0; display: flex; gap: 8px; align-items: center; }
+.toolbar legend { float: left; margin-right: 4px; color: #666; }
+.toolbar label { cursor: pointer; }
+.print-button {
+	font: inherit; font-weight: 700; color: #fff; background: var(--accent); border: 0; border-radius: 6px;
+	padding: 8px 22px; cursor: pointer;
+}
+.message { max-width: 40em; margin: 60px auto; font-size: 16px; text-align: center; }
+
+article {
+	box-sizing: border-box; max-width: 210mm; margin: 24px auto 48px; padding: 18mm 16mm 20mm;
+	background: #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, .12);
+	font-family: var(--body-font); font-size: var(--base-size); line-height: 1.6;
+}
+
+/* Header */
+article > header .meta { margin: 0 0 4mm; font: 700 0.95em/1.3 "Work Sans", sans-serif; color: #555; }
+article > header .meta span:not(:empty) + span:not(:empty)::before { content: " · "; font-weight: 400; }
+article > header .title { margin: 0 0 4mm; font: 700 2.8em/1.15 "Work Sans", sans-serif; letter-spacing: -0.01em; }
+article > header .excerpt { margin: 0 0 4mm; font: 500 1.35em/1.35 "Trirong", Georgia, serif; color: #333; }
+article > header .excerpt:empty { display: none; }
+article hr { width: 15mm; margin: 0 0 6mm; border: 0; border-top: 1.5pt solid var(--ink); }
+article > header .hero { margin: 0 0 6mm; text-align: center; break-inside: avoid; }
+article > header .hero img { max-width: 100%; max-height: 110mm; }
+
+/* Body */
+.columns-2 article > .content { column-count: 2; column-gap: 7mm; column-rule: 0.25pt solid var(--rule); }
+article > .content { text-align: justify; hyphens: auto; }
+article > .content p { margin: 0 0 0.75em; orphans: 3; widows: 3; }
+article > .content h1, article > .content h2, article > .content h3,
+article > .content h4, article > .content h5, article > .content h6 {
+	margin: 1.2em 0 0.4em; font: 700 1.2em/1.25 "Work Sans", sans-serif; text-align: left; break-after: avoid;
+}
+article > .content h2 { font-size: 1.35em; }
+article > .content a { color: var(--accent); text-decoration: none; }
+article > .content ul, article > .content ol { padding-left: 6mm; }
+article > .content li { margin-bottom: 0.3em; }
+article > .content blockquote {
+	margin: 1em 0 1em 4mm; padding-left: 4mm; border-left: 2pt solid var(--accent); color: var(--accent);
+	font-size: 1.1em; break-inside: avoid; text-align: left;
+}
+article > .content pre, article > .content code { font-family: "Inconsolata", monospace; }
+article > .content pre {
+	font-size: 0.85em; text-align: left; white-space: pre-wrap; padding: 2mm; margin: 2mm 0;
+	border: 0.5pt solid #dadada; background: #f7f7f7; break-inside: avoid;
+}
+article > .content figure { margin: 1em 0; break-inside: avoid; text-align: center; }
+article > .content img, article > .content video { max-width: 100%; height: auto; break-inside: avoid; }
+article > .content figcaption { margin-top: 2mm; font: 0.75em/1.3 "Work Sans", sans-serif; color: #555; text-align: left; }
+article > .content table { width: 100%; border-collapse: collapse; font: 0.85em/1.35 "Work Sans", sans-serif; break-inside: auto; text-align: left; }
+article > .content th, article > .content td { padding: 1.5mm 2mm; border-bottom: 0.5pt solid var(--rule); vertical-align: top; }
+article > .content thead { display: table-header-group; }
+article > .content tr { break-inside: avoid; }
+article > .content .embed-link { font: 0.85em "Work Sans", sans-serif; color: #555; text-align: left; word-break: break-all; }
+.no-images article img, .no-images article figure, .no-images article .hero { display: none !important; }
+
+/* Footer */
+article > footer { margin-top: 8mm; font: 0.75em/1.4 "Work Sans", sans-serif; color: #555; break-inside: avoid; }
+article > footer hr { margin-bottom: 3mm; }
+article > footer a { color: inherit; word-break: break-all; }
+
+@media print {
+	html { background: none; }
+	.toolbar, .message { display: none !important; }
+	article { max-width: none; margin: 0; padding: 0; box-shadow: none; }
+}

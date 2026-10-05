@@ -1,0 +1,13 @@
+body { width: 280px; margin: 0; padding: 14px; font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d1d1b; }
+.logo { display: block; margin: 0 0 12px; }
+button {
+	display: flex; align-items: center; gap: 12px; width: 100%; margin: 0 0 8px; padding: 10px 12px; text-align: left;
+	font: inherit; color: inherit; background: #f4f6f5; border: 1px solid #e1e5e3; border-radius: 8px; cursor: pointer;
+}
+button:hover, button:focus-visible { background: #e6efec; border-color: #005D4C; outline: none; }
+button svg { width: 24px; height: 24px; fill: #005D4C; flex: none; }
+button strong { display: block; font-size: 14px; }
+button small { display: block; color: #666; }
+.default { display: block; margin-top: 12px; color: #555; }
+.default select { font: inherit; }
+.settings { display: inline-block; margin-top: 8px; color: #005D4C; }
