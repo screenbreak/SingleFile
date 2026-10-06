@@ -7,13 +7,23 @@ import { showStatus, hideStatus } from "./overlay.js";
 // so they are turned into plain <img> elements before the page is cloned.
 const CODE_BUILT_IMAGES_SELECTOR = "canvas, svg";
 const MIN_IMAGE_SIZE = 24;
+// Below this many words the live page may have lost its article; the HTML as served is then read as well.
+const SOURCE_CHECK_WORDS = 600;
 
 globalThis.__screenbreakExtract = async function extract() {
 	showStatus({ state: "working", title: "Preparing to print", detail: "Finding the article…" });
 	try {
 		const doc = cloneWithImages(document);
 		const metadata = getMetadata(document);
-		const article = new Readability(doc, { charThreshold: 300 }).parse();
+		let article = new Readability(doc, { charThreshold: 300 }).parse();
+		// Some sites send the whole story in their HTML, then remove it with script (paywalls and "subscribe"
+		// walls: The New Yorker leaves only its menu). When the page gives little, read the HTML as served too.
+		if (wordCount(article) < SOURCE_CHECK_WORDS) {
+			const fromSource = await parseServedHTML();
+			if (wordCount(fromSource) > Math.max(wordCount(article) * 1.5, SOURCE_CHECK_WORDS)) {
+				article = fromSource;
+			}
+		}
 		if (!article || !article.content) {
 			throw new Error("Couldn't find an article on this page.");
 		}
@@ -35,6 +45,28 @@ globalThis.__screenbreakExtract = async function extract() {
 		throw error;
 	}
 };
+
+// The page's HTML as the server sent it, before any script ran, parsed with Readability. Same origin, so
+// the request carries the reader's cookies and a subscriber still gets the full text.
+async function parseServedHTML() {
+	try {
+		const response = await fetch(location.href, { credentials: "include" });
+		if (!response.ok || !/html/.test(response.headers.get("content-type") || "")) {
+			return null;
+		}
+		const doc = new DOMParser().parseFromString(await response.text(), "text/html");
+		const base = doc.createElement("base");
+		base.href = location.href;
+		doc.head.prepend(base);
+		return new Readability(doc, { charThreshold: 300 }).parse();
+	} catch (error) {
+		return null;
+	}
+}
+
+function wordCount(article) {
+	return article && article.textContent ? article.textContent.trim().split(/\s+/).length : 0;
+}
 
 function cloneWithImages(liveDocument) {
 	const liveElements = getCodeBuiltImages(liveDocument);
