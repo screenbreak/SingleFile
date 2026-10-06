@@ -94,9 +94,9 @@ try {
 		await popup.screenshot({ path: join(OUT, name), clip: { x: 0, y: 0, width: 320, height } });
 	};
 	await shootPopup("01-popup.png");
-	const popupMeasures = await popup.evaluate(MEASURE, [".wordmark", ".actions-label", ".row[data-action=save] .icon", ".row[data-action=print] .icon", "#default-label", ".default .segmented", ".consequence", ".library", ".row[data-action=save] .row-title", ".row[data-action=save] .row-desc", ".row[data-action=print] .row-title"]);
+	const popupMeasures = await popup.evaluate(MEASURE, [".wordmark", ".actions-label", ".row[data-action=save] .icon", ".row[data-action=print] .icon", "#default-label", ".default .segmented", ".consequence", ".library", ".row[data-action=save] .row-title", ".row[data-action=save] .row-desc", ".row[data-action=print] .row-title", ".also-save .track"]);
 	report.alignment.popup = popupMeasures;
-	check("popup", popupMeasures, "left", { "outer edge x16": [".wordmark", ".actions-label", ".row[data-action=save] .icon", ".row[data-action=print] .icon", "#default-label", ".default .segmented", ".consequence", ".library"], "row text x48": [".row[data-action=save] .row-title", ".row[data-action=save] .row-desc", ".row[data-action=print] .row-title"] });
+	check("popup", popupMeasures, "left", { "outer edge x16": [".wordmark", ".actions-label", ".row[data-action=save] .icon", ".row[data-action=print] .icon", "#default-label", ".default .segmented", ".consequence", ".library"], "row text x48": [".row[data-action=save] .row-title", ".row[data-action=save] .row-desc", ".row[data-action=print] .row-title", ".also-save .track"] });
 	await popup.click("input[name=defaultAction][value=print]");
 	await shootPopup("02-popup-default-print.png");
 	await popup.evaluate(() => chrome.storage.sync.set({ defaultAction: "ask" }));
@@ -300,6 +300,40 @@ try {
 	await formPrintPage.setViewportSize({ width: 1280, height: 900 });
 	await sleep(800);
 	await formPrintPage.screenshot({ path: join(OUT, "36-print-nothing-to-print.png") });
+	// Print and save: status in the print toolbar, logged in and then logged out
+	await ctl.evaluate(() => chrome.storage.sync.set({ saveWhenPrinting: true }));
+	await shootPopup("37-popup-print-and-save.png");
+	await popup.evaluate(() => chrome.storage.sync.set({ defaultAction: "print" }));
+	await shootPopup("38-popup-print-and-save-default-print.png");
+	await popup.evaluate(() => chrome.storage.sync.set({ defaultAction: "ask" }));
+	for (const [name, logOut] of [["39-print-and-save-saved.png", false], ["40-print-and-save-login.png", true]]) {
+		if (logOut) {
+			await article.goto(BASE + "/logout/");
+			await article.goto(ARTICLE);
+		}
+		const opened = context.waitForEvent("page", page => page.url().includes("print.html"));
+		await run("print", ARTICLE);
+		const page = await opened;
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await page.locator(".save-status:not([hidden])").waitFor();
+		await sleep(logOut ? 5000 : 200);
+		await page.screenshot({ path: join(OUT, name.replace(".png", "-working.png")), clip: { x: 560, y: 0, width: 720, height: 60 } });
+		await sleep(logOut ? 0 : 5000);
+		await page.screenshot({ path: join(OUT, name), clip: { x: 560, y: 0, width: 720, height: 60 } });
+		if (!logOut) {
+			report.alignment.saveStatus = await page.evaluate(() => {
+				const box = selector => document.querySelector(selector).getBoundingClientRect();
+				return { status: Math.round((box(".save-status").top + box(".save-status").bottom) / 2), print: Math.round((box(".print-button").top + box(".print-button").bottom) / 2) };
+			});
+		}
+		await page.close();
+	}
+	await ctl.evaluate(() => chrome.storage.sync.set({ saveWhenPrinting: false }));
+	await options.goto(ext("options.html"));
+	await options.setViewportSize({ width: 1280, height: 900 });
+	await sleep(400);
+	await options.screenshot({ path: join(OUT, "41-settings-print-and-save.png"), clip: { x: 300, y: 740, width: 680, height: 200 } });
+
 	await ctl.evaluate(() => chrome.storage.sync.set({ serverUrl: "http://localhost:9" }));
 	await run("save", ARTICLE);
 	await sleep(6000);
@@ -309,6 +343,7 @@ try {
 	const failed = report.checks.filter(item => !item.ok);
 	console.log(`${report.checks.length - failed.length}/${report.checks.length} alignment checks pass`);
 	failed.forEach(item => console.log("FAIL", item.surface, item.name, JSON.stringify(item.values)));
+	console.log("print toolbar centre lines (save status, Print):", JSON.stringify(report.alignment.saveStatus));
 	console.log("two columns, first line tops:", JSON.stringify(report.alignment.print2col), JSON.stringify(report.alignment.wrapped2col));
 } finally {
 	await context.close();

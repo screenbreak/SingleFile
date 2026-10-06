@@ -88,6 +88,16 @@ try {
 	await article.locator("screenbreak-status").locator("text=Removed from Screenbreak").waitFor();
 	assert.deepEqual(removed, ["abc123"]);
 
+	// Print and save: the print page opens, the article is saved in the background, and the print page says so.
+	await extensionPage.evaluate(() => chrome.storage.sync.set({ saveWhenPrinting: true }));
+	const printAndSavePagePromise = context.waitForEvent("page", page => page.url().includes("print.html"));
+	await run("print");
+	const printAndSavePage = await printAndSavePagePromise;
+	await printAndSavePage.locator(".save-status:has-text('Saved to Screenbreak')").waitFor({ timeout: 30000 });
+	assert.equal(uploads.length, 2);
+	assert.equal(await printAndSavePage.locator(".save-actions a").textContent(), "Open");
+	await extensionPage.evaluate(() => chrome.storage.sync.set({ saveWhenPrinting: false }));
+
 	// Changing the default action changes what the button does.
 	await extensionPage.evaluate(() => chrome.storage.sync.set({ defaultAction: "print" }));
 	await new Promise(resolve => setTimeout(resolve, 300));

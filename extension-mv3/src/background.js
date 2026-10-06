@@ -12,8 +12,10 @@ const MENU_DEFAULT_PREFIX = "default-action:";
 const BUTTON_TITLES = {
 	save: "Screenbreak: save this article",
 	print: "Screenbreak: print this article",
+	printAndSave: "Screenbreak: print and save this article",
 	ask: "Screenbreak: save or print this article"
 };
+const PRINT_MENU_TITLES = { print: "Print this article", printAndSave: "Print and save this article" };
 const DEFAULT_ACTION_LABELS = { ask: "Ask me each time", save: "Save to Screenbreak", print: "Print" };
 const MAX_STORED_PRINT_JOBS = 5;
 const MAX_PRINT_JOB_SOURCES = 20;
@@ -25,6 +27,8 @@ const printJobs = new Map();
 const lazyTimeouts = new Map();
 // The last save per tab, kept so the status card can retry, undo, or carry on after a login.
 const saveJobs = new Map();
+// The latest save status of each "print and save", for a print page that opens after the save started.
+const printSaveStatuses = new Map();
 
 chrome.runtime.onInstalled.addListener(async details => {
 	await createMenus();
@@ -39,7 +43,7 @@ chrome.runtime.onInstalled.addListener(async details => {
 chrome.runtime.onStartup.addListener(applyDefaultAction);
 
 chrome.storage.onChanged.addListener((changes, area) => {
-	if (area == "sync" && changes.defaultAction) {
+	if (area == "sync" && (changes.defaultAction || changes.saveWhenPrinting)) {
 		applyDefaultAction();
 	}
 });
@@ -93,8 +97,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			runAction(message.action, message.tab);
 			break;
 		case "screenbreak.statusAction":
-			onStatusAction(message.action, sender.tab);
+			// The print page acts on the article tab it came from; the status card acts on its own tab.
+			(message.tabId ? chrome.tabs.get(message.tabId).catch(() => null) : Promise.resolve(sender.tab)).then(tab => tab && onStatusAction(message.action, tab));
 			break;
+		case "screenbreak.getSaveStatus":
+			sendResponse(printSaveStatuses.get(message.id) || null);
+			return false;
 		case "screenbreak.fetch":
 			fetchForPage(message).then(sendResponse);
 			return true;
@@ -120,7 +128,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function applyDefaultAction() {
-	const { defaultAction } = await getSettings();
+	const { defaultAction, saveWhenPrinting } = await getSettings();
+	chrome.contextMenus.update(MENU_PRINT, { title: PRINT_MENU_TITLES[saveWhenPrinting ? "printAndSave" : "print"] }).catch(() => {});
 	await chrome.action.setPopup({ popup: defaultAction == "ask" ? "popup.html" : "" });
 	// Tab-level popups outrank the global one, so tabs that had the "can't run here" popup follow too.
 	for (const tabId of await getUnsupportedTabs()) {
@@ -128,17 +137,17 @@ async function applyDefaultAction() {
 			chrome.action.setPopup({ tabId, popup: defaultAction == "ask" ? "popup.html" : "" }).catch(() => {});
 		}
 	}
-	await chrome.action.setTitle({ title: BUTTON_TITLES[defaultAction] });
+	await chrome.action.setTitle({ title: BUTTON_TITLES[defaultAction == "print" && saveWhenPrinting ? "printAndSave" : defaultAction] });
 	for (const action of Object.keys(DEFAULT_ACTION_LABELS)) {
 		chrome.contextMenus.update(MENU_DEFAULT_PREFIX + action, { checked: action == defaultAction }).catch(() => {});
 	}
 }
 
 async function createMenus() {
-	const { defaultAction } = await getSettings();
+	const { defaultAction, saveWhenPrinting } = await getSettings();
 	await chrome.contextMenus.removeAll();
 	chrome.contextMenus.create({ id: MENU_SAVE, title: "Save to Screenbreak", contexts: ["action", "page"] });
-	chrome.contextMenus.create({ id: MENU_PRINT, title: "Print this article", contexts: ["action", "page"] });
+	chrome.contextMenus.create({ id: MENU_PRINT, title: PRINT_MENU_TITLES[saveWhenPrinting ? "printAndSave" : "print"], contexts: ["action", "page"] });
 	chrome.contextMenus.create({ id: MENU_DEFAULT_PARENT, title: "When I click the button", contexts: ["action"] });
 	for (const [action, label] of Object.entries(DEFAULT_ACTION_LABELS)) {
 		chrome.contextMenus.create({
@@ -159,7 +168,11 @@ async function runAction(action, tab) {
 	runningTabs.add(tab.id);
 	try {
 		if (action == "print") {
-			await printTab(tab);
+			const printed = await printTab(tab);
+			if ((await getSettings()).saveWhenPrinting) {
+				// The print version is already open; save from the article tab while the user reads or prints.
+				await saveTab(tab, { printJobId: printed.id, returnTabId: printed.tabId });
+			}
 		} else {
 			await saveTab(tab);
 		}
@@ -175,7 +188,8 @@ async function runAction(action, tab) {
 
 // Save
 
-async function saveTab(tab) {
+// A background save (print and save) reports to the print page, not to the card on the article tab.
+async function saveTab(tab, { printJobId, returnTabId } = {}) {
 	const previous = saveJobs.get(tab.id);
 	if (previous) {
 		previous.cancelled = true;
@@ -186,12 +200,18 @@ async function saveTab(tab) {
 		capture = await runInPage(tab, "content-save.js", "__screenbreakCapture");
 	} catch (error) {
 		saveJobs.delete(tab.id);
-		if (!error.cannotAccessPage) {
+		if (printJobId) {
+			hideStatus(tab);
+			sendPrintSaveStatus(printJobId, tab.id, STATUS.captureFailed());
+		} else if (!error.cannotAccessPage) {
 			showStatus(tab, STATUS.captureFailed());
 		}
 		throw error;
 	}
-	const job = { tab, capture, startTime: Date.now() };
+	const job = { tab, capture, startTime: Date.now(), printJobId, returnTabId };
+	if (printJobId) {
+		hideStatus(tab);
+	}
 	saveJobs.set(tab.id, job);
 	await submitSave(job);
 }
@@ -202,18 +222,18 @@ async function submitSave(job) {
 	const version = chrome.runtime.getManifest().version;
 	const gzippedHTML = new Blob([base64ToBytes(capture.gzippedBase64)], { type: "application/gzip" });
 	job.cancelled = false;
-	showStatus(tab, job.loginTabId ? STATUS.waitingForLogin() : STATUS.uploading());
+	report(job, job.loginTabId ? STATUS.waitingForLogin() : STATUS.uploading());
 	try {
 		let created = await createArticle({ serverUrl: settings.serverUrl, url: capture.url, title: capture.title, size: gzippedHTML.size, version });
 		while (created.loginRequired) {
 			if (!job.loginTabId) {
 				// Ask first: opening a tab out of the blue is confusing.
-				showStatus(tab, STATUS.loginRequired());
+				report(job, STATUS.loginRequired());
 				return;
 			}
 			if (Date.now() - job.loginStartTime > MAX_LOGIN_WAIT) {
 				job.loginTabId = null;
-				showStatus(tab, STATUS.loginTimedOut());
+				report(job, STATUS.loginTimedOut());
 				return;
 			}
 			await sleepOrWake(job, LOGIN_POLL_DELAY);
@@ -225,18 +245,18 @@ async function submitSave(job) {
 		if (job.cancelled) {
 			return;
 		}
-		showStatus(tab, STATUS.uploading());
+		report(job, STATUS.uploading());
 		job.result = await uploadArticle({ serverUrl: settings.serverUrl, refId: created.refId, gzippedHTML, version });
 		if (job.loginTabId) {
-			// Logged in from another tab: bring the article back so the user sees it was saved.
-			chrome.tabs.update(tab.id, { active: true }).catch(() => {});
+			// Logged in from another tab: bring back the tab the user came from, so they see it was saved.
+			chrome.tabs.update(job.returnTabId || tab.id, { active: true }).catch(() => {});
 			job.loginTabId = null;
 		}
-		showStatus(tab, STATUS.saved({ title: withoutSiteName(capture.title), articleURL: job.result.articleURL, tip: await takeTip() }));
+		report(job, STATUS.saved({ title: withoutSiteName(capture.title), articleURL: job.result.articleURL, tip: await takeTip() }));
 	} catch (error) {
 		console.error(error); // eslint-disable-line no-console
 		job.loginTabId = null;
-		showStatus(tab, STATUS.saveFailed(error));
+		report(job, STATUS.saveFailed(error));
 	}
 }
 
@@ -291,21 +311,21 @@ async function onStatusAction(action, tab) {
 				job.loginTabId = null;
 				job.wakeUp?.();
 			}
-			showStatus(tab, STATUS.notSaved());
+			report(job, STATUS.notSaved(), tab);
 			break;
 		case "dismiss":
-			hideStatus(tab);
+			report(job, null, tab);
 			break;
 		case "undo":
 			if (job && job.result) {
-				showStatus(tab, STATUS.removing());
+				report(job, STATUS.removing());
 				try {
 					const { serverUrl } = await getSettings();
 					await removeArticle({ serverUrl, refId: job.result.refId });
 					job.result = null;
-					showStatus(tab, STATUS.removed());
+					report(job, STATUS.removed());
 				} catch (error) {
-					showStatus(tab, STATUS.undoFailed(job.result.articleURL));
+					report(job, STATUS.undoFailed(job.result.articleURL));
 				}
 			}
 			break;
@@ -352,7 +372,8 @@ async function printTab(tab) {
 	const id = crypto.randomUUID();
 	printJobs.set(id, article);
 	await storePrintJob(id, article);
-	await chrome.tabs.create({ url: chrome.runtime.getURL("print.html#" + id), index: tab.index + 1, openerTabId: tab.id });
+	const printTab = await chrome.tabs.create({ url: chrome.runtime.getURL("print.html#" + id), index: tab.index + 1, openerTabId: tab.id });
+	return { id, tabId: printTab.id };
 }
 
 // Injects a content script, then calls the function it exposes on globalThis and returns its (awaited) result.
@@ -438,6 +459,24 @@ function setLazyTimeout(sender, message) {
 
 function showStatus(tab, status) {
 	chrome.tabs.sendMessage(tab.id, { method: "screenbreak.status", status }, { frameId: 0 }).catch(() => {});
+}
+
+// Where a save's status goes: the print page for "print and save", otherwise the card on the article tab.
+// A null status clears it.
+function report(job, status, tab = job && job.tab) {
+	if (job && job.printJobId) {
+		sendPrintSaveStatus(job.printJobId, job.tab.id, status);
+	} else if (status) {
+		showStatus(tab, status);
+	} else {
+		hideStatus(tab);
+	}
+}
+
+function sendPrintSaveStatus(printJobId, articleTabId, status) {
+	const message = { method: "screenbreak.saveStatus", id: printJobId, articleTabId, status };
+	printSaveStatuses.set(printJobId, message);
+	chrome.runtime.sendMessage(message).catch(() => {});
 }
 
 function hideStatus(tab) {

@@ -45,6 +45,7 @@ async function init() {
 	}
 	document.body.classList.remove("is-loading");
 	trackImages();
+	watchSave(id);
 	if (settings.print.openPrintDialog) {
 		printWhenReady();
 	}
@@ -262,6 +263,66 @@ async function waitForImages() {
 		image.addEventListener("error", resolve, { once: true });
 	})));
 	await Promise.race([Promise.all([loaded, document.fonts.ready]), new Promise(resolve => setTimeout(resolve, IMAGE_LOAD_TIMEOUT))]);
+}
+
+// Print and save: the article is saved in the background, and its status shows in the toolbar.
+
+const SAVE_ICONS = {
+	working: `<svg viewBox="0 0 16 16" class="spinner"><circle cx="8" cy="8" r="6.25" fill="none" stroke-width="1.75" opacity=".2"/><path d="M8 1.75a6.25 6.25 0 0 1 6.25 6.25" fill="none" stroke-width="1.75" stroke-linecap="round"/></svg>`,
+	done: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" class="fill"/><path d="M4.9 8.2l2.1 2.1 4.1-4.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+	error: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" class="fill"/><path d="M8 4.6v4.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".95" fill="#fff"/></svg>`,
+	login: `<svg viewBox="0 0 16 16"><circle cx="8" cy="5.6" r="2.6" fill="none" stroke-width="1.5"/><path d="M2.9 14c.6-2.6 2.6-4 5.1-4s4.5 1.4 5.1 4" fill="none" stroke-width="1.5" stroke-linecap="round"/></svg>`
+};
+// Actions that only make sense on the article page itself.
+const PAGE_ONLY_ACTIONS = ["print-instead", "print-page"];
+
+function watchSave(id) {
+	chrome.runtime.onMessage.addListener(message => {
+		if (message.method == "screenbreak.saveStatus" && message.id == id) {
+			showSaveStatus(message);
+		}
+	});
+	chrome.runtime.sendMessage({ method: "screenbreak.getSaveStatus", id }).then(message => message && showSaveStatus(message));
+}
+
+function showSaveStatus({ status, articleTabId }) {
+	const element = document.querySelector(".save-status");
+	clearTimeout(element.timeout);
+	if (!status) {
+		element.hidden = true;
+		return;
+	}
+	const { state, title, detail, autoHide } = status;
+	element.className = "save-status " + state;
+	element.title = detail || "";
+	element.querySelector(".save-icon").innerHTML = SAVE_ICONS[state] || "";
+	element.querySelector(".save-text").textContent = state == "working" && title.startsWith("Saving") ? "Saving to Screenbreak…" : state == "login" ? "Not saved yet" : title;
+	const actions = (status.actions || []).filter(action => !PAGE_ONLY_ACTIONS.includes(action.action)).map(({ label, action, href }) => {
+		const control = document.createElement(href ? "a" : "button");
+		control.textContent = label == "Open in Screenbreak" ? "Open" : label;
+		if (href) {
+			control.href = href;
+			control.target = "_blank";
+		} else {
+			control.type = "button";
+			control.className = "link-button";
+			control.addEventListener("click", () => chrome.runtime.sendMessage({ method: "screenbreak.statusAction", action, tabId: articleTabId }));
+		}
+		control.dataset.action = action || "";
+		return control;
+	});
+	element.querySelector(".save-actions").replaceChildren(...actions);
+	element.hidden = false;
+	if (autoHide) {
+		// Undo is offered for a moment, like on the card; a passing note ("Removed", "Not saved") then goes away.
+		element.timeout = setTimeout(() => {
+			if (state == "done") {
+				element.querySelector("[data-action=undo]")?.remove();
+			} else {
+				element.hidden = true;
+			}
+		}, autoHide);
+	}
 }
 
 // Messages (expired, nothing to print)

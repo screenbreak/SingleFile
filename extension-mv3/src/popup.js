@@ -5,17 +5,20 @@ import { getShortcuts, renderKeys } from "./shortcuts.js";
 const CONSEQUENCES = {
 	ask: "Clicking the button shows this menu.",
 	save: "Clicking the button saves the page straight away. To change this, right-click the button.",
-	print: "Clicking the button opens the print version straight away. To change this, right-click the button."
+	print: "Clicking the button opens the print version straight away. To change this, right-click the button.",
+	printAndSave: "Clicking the button opens the print version and saves the article. To change this, right-click the button."
 };
 
 const rows = Array.from(document.querySelectorAll(".row"));
 const radios = document.querySelectorAll("input[name=defaultAction]");
 const consequence = document.querySelector(".consequence");
+const alsoSave = document.querySelector("input[name=saveWhenPrinting]");
 
 init();
 
 async function init() {
 	const [settings, shortcuts, tab] = await Promise.all([getSettings(), getShortcuts(), getTargetTab()]);
+	alsoSave.checked = settings.saveWhenPrinting;
 	setDefaultAction(settings.defaultAction);
 	document.querySelector(".library").href = settings.serverUrl + "/articles/";
 	document.querySelectorAll("[data-shortcut]").forEach(element => element.append(renderKeys(shortcuts[element.dataset.shortcut])));
@@ -50,8 +53,13 @@ async function canRunOn(tab) {
 
 function setDefaultAction(value) {
 	radios.forEach(radio => radio.checked = radio.value == value);
-	consequence.textContent = CONSEQUENCES[value];
+	consequence.textContent = CONSEQUENCES[value == "print" && alsoSave.checked ? "printAndSave" : value];
 }
+
+alsoSave.addEventListener("change", () => {
+	updateSettings({ saveWhenPrinting: alsoSave.checked });
+	setDefaultAction(document.querySelector("input[name=defaultAction]:checked").value);
+});
 
 radios.forEach(radio => radio.addEventListener("change", () => {
 	setDefaultAction(radio.value);

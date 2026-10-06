@@ -17,6 +17,9 @@ rewrite for Manifest V3 that keeps **Save** working exactly as before and adds *
   the page, and by keyboard: Ctrl+Shift+Y saves, Alt+Shift+P prints.
 - **Print options**: font (sans/serif), text size, one or two columns, images on/off. Set defaults in Settings
   or adjust them on the print page before printing; the last choice is remembered.
+- **Print and save**: with "Also save what I print" on (popup, Settings or welcome page), every print opens the
+  print version straight away and saves the article in the background. The print page's toolbar shows the save:
+  "Saving…", then "Saved · Open · Undo", or "Not saved yet · Log in".
 - **Save when logged out**: the status card asks first ("Log in" or "Print instead"), opens the login page only
   on a click, waits with a Cancel, then saves by itself and brings the article tab back.
 - **Saved**: the card names the article and offers "Open in Screenbreak" and Undo for 8 seconds (paused while the

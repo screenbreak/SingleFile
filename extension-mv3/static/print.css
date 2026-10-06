@@ -45,6 +45,18 @@ body { background: var(--desk); }
 .options-toggle { display: none; }
 .toolbar-end { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .print-status { font-size: 12px; color: var(--muted); white-space: nowrap; }
+/* Print and save: the background save reports here, quietly, left of Print (W&B autosave status, Refero 452e5353). */
+.save-status { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 20px; color: var(--ink-2); white-space: nowrap; }
+.save-status + .print-status:not(:empty) { padding-left: 12px; border-left: 1px solid var(--line); }
+.save-icon { display: grid; width: 16px; height: 16px; color: var(--green); }
+.save-icon svg { width: 16px; height: 16px; stroke: currentColor; }
+.save-icon .fill { fill: currentColor; stroke: none; }
+.save-status.error .save-icon { color: var(--danger); }
+.save-status.login .save-icon, .save-status.info .save-icon { color: var(--ink-2); }
+.save-actions { display: flex; gap: 12px; }
+.save-actions .link-button, .save-actions a { font-size: 13px; }
+.save-icon .spinner { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .print-button[aria-busy=true] { opacity: .7; cursor: progress; }
 .is-loading .options, .is-loading .toolbar-end { opacity: .4; pointer-events: none; }
 .is-message .options, .is-message .toolbar-end, .is-message .options-toggle { display: none; }
@@ -64,7 +76,7 @@ body { background: var(--desk); }
 		width: 248px; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
 	}
 	.options.open { display: flex; }
-	.print-status { display: none; }
+	.print-status, .save-text { display: none; }
 }
 
 /* Desk and sheet */

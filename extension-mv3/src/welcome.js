@@ -27,6 +27,9 @@ async function init() {
 			setTimeout(() => saved.textContent = "", SAVED_DELAY);
 		});
 	});
+	const alsoSave = document.querySelector("input[name=saveWhenPrinting]");
+	alsoSave.checked = settings.saveWhenPrinting;
+	alsoSave.addEventListener("change", () => updateSettings({ saveWhenPrinting: alsoSave.checked }));
 	const shortcuts = await getShortcuts();
 	document.querySelectorAll("[data-shortcut]").forEach(element => {
 		const keys = shortcuts[element.dataset.shortcut];

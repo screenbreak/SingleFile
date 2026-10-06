@@ -28,7 +28,7 @@ globalThis.__screenbreakExtract = async function extract() {
 			heroImage: metadata.image,
 			lang: article.lang || document.documentElement.lang,
 			dir: article.dir,
-			content: article.content
+			content: removeSiteFurniture(article.content)
 		};
 	} catch (error) {
 		showStatus({ state: "error", title: "Couldn't prepare this page for printing", detail: error.message });
@@ -41,7 +41,16 @@ function cloneWithImages(liveDocument) {
 	const replacements = liveElements.map(toImage);
 	const liveImages = Array.from(liveDocument.images);
 	const doc = liveDocument.cloneNode(true);
-	// cloneNode keeps document order, so elements line up by index.
+	// cloneNode keeps document order, so elements line up by index. Photos are paired first: each code-built
+	// image swapped in below adds an <img>, which would shift every photo after it onto the wrong source.
+	Array.from(doc.images).forEach((image, index) => {
+		const src = bestSource(liveImages[index]);
+		if (src) {
+			image.setAttribute("src", src);
+			image.removeAttribute("srcset");
+			image.removeAttribute("sizes");
+		}
+	});
 	getCodeBuiltImages(doc).forEach((element, index) => {
 		if (replacements[index]) {
 			element.replaceWith(replacements[index]);
@@ -49,17 +58,62 @@ function cloneWithImages(liveDocument) {
 			element.remove();
 		}
 	});
-	Array.from(doc.images).forEach((image, index) => {
-		const liveImage = liveImages[index];
-		// Use the image the browser actually picked from srcset/<picture>, as an absolute URL.
-		if (liveImage && liveImage.currentSrc && !image.src.startsWith("data:")) {
-			image.setAttribute("src", liveImage.currentSrc);
-			image.removeAttribute("srcset");
-			image.removeAttribute("sizes");
-		}
-	});
 	doc.querySelectorAll("screenbreak-status, picture > source").forEach(element => element.remove());
 	return doc;
+}
+
+// The image the browser picked from srcset/<picture>, as an absolute URL. A lazy image below the fold has
+// none yet: take the largest candidate from its srcset, its <picture> sources or a lazy loader's data- attribute.
+const LAZY_ATTRIBUTES = ["data-src", "data-lazy-src", "data-original", "data-srcset", "data-lazy-srcset"];
+
+function bestSource(image) {
+	if (!image) {
+		return null;
+	}
+	if (image.currentSrc && !image.currentSrc.startsWith("data:")) {
+		return image.currentSrc;
+	}
+	const picture = image.closest("picture");
+	const sources = picture ? Array.from(picture.querySelectorAll("source[srcset]")).filter(source => !source.media || matchMedia(source.media).matches) : [];
+	const candidates = [image.getAttribute("srcset"), ...sources.map(source => source.getAttribute("srcset")), ...LAZY_ATTRIBUTES.map(name => image.getAttribute(name))];
+	for (const value of candidates) {
+		const url = largestCandidate(value);
+		if (url) {
+			try {
+				return new URL(url, document.baseURI).href;
+			} catch (error) {
+				// Not a URL: try the next candidate.
+			}
+		}
+	}
+	return null;
+}
+
+function largestCandidate(srcset) {
+	if (!srcset) {
+		return null;
+	}
+	const candidates = srcset.split(/,\s+/).map(entry => {
+		const [url, descriptor = "1x"] = entry.trim().split(/\s+/);
+		return { url, size: parseFloat(descriptor) || 1 };
+	}).filter(candidate => candidate.url && !candidate.url.startsWith("data:"));
+	candidates.sort((a, b) => b.size - a.size);
+	return candidates.length ? candidates[0].url : null;
+}
+
+// Short lines that sit inside article bodies but aren't the article: newsletter and subscribe prompts, "skip past"
+// links, "related" labels, reading times. Same wording as printlab's furniture rules (capture.js JUNK_TEXT).
+const JUNK_TEXT = /^(skip (past|to) |after newsletter promotion|sign up|subscribe|support (independent|our|us)|become a .{0,40}member|you might also like|more about|related( stories| articles| content)?:?$|read more|recommended( stories)?$|sponsored( content)?|advertisement|most (read|popular)|listen to (this|the) article|digital subscribers can listen|share this|follow us|add us on google|mehr zum thema|lesen sie auch|à lire aussi|sur le même sujet|lee también|leia também|leggi anche|\d+ min(ute)? read$|published on)/i;
+
+function removeSiteFurniture(html) {
+	const doc = new DOMParser().parseFromString(html, "text/html");
+	for (const element of doc.body.querySelectorAll("p, div, section, li, span, h2, h3, h4, figure")) {
+		const text = element.isConnected ? element.textContent.replace(/\s+/g, " ").trim() : "";
+		if (text && text.length < 400 && JUNK_TEXT.test(text)) {
+			element.remove();
+		}
+	}
+	return doc.body.innerHTML;
 }
 
 function getCodeBuiltImages(doc) {

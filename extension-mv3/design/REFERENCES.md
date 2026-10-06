@@ -51,6 +51,7 @@ Research 2026-10-06: 3 Refero styles in full plus 7 topic notes in `research/` (
 | Print expired / no article: toolbar hidden, text on the article column, Trirong title, one button and one link | Zara `232f8bd8`, Contra `209d65b9`, Family `2eb69beb` |
 | Settings: one 560 px column, no card, text on one left x and controls on one right x | Rise `23dad935`, Matter `7baf4158` |
 | Settings autosave note under the title; reset as a link with Undo | Whereby `a76499eb`, Missive `06229a09` |
+| Print and save: one switch ("Also save what I print") for every way of printing, not a 4th click action; the background save reports quietly in the print toolbar, left of Print | W&B autosave status `452e5353`, Revolut toggle row `14b7365e`; Yorgos's request 2026-10-06 |
 | Welcome: one scrolling page; pin callout first, detected with `isOnToolbar`; radio cards; keycaps; optional login; what's new for 1.x users | mymind `ab68a80b`, Arcade `c7bc6e09`, Mailchimp `d8930ed2`, Linear `08aba202`, ElevenMusic `22e176ed` |
 
 ## Not built (needs the webapp)

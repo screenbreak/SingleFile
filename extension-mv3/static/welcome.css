@@ -29,6 +29,9 @@ h2 { margin: 0; font: 500 26px/32px var(--serif); }
 .choice input:focus-visible + .choice-body { outline: 2px solid var(--green); outline-offset: 2px; }
 .choice-title { font: 600 15px/22px var(--sans); }
 .choice-text { color: var(--ink-2); }
+.also-save { margin-top: 20px; }
+.also-save .switch { font-size: 15px; font-weight: 600; }
+.also-save .choice-text { display: block; margin: 4px 0 0 40px; }
 .hint { margin-left: 6px; font: 500 12px/16px var(--sans); color: var(--muted); }
 
 .ways { display: grid; grid-template-columns: 1fr 220px; gap: 24px; align-items: start; }

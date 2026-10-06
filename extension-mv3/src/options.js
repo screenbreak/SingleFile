@@ -22,6 +22,7 @@ async function init() {
 
 function fill(settings) {
 	form.elements.defaultAction.value = settings.defaultAction;
+	form.elements.saveWhenPrinting.checked = settings.saveWhenPrinting;
 	form.elements.font.value = settings.print.font;
 	form.elements.size.value = settings.print.size;
 	form.elements.columns.value = String(settings.print.columns);
@@ -51,9 +52,8 @@ addEventListener("focus", renderShortcuts);
 
 // The default action can also be changed from the popup or the button's right-click menu.
 chrome.storage.onChanged.addListener((changes, area) => {
-	if (area == "sync" && changes.defaultAction) {
-		form.elements.defaultAction.value = changes.defaultAction.newValue;
-		document.querySelector("#default-desc").textContent = DEFAULT_DESCRIPTIONS[changes.defaultAction.newValue];
+	if (area == "sync" && (changes.defaultAction || changes.saveWhenPrinting)) {
+		getSettings().then(fill);
 	}
 });
 
@@ -61,6 +61,7 @@ form.addEventListener("change", async event => {
 	const settings = await getSettings();
 	await updateSettings({
 		defaultAction: form.elements.defaultAction.value,
+		saveWhenPrinting: form.elements.saveWhenPrinting.checked,
 		serverUrl: form.elements.serverUrl.checkValidity() ? form.elements.serverUrl.value : settings.serverUrl || DEFAULT_SETTINGS.serverUrl,
 		print: {
 			...settings.print,
@@ -85,7 +86,7 @@ document.querySelector(".shortcuts").addEventListener("click", openShortcutSetti
 // Reset needs no confirmation: it can be undone for a few seconds. Login and shortcuts are left alone.
 document.querySelector(".reset").addEventListener("click", async () => {
 	const previous = await getSettings();
-	await updateSettings({ defaultAction: DEFAULT_SETTINGS.defaultAction, serverUrl: DEFAULT_SETTINGS.serverUrl, print: DEFAULT_SETTINGS.print });
+	await updateSettings({ defaultAction: DEFAULT_SETTINGS.defaultAction, saveWhenPrinting: DEFAULT_SETTINGS.saveWhenPrinting, serverUrl: DEFAULT_SETTINGS.serverUrl, print: DEFAULT_SETTINGS.print });
 	fill(await getSettings());
 	const area = document.querySelector(".reset-area");
 	const resetButton = area.firstElementChild;
