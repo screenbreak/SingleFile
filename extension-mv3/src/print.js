@@ -1,29 +1,52 @@
 // The print page: shows the extracted article with the print layout, lets the user adjust it, and opens
 // the browser's print dialog (which also offers "Save as PDF").
 import { getSettings, updateSettings } from "./settings.js";
+import { renderKeys } from "./shortcuts.js";
 
 const REMOVED_ELEMENTS = "script, style, link, meta, noscript, form, input, button, select, textarea, object, embed, applet, frame, frameset";
 const IMAGE_LOAD_TIMEOUT = 8000;
+const LONG_TITLE = 90;
+const MIN_ARTICLE_TEXT = 140;
+const MEDIA = "img, svg, video, picture, canvas, table, figure";
 
-const form = document.querySelector(".toolbar");
-const articleElement = document.querySelector("article");
-const messageElement = document.querySelector(".message");
+const form = document.querySelector(".options");
+const articleElement = document.querySelector(".article");
+const printButton = document.querySelector(".print-button");
+const printStatus = document.querySelector(".print-status");
 
 init();
 
 async function init() {
 	const id = location.hash.substring(1);
 	const [article, settings] = await Promise.all([chrome.runtime.sendMessage({ method: "screenbreak.getPrintJob", id }), getSettings()]);
+	initCloseTab();
 	if (!article) {
-		showMessage("This print preview has expired. Go back to the article and click Print again.");
+		const { printJobSources = {} } = await chrome.storage.local.get("printJobSources");
+		const source = printJobSources[id];
+		showMessage({
+			title: "This print preview has expired",
+			text: "Screenbreak keeps an article only until Chrome closes. Go back to the article and click Print again.",
+			action: source && { label: "Open the article", url: source.url }
+		});
 		return;
 	}
 	applyOptions(settings.print);
-	initForm(settings.print);
+	initToolbar(settings.print);
 	render(article);
+	// Readability returns its best guess even on pages without an article (a login form, an app shell).
+	const content = articleElement.querySelector(".content");
+	if (content.textContent.trim().length < MIN_ARTICLE_TEXT && !content.querySelector("img")) {
+		showMessage({
+			title: "There's no article to print",
+			text: "Screenbreak couldn't find the text of this page. Go back to the page to print it as it is.",
+			action: { label: "Back to the page", url: article.url }
+		});
+		return;
+	}
+	document.body.classList.remove("is-loading");
+	trackImages();
 	if (settings.print.openPrintDialog) {
-		await waitForImages();
-		window.print();
+		printWhenReady();
 	}
 }
 
@@ -36,18 +59,20 @@ function render(article) {
 	setText(".byline", article.byline && article.byline != article.siteName ? article.byline : "");
 	setText(".date", formatDate(article.publishedTime));
 	setText(".title", article.title);
+	articleElement.querySelector(".title").classList.toggle("long", (article.title || "").length > LONG_TITLE);
 	const content = sanitize(article.content, article.url);
 	removeRepeatedByline(content, article.byline);
-	setText(".excerpt", article.excerpt && !content.textContent.trim().startsWith(article.excerpt.trim().substring(0, 60)) ? article.excerpt : "");
+	setText(".excerpt", showExcerpt(article, content) ? article.excerpt : "");
 	if (article.heroImage && !hasImage(content, article.heroImage)) {
 		const hero = articleElement.querySelector(".hero");
 		hero.querySelector("img").src = article.heroImage;
 		hero.hidden = false;
 	}
 	articleElement.querySelector(".content").replaceChildren(...content.childNodes);
+	markLeadingElements(articleElement.querySelector(".content"));
 	const source = articleElement.querySelector(".source");
 	source.href = article.url;
-	source.textContent = article.url;
+	source.replaceChildren(...breakableURL(article.url));
 	articleElement.hidden = false;
 }
 
@@ -98,12 +123,45 @@ function removeRepeatedByline(content, byline) {
 	if (!byline) {
 		return;
 	}
-	const normalize = text => text.replace(/\s+/g, " ").trim().toLowerCase().replace(/^by\s+/, "");
 	const firstBlocks = Array.from(content.querySelectorAll("p, div, span, address")).slice(0, 5);
 	const bylineElement = firstBlocks.find(element => normalize(element.textContent) == normalize(byline));
 	if (bylineElement) {
 		bylineElement.remove();
 	}
+}
+
+// The standfirst is worth showing only when it adds something: not the byline again, not the first paragraph again.
+function showExcerpt(article, content) {
+	const excerpt = normalize(article.excerpt || "");
+	if (!excerpt || (article.byline && excerpt == normalize(article.byline))) {
+		return false;
+	}
+	return !normalize(content.textContent).startsWith(excerpt.substring(0, 60));
+}
+
+function normalize(text) {
+	return text.replace(/\s+/g, " ").trim().toLowerCase().replace(/^by\s+/, "");
+}
+
+// Wrappers at the top of the content often bring their own top margins, which push the first column
+// of a two-column print below the second. The chain of first elements starts flush instead.
+function markLeadingElements(content) {
+	let element = content.firstElementChild;
+	while (element) {
+		const isEmpty = !element.textContent.trim() && !element.matches(MEDIA) && !element.querySelector(MEDIA);
+		const next = isEmpty ? element.nextElementSibling : element.firstElementChild;
+		if (isEmpty) {
+			element.remove();
+		} else {
+			element.classList.add("sb-lead");
+		}
+		element = next;
+	}
+}
+
+// Long links break after "/", "?", "&" and "=", not in the middle of a word.
+function breakableURL(url) {
+	return url.split(/(?<=[/?&=])/).flatMap((part, index) => index ? [document.createElement("wbr"), document.createTextNode(part)] : [document.createTextNode(part)]);
 }
 
 function hasImage(content, url) {
@@ -119,7 +177,9 @@ function imageName(url) {
 	}
 }
 
-function initForm(options) {
+// Toolbar
+
+async function initToolbar(options) {
 	form.elements.font.value = options.font;
 	form.elements.size.value = options.size;
 	form.elements.columns.value = String(options.columns);
@@ -134,13 +194,24 @@ function initForm(options) {
 			images: form.elements.images.checked
 		};
 		applyOptions(print);
+		trackImages();
 		// Remember the choice for next time.
 		updateSettings({ print });
 	});
-	form.querySelector(".print-button").addEventListener("click", async () => {
-		// A font picked a moment ago may still be loading; printing now would leave its text blank.
-		await document.fonts.ready;
-		window.print();
+	printButton.addEventListener("click", printWhenReady);
+	// Cmd/Ctrl+P takes the same path as the button, so fonts and images are ready first.
+	addEventListener("keydown", event => {
+		if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() == "p") {
+			event.preventDefault();
+			printWhenReady();
+		}
+	});
+	const isMac = navigator.platform.startsWith("Mac");
+	document.querySelector(".print-keys").append(renderKeys(isMac ? ["⌘", "P"] : ["Ctrl", "P"]));
+	const toggle = document.querySelector(".options-toggle");
+	toggle.addEventListener("click", () => {
+		const open = form.classList.toggle("open");
+		toggle.setAttribute("aria-expanded", String(open));
 	});
 }
 
@@ -153,13 +224,70 @@ function applyOptions(options) {
 	}
 }
 
+function visibleImages() {
+	return document.body.classList.contains("no-images") ? [] : Array.from(articleElement.querySelectorAll("img"));
+}
+
+// "Loading images · 3 of 7" beside Print until every image has arrived.
+function trackImages() {
+	const update = () => {
+		const images = visibleImages();
+		const loaded = images.filter(image => image.complete).length;
+		printStatus.textContent = loaded < images.length ? `Loading images · ${loaded} of ${images.length}` : "";
+	};
+	visibleImages().forEach(image => {
+		image.addEventListener("load", update, { once: true });
+		image.addEventListener("error", update, { once: true });
+	});
+	update();
+}
+
+async function printWhenReady() {
+	if (printButton.getAttribute("aria-busy") == "true") {
+		return;
+	}
+	printButton.setAttribute("aria-busy", "true");
+	document.querySelector(".print-label").textContent = "Preparing…";
+	await waitForImages();
+	printButton.removeAttribute("aria-busy");
+	document.querySelector(".print-label").textContent = "Print";
+	window.print();
+}
+
 async function waitForImages() {
-	const pending = Array.from(document.images).filter(image => !image.complete);
+	// A font picked a moment ago may still be loading; printing now would leave its text blank.
+	const pending = visibleImages().filter(image => !image.complete);
 	const loaded = Promise.all(pending.map(image => new Promise(resolve => {
 		image.addEventListener("load", resolve, { once: true });
 		image.addEventListener("error", resolve, { once: true });
 	})));
 	await Promise.race([Promise.all([loaded, document.fonts.ready]), new Promise(resolve => setTimeout(resolve, IMAGE_LOAD_TIMEOUT))]);
+}
+
+// Messages (expired, nothing to print)
+
+function showMessage({ title, text, action }) {
+	document.title = title + " · Screenbreak";
+	document.body.classList.remove("is-loading");
+	document.body.classList.add("is-message");
+	articleElement.hidden = true;
+	const message = document.querySelector(".message");
+	message.querySelector(".message-title").textContent = title;
+	message.querySelector(".message-text").textContent = text;
+	const primary = message.querySelector(".message-primary");
+	if (action && action.url) {
+		primary.textContent = action.label;
+		primary.href = action.url;
+		primary.hidden = false;
+	}
+	message.hidden = false;
+}
+
+function initCloseTab() {
+	document.querySelector(".close-tab").addEventListener("click", async () => {
+		const tab = await chrome.tabs.getCurrent();
+		chrome.tabs.remove(tab.id);
+	});
 }
 
 function formatDate(value) {
@@ -169,10 +297,4 @@ function formatDate(value) {
 
 function setText(selector, text) {
 	articleElement.querySelector(selector).textContent = text || "";
-}
-
-function showMessage(text) {
-	messageElement.textContent = text;
-	messageElement.hidden = false;
-	form.hidden = true;
 }

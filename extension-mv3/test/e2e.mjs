@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { start, log, uploads } from "./server.mjs";
+import { start, log, uploads, removed } from "./server.mjs";
 
 const EXTENSION_PATH = new URL("../dist", import.meta.url).pathname;
 const PORT = 8765;
@@ -14,7 +14,8 @@ const ARTICLE_URL = BASE + "/article.html";
 
 const server = await start(PORT);
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), "sb-e2e-")), {
-	executablePath: process.env.CHROMIUM_PATH || undefined,
+	// The default headless shell can't load extensions; the "chromium" channel is full Chromium in headless mode.
+	...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : { channel: "chromium" }),
 	headless: true,
 	args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`]
 });
@@ -41,10 +42,10 @@ try {
 	const printPagePromise = context.waitForEvent("page", page => page.url().includes("print.html"));
 	await run("print");
 	const printPage = await printPagePromise;
-	await printPage.waitForSelector("article:not([hidden])");
+	await printPage.waitForSelector(".article:not([hidden])");
 	const printed = await printPage.evaluate(() => ({
 		title: document.querySelector("h1.title").textContent,
-		meta: document.querySelector(".meta").textContent,
+		meta: document.querySelector(".article .meta").textContent,
 		images: Array.from(document.querySelectorAll(".content img")).map(image => image.getAttribute("src").split(/[,;]/)[0]),
 		tables: document.querySelectorAll(".content table").length,
 		embeds: document.querySelectorAll(".embed-link").length,
@@ -57,9 +58,21 @@ try {
 	assert.equal(printed.embeds, 1);
 	assert.doesNotMatch(printed.text, /Most popular|Advertisement|Privacy|By Maria/);
 
-	// Save: not logged in, so the login page opens; once logged in the upload goes through.
-	const loginPagePromise = context.waitForEvent("page", page => page.url().includes("/login/"));
+	// Save: not logged in, so the status card asks first; "Log in" opens the login page, and once logged in the
+	// upload goes through. The card's shadow root is closed, so it is opened up here to click the button.
+	await extensionPage.evaluate(async url => {
+		const [tab] = await chrome.tabs.query({ url });
+		await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => {
+			const attach = Element.prototype.attachShadow;
+			Element.prototype.attachShadow = function (init) { return attach.call(this, { ...init, mode: "open" }); };
+		} });
+	}, ARTICLE_URL);
 	await run("save");
+	const loginButton = article.locator("screenbreak-status").locator(".primary");
+	await loginButton.waitFor({ timeout: 30000 });
+	assert.equal(await loginButton.textContent(), "Log in");
+	const loginPagePromise = context.waitForEvent("page", page => page.url().includes("/login/"));
+	await loginButton.click();
 	await loginPagePromise;
 	for (let attempt = 0; attempt < 60 && !uploads.length; attempt++) {
 		await new Promise(resolve => setTimeout(resolve, 500));
@@ -68,6 +81,12 @@ try {
 	assert.match(uploads[0], /Page saved with SingleFile/);
 	assert.match(uploads[0], /data:image\/png;base64/);
 	assert.doesNotMatch(uploads[0], /<script|screenbreak-status/);
+	await article.locator("screenbreak-status").locator("text=Saved to Screenbreak").waitFor();
+
+	// Undo removes the article again.
+	await article.locator("screenbreak-status").locator("button:text('Undo')").click();
+	await article.locator("screenbreak-status").locator("text=Removed from Screenbreak").waitFor();
+	assert.deepEqual(removed, ["abc123"]);
 
 	// Changing the default action changes what the button does.
 	await extensionPage.evaluate(() => chrome.storage.sync.set({ defaultAction: "print" }));

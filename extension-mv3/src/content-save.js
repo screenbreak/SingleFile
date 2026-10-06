@@ -32,9 +32,9 @@ const CAPTURE_OPTIONS = {
 };
 
 globalThis.__screenbreakCapture = async function capture() {
-	showStatus({ state: "working", title: "Saving to Screenbreak", detail: "Capturing the page…" });
+	showStatus({ state: "working", title: "Saving to Screenbreak", detail: "Capturing the page…", step: 1 });
 	const pageData = await singlefile.getPageData(CAPTURE_OPTIONS, { fetch: backgroundFetch, frameFetch: backgroundFetch });
-	showStatus({ state: "working", title: "Saving to Screenbreak", detail: "Compressing…" });
+	showStatus({ state: "working", title: "Saving to Screenbreak", detail: "Compressing…", step: 2 });
 	const gzipped = await new Response(new Blob([pageData.content]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
 	return { url: location.href, title: pageData.title || document.title, gzippedBase64: bytesToBase64(new Uint8Array(gzipped)) };
 };

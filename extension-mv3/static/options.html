@@ -2,40 +2,100 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Screenbreak settings</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Settings · Screenbreak</title>
+	<link rel="stylesheet" href="ui.css">
 	<link rel="stylesheet" href="options.css">
 </head>
 <body>
-	<main>
-		<img src="icons/logo.png" alt="Screenbreak" width="141" height="20">
+	<main class="page">
+		<img src="icons/logo.png" alt="Screenbreak" class="wordmark" width="141" height="20">
 		<h1>Settings</h1>
+		<p class="lede">Changes save automatically.</p>
 		<form>
-			<section>
-				<h2>When I click the Screenbreak button</h2>
-				<label><input type="radio" name="defaultAction" value="ask"> Ask me: show Save and Print</label>
-				<label><input type="radio" name="defaultAction" value="save"> Save the article to my Screenbreak account</label>
-				<label><input type="radio" name="defaultAction" value="print"> Print the article</label>
-				<p class="hint">Whatever you pick, both actions stay one right-click away on the button and on the page.
-					Keyboard shortcuts: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Y</kbd> saves, <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> prints
-					(<a href="#" class="shortcuts">change</a>).</p>
+			<section aria-labelledby="button-heading">
+				<h2 id="button-heading">The Screenbreak button</h2>
+				<div class="row stack-narrow">
+					<div class="row-text"><p class="row-label" id="default-label">When I click it</p><p class="row-desc" id="default-desc"></p></div>
+					<span class="saved" aria-live="polite"></span>
+					<div class="segmented" role="radiogroup" aria-labelledby="default-label" aria-describedby="default-desc">
+						<label><input type="radio" name="defaultAction" value="ask"><span>Ask me</span></label>
+						<label><input type="radio" name="defaultAction" value="save"><span>Save</span></label>
+						<label><input type="radio" name="defaultAction" value="print"><span>Print</span></label>
+					</div>
+				</div>
+				<div class="row">
+					<div class="row-text"><p class="row-label">Save shortcut</p><p class="row-desc">Saves the page to your Screenbreak account.</p></div>
+					<span></span>
+					<span class="keycaps" data-shortcut="save"></span>
+				</div>
+				<div class="row">
+					<div class="row-text"><p class="row-label">Print shortcut</p><p class="row-desc">Opens the clean print version.</p></div>
+					<span></span>
+					<span class="keycaps" data-shortcut="print"></span>
+				</div>
+				<p class="note">Save and Print are also in the right-click menu, on the button and on any page. <button type="button" class="link-button shortcuts">Change shortcuts</button></p>
 			</section>
-			<section>
-				<h2>Print</h2>
-				<label>Font
-					<select name="font"><option value="sans">Sans serif</option><option value="serif">Serif</option></select></label>
-				<label>Text size
-					<select name="size"><option value="small">Small</option><option value="normal">Normal</option><option value="large">Large</option></select></label>
-				<label>Columns
-					<select name="columns"><option value="1">One</option><option value="2">Two</option></select></label>
-				<label><input type="checkbox" name="images"> Include images</label>
-				<label><input type="checkbox" name="openPrintDialog"> Open the print dialog straight away</label>
+			<section aria-labelledby="print-heading">
+				<h2 id="print-heading">Print</h2>
+				<p class="section-desc">Defaults for the print version. You can still change them before you print.</p>
+				<div class="row">
+					<div class="row-text"><p class="row-label" id="font-label">Font</p></div>
+					<span class="saved" aria-live="polite"></span>
+					<div class="segmented" role="radiogroup" aria-labelledby="font-label">
+						<label><input type="radio" name="font" value="sans"><span class="sample-sans">Sans</span></label>
+						<label><input type="radio" name="font" value="serif"><span class="sample-serif">Serif</span></label>
+					</div>
+				</div>
+				<div class="row">
+					<div class="row-text"><p class="row-label" id="size-label">Text size</p></div>
+					<span class="saved" aria-live="polite"></span>
+					<div class="segmented" role="radiogroup" aria-labelledby="size-label">
+						<label title="Small text"><input type="radio" name="size" value="small" aria-label="Small"><span class="size-a" style="font-size:12px">A</span></label>
+						<label title="Medium text"><input type="radio" name="size" value="normal" aria-label="Medium"><span class="size-a" style="font-size:15px">A</span></label>
+						<label title="Large text"><input type="radio" name="size" value="large" aria-label="Large"><span class="size-a" style="font-size:18px">A</span></label>
+					</div>
+				</div>
+				<div class="row">
+					<div class="row-text"><p class="row-label" id="columns-label">Columns</p></div>
+					<span class="saved" aria-live="polite"></span>
+					<div class="segmented icons" role="radiogroup" aria-labelledby="columns-label">
+						<label title="One column"><input type="radio" name="columns" value="1" aria-label="One column"><span><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5h5M5.5 7.5h5M5.5 10h5"/></svg></span></label>
+						<label title="Two columns"><input type="radio" name="columns" value="2" aria-label="Two columns"><span><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M4.5 5h2.5M4.5 7.5h2.5M4.5 10h2.5M9 5h2.5M9 7.5h2.5M9 10h2.5"/></svg></span></label>
+					</div>
+				</div>
+				<div class="row">
+					<div class="row-text"><p class="row-label" id="images-label">Include images</p><p class="row-desc">Photos, charts and diagrams from the article.</p></div>
+					<span class="saved" aria-live="polite"></span>
+					<label class="switch"><input type="checkbox" name="images" role="switch" aria-labelledby="images-label"><span class="track"></span></label>
+				</div>
+				<div class="row">
+					<div class="row-text"><p class="row-label" id="dialog-label">Open the print dialog straight away</p><p class="row-desc">Skip the preview and go straight to printing.</p></div>
+					<span class="saved" aria-live="polite"></span>
+					<label class="switch"><input type="checkbox" name="openPrintDialog" role="switch" aria-labelledby="dialog-label"><span class="track"></span></label>
+				</div>
+			</section>
+			<section aria-labelledby="account-heading">
+				<h2 id="account-heading">Account</h2>
+				<div class="row stack-narrow">
+					<div class="row-text"><p class="row-label">Screenbreak account</p><p class="row-desc">Save uses the account you're logged in to on Screenbreak. Print works without one.</p></div>
+					<span></span>
+					<a class="button button-outline button-small library" target="_blank">Open Screenbreak</a>
+				</div>
 			</section>
 			<details>
-				<summary>Advanced</summary>
-				<label>Screenbreak server <input type="url" name="serverUrl" size="40" required></label>
+				<summary><span>Advanced</span><svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 6.5l3 3 3-3"/></svg></summary>
+				<div class="field">
+					<label class="row-label" for="server-url">Server address</label>
+					<p class="row-desc">Only change this if Screenbreak support asks you to.</p>
+					<input type="url" id="server-url" name="serverUrl" required spellcheck="false">
+				</div>
 			</details>
-			<p class="saved" aria-live="polite"></p>
 		</form>
+		<footer class="foot">
+			<p><span class="version"></span> · <a href="welcome.html">Welcome page</a></p>
+			<p class="reset-area"><button type="button" class="link-button reset">Reset to defaults</button></p>
+		</footer>
 	</main>
 	<script src="options.js"></script>
 </body>

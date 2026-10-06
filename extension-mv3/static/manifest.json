@@ -35,6 +35,11 @@
 			"description": "Print this article"
 		}
 	},
+	"web_accessible_resources": [{
+		"resources": ["fonts/WorkSans-latin.woff2", "fonts/Trirong-Medium.ttf"],
+		"matches": ["<all_urls>"],
+		"use_dynamic_url": true
+	}],
 	"permissions": ["activeTab", "scripting", "storage", "contextMenus"],
 	"host_permissions": ["<all_urls>"]
 }

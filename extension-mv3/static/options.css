@@ -1,13 +1,32 @@
-body { margin: 0; background: #f4f6f5; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d1d1b; }
-main { max-width: 620px; margin: 40px auto; padding: 28px 32px; background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0, 0, 0, .08); }
-h1 { margin: 16px 0 8px; font-size: 24px; }
-h2 { margin: 0 0 8px; font-size: 16px; }
-section { padding: 16px 0; border-bottom: 1px solid #e6e6e6; }
-label { display: block; margin: 6px 0; }
-select, input[type=url] { font: inherit; margin-left: 6px; }
-.hint { color: #666; font-size: 13px; }
-a { color: #005D4C; }
-kbd { font: 12px ui-monospace, monospace; padding: 1px 4px; border: 1px solid #ccc; border-radius: 3px; background: #fafafa; }
-details { padding: 16px 0; }
-summary { cursor: pointer; font-weight: 600; }
-.saved { min-height: 1.5em; color: #005D4C; font-size: 13px; }
+/* Settings: one 560 px column, no card. All text on one left x, all controls on one right x (research/06-settings.md). */
+.page { max-width: 560px; margin: 0 auto; padding: 64px 0 48px; }
+@media (max-width: 600px) {
+	.page { padding: 40px 16px; }
+	/* Wide controls go under their text, which then keeps the full width. Everything still starts on the left x. */
+	.row.stack-narrow { grid-template-columns: 1fr; row-gap: 10px; }
+	.row.stack-narrow > .saved, .row.stack-narrow > span:empty { display: none; }
+	.row.stack-narrow > :last-child { justify-self: start; }
+}
+h1 { margin: 32px 0 4px; font: 500 32px/40px var(--serif); }
+.lede { margin: 0; color: rgba(29, 29, 27, .6); }
+section { margin-top: 40px; }
+h2 { margin: 0; padding-bottom: 8px; font: 500 20px/28px var(--serif); border-bottom: 1px solid var(--line); }
+.section-desc { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+.row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 12px; min-height: 56px; padding: 8px 0; }
+.row-text { min-width: 0; padding-right: 12px; }
+.row-label { margin: 0; font: 500 15px/22px var(--sans); }
+.row-desc { margin: 0; font-size: 13px; line-height: 20px; color: rgba(29, 29, 27, .62); }
+.saved { min-width: 40px; text-align: right; font-size: 13px; color: var(--green); }
+.note { margin: 4px 0 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+.note .link-button { font-size: 13px; }
+details { margin-top: 40px; }
+summary { display: flex; align-items: center; gap: 4px; padding-bottom: 8px; font: 500 20px/28px var(--serif); border-bottom: 1px solid var(--line); list-style: none; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+.chevron { width: 16px; height: 16px; color: var(--muted); transition: transform .15s; }
+details[open] .chevron { transform: rotate(180deg); }
+.field { padding: 16px 0 8px; }
+.field input { width: 100%; height: 36px; margin-top: 8px; padding: 0 10px; font: 400 14px var(--sans); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; }
+.field input:focus { outline: 2px solid var(--green); outline-offset: 0; border-color: transparent; }
+.foot { display: flex; justify-content: space-between; align-items: center; margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.foot p { margin: 0; }
+.foot .link-button, .foot a { font-size: 13px; }

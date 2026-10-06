@@ -1,0 +1,86 @@
+/* Welcome: one scrolling page, one 640 px column, one left edge (research/03-onboarding.md). */
+.page { max-width: 640px; margin: 0 auto; padding: 64px 24px 96px; }
+.intro { margin-top: 40px; }
+.intro-title { margin: 0; font: 500 40px/48px var(--serif); text-wrap: balance; }
+.intro-text { margin: 12px 0 0; font-size: 18px; line-height: 27px; color: var(--ink-2); }
+section { margin-top: 72px; }
+h2 { margin: 0; font: 500 26px/32px var(--serif); }
+.section-text { margin: 8px 0 20px; font-size: 16px; line-height: 24px; color: var(--ink-2); }
+.muted { margin: 12px 0 0; color: var(--muted); }
+.saved { color: var(--green); font-size: 14px; }
+
+.whats-new { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); }
+.list { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.list li { display: flex; gap: 12px; align-items: baseline; font-size: 16px; line-height: 24px; }
+.list strong { font-weight: 600; }
+.tag { flex: none; width: 44px; font: 600 11px/16px var(--sans); color: var(--green); }
+
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 20px; }
+.cell .icon { color: var(--green); }
+.cell-title { margin: 12px 0 4px; font: 600 16px/24px var(--sans); }
+.cell-text { margin: 0; color: var(--ink-2); }
+
+.choices { display: grid; gap: 12px; }
+.choice { position: relative; display: block; cursor: pointer; }
+.choice input { position: absolute; opacity: 0; }
+.choice-body { display: grid; gap: 2px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 8px; transition: border-color .12s, background-color .12s; }
+.choice:hover .choice-body { background: rgba(29, 29, 27, .03); }
+.choice input:checked + .choice-body { border-color: var(--green); box-shadow: inset 0 0 0 1px var(--green); background: rgba(0, 93, 76, .04); }
+.choice input:focus-visible + .choice-body { outline: 2px solid var(--green); outline-offset: 2px; }
+.choice-title { font: 600 15px/22px var(--sans); }
+.choice-text { color: var(--ink-2); }
+.hint { margin-left: 6px; font: 500 12px/16px var(--sans); color: var(--muted); }
+
+.ways { display: grid; grid-template-columns: 1fr 220px; gap: 24px; align-items: start; }
+.shortcut-box { display: grid; gap: 16px; justify-items: start; }
+.shortcut { display: flex; align-items: center; gap: 16px; }
+.shortcut-name { width: 48px; font: 600 15px/22px var(--sans); }
+.context-drawing { display: grid; padding: 6px 0; background: #fff; border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); font-size: 13px; }
+.ctx-item { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px; }
+.ctx-item img { flex: none; }
+.muted-item { color: var(--muted); padding-left: 36px; }
+.ctx-sep { height: 1px; margin: 4px 0; background: var(--line); }
+
+.status-list { margin: 16px 0 24px; padding: 0; list-style: none; display: grid; gap: 10px; }
+.status-list li { display: flex; align-items: center; gap: 12px; font-size: 16px; line-height: 24px; color: var(--ink-2); }
+.check { width: 20px; height: 20px; flex: none; border: 1.5px solid #c8d0cc; border-radius: 50%; }
+.status-list li.is-done { color: var(--ink); }
+.status-list li.is-done .check { background: var(--green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 10.3l2.6 2.6L14 7.4' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 20px no-repeat; border-color: var(--green); }
+
+/* Pin callout: fixed under Chrome's toolbar, caret pointing up at the extensions menu. */
+.pin-callout {
+	position: fixed; top: 12px; right: 16px; z-index: 2; width: 300px; padding: 24px; background: #fff;
+	border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow);
+}
+.pin-callout::before {
+	content: ""; position: absolute; top: -7px; right: 56px; width: 12px; height: 12px; background: #fff;
+	border-left: 1px solid var(--line); border-top: 1px solid var(--line); transform: rotate(45deg);
+}
+.eyebrow { margin: 0 0 4px; font: 600 12px/16px var(--sans); color: var(--muted); }
+.pin-callout h2 { font: 500 20px/26px var(--serif); }
+.pin-steps { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.pin-steps li { display: flex; gap: 10px; align-items: baseline; }
+.badge { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; font: 600 11px/1 var(--sans); color: #fff; background: var(--green); border-radius: 50%; }
+.pin-steps .badge { position: relative; top: -1px; }
+.glyph { width: 14px; height: 14px; vertical-align: -2px; fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+.toolbar-drawing { position: relative; display: grid; grid-template-columns: 1fr 32px; gap: 8px; align-items: center; margin-top: 20px; padding: 10px; background: #f1f3f2; border-radius: 8px; }
+.omnibox { height: 24px; background: #fff; border-radius: 12px; }
+.tool { position: relative; display: grid; place-items: center; width: 28px; height: 28px; background: #fff; border-radius: 50%; }
+.tool svg, .menu .pin { width: 16px; height: 16px; fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; }
+.toolbar-drawing .badge { width: 16px; height: 16px; font-size: 10px; }
+.b1, .b3 { position: absolute; top: -6px; right: -6px; }
+.b2 { margin-left: 6px; vertical-align: 1px; }
+.tool-pin { position: relative; display: grid; place-items: center; width: 24px; height: 24px; }
+.menu { position: relative; grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; background: #fff; border-radius: 6px; font-size: 13px; }
+.menu-name { flex: 1; }
+.pin-fallback { margin: 12px 0 0; font-size: 12px; line-height: 16px; color: var(--muted); }
+
+/* The callout needs the margin beside the 640 px column; on narrower windows it sits above the page. */
+@media (max-width: 1319px) {
+	.pin-callout { position: static; width: auto; max-width: 592px; margin: 24px max(24px, calc((100% - 592px) / 2)) 0; }
+	.pin-callout .toolbar-drawing { max-width: 360px; }
+	.pin-callout::before { display: none; }
+}
+@media (max-width: 640px) {
+	.pair, .ways { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,101 @@
+/* Shared tokens and controls for the extension's own pages (popup, settings, welcome, print toolbar).
+   Reference lock and roles: design/REFERENCES.md. */
+
+@font-face {
+	font-family: "Work Sans"; font-style: normal; font-weight: 100 900; font-display: swap;
+	src: url("fonts/WorkSans-latin.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Work Sans"; font-style: normal; font-weight: 100 900; font-display: swap;
+	src: url("fonts/WorkSans-latin-ext.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face { font-family: "Trirong"; font-weight: 500; font-display: swap; src: url("fonts/Trirong-Medium.ttf"); }
+
+:root {
+	--ink: #1d1d1b;
+	--ink-2: #4a5250;
+	--muted: #6b7370;
+	--green: #005d4c;
+	--green-hover: #00483b;
+	--progress: #4c9b6e;
+	--tint: #edf2ee;
+	--tint-strong: #e1e9e4;
+	--line: rgba(29, 29, 27, .12);
+	--canvas: #ffffff;
+	--desk: #e8e9e5;
+	--danger: #b3261e;
+	--shadow: 0 1px 2px rgba(29, 29, 27, .06), 0 8px 24px rgba(29, 29, 27, .12);
+	--sans: "Work Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+	--serif: "Trirong", Georgia, serif;
+	color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font: 400 14px/20px var(--sans); color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased; }
+a { color: var(--green); text-decoration: none; font-weight: 500; }
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Icons: 20 px line icons in the text colour. */
+.icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Buttons */
+.button {
+	display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px;
+	font: 600 14px/1 var(--sans); color: #fff; background: var(--green); border: 1px solid var(--green); border-radius: 8px;
+	cursor: pointer; white-space: nowrap; text-decoration: none;
+}
+.button:hover { background: var(--green-hover); border-color: var(--green-hover); text-decoration: none; }
+.button .icon { width: 18px; height: 18px; }
+.button-outline { color: var(--ink); background: var(--canvas); border-color: var(--line); }
+.button-outline:hover { background: var(--tint); border-color: var(--line); }
+.button-small { height: 32px; padding: 0 12px; font-size: 13px; }
+.link-button { padding: 0; font: 500 14px/20px var(--sans); color: var(--green); background: none; border: 0; cursor: pointer; }
+.link-button:hover { text-decoration: underline; text-underline-offset: 2px; }
+button:disabled, .button[aria-disabled=true] { opacity: .45; cursor: default; pointer-events: none; }
+
+/* Segmented control: radio inputs inside labels. White thumb on a tint track; no green (05-print-toolbar). */
+.segmented { display: inline-flex; padding: 2px; gap: 2px; background: var(--tint); border-radius: 8px; }
+.segmented label { position: relative; display: block; cursor: pointer; }
+.segmented input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.segmented span {
+	display: flex; align-items: center; justify-content: center; gap: 6px; height: 28px; min-width: 32px; padding: 0 12px;
+	font: 500 13px/1 var(--sans); color: var(--ink-2); border-radius: 6px; transition: background-color .12s, color .12s;
+}
+.segmented label:hover span { color: var(--ink); }
+.segmented input:checked + span { color: var(--ink); background: #fff; box-shadow: 0 1px 2px rgba(29, 29, 27, .12), 0 0 0 .5px rgba(29, 29, 27, .06); }
+.segmented input:focus-visible + span { outline: 2px solid var(--green); outline-offset: 1px; }
+.segmented .icon { width: 16px; height: 16px; }
+.segmented.icons span { padding: 0 8px; }
+.segmented .sample-serif { font-family: var(--serif); font-size: 14px; font-weight: 500; }
+.segmented .sample-sans { font-family: var(--sans); font-size: 13px; }
+.segmented .size-a { font-family: var(--serif); font-weight: 500; line-height: 1; }
+
+/* Switch: a checkbox with role=switch. Green only when on. */
+.switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font: 500 13px/20px var(--sans); color: var(--ink); }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.switch .track { position: relative; width: 32px; height: 18px; flex: none; background: #c8d0cc; border-radius: 9px; transition: background-color .15s; }
+.switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0, 0, 0, .2); transition: transform .15s; }
+.switch input:checked + .track { background: var(--green); }
+.switch input:checked + .track::after { transform: translateX(14px); }
+.switch input:focus-visible + .track { outline: 2px solid var(--green); outline-offset: 2px; }
+
+/* Keys: flat chips in lists (popup), keycaps on full pages (settings, welcome). One element per key, no "+". */
+.keys { display: inline-flex; gap: 3px; }
+.keys kbd {
+	display: inline-flex; align-items: center; justify-content: center; height: 20px; min-width: 20px; padding: 0 5px;
+	font: 500 11px/1 var(--sans); color: var(--muted); background: var(--tint); border-radius: 4px;
+}
+.keycaps { display: inline-flex; gap: 4px; }
+.keycaps kbd {
+	display: inline-flex; align-items: center; justify-content: center; height: 26px; min-width: 26px; padding: 0 7px;
+	font: 500 12px/1 var(--sans); color: var(--ink); background: #fff; border: 1px solid rgba(29, 29, 27, .16); border-bottom-width: 2px; border-radius: 5px;
+}
+.keycaps-large kbd { height: 40px; min-width: 40px; padding: 0 12px; font-size: 16px; border-radius: 6px; }
+.not-set { font: 400 13px/20px var(--sans); color: var(--muted); }
+
+.wordmark { display: block; width: 141px; height: 20px; }
