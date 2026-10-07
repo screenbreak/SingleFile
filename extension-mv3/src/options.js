@@ -4,7 +4,7 @@ import { getSettings, updateSettings, DEFAULT_SETTINGS } from "./settings.js";
 import { getShortcuts, renderKeys, openShortcutSettings } from "./shortcuts.js";
 import { prepare, compose } from "./engine/layout.js";
 import { sanitize } from "./engine/sanitize.js";
-import { DESIGNS, PICTURES, REFERENCES, sentence, topPicks } from "./designs.js";
+import { DESIGNS, PICTURES, REFERENCES, PAPER, sentence, topPicks } from "./designs.js";
 import { getAccount, getQuota, resetQuota } from "./plans.js";
 import { Desk } from "./desk.js";
 import { fillSegmented, designTile, renderQuota, renderAccount, renderWho } from "./panel.js";
@@ -53,6 +53,7 @@ function fill(settings) {
 		: "You can switch to printing straight away from the print page too.";
 	fillSegmented(form.querySelector("[data-name=pictures]"), PICTURES, print.pictures);
 	fillSegmented(form.querySelector("[data-name=references]"), REFERENCES, print.references);
+	fillSegmented(form.querySelector("[data-name=paper]"), PAPER, print.paper);
 	form.querySelector(".pictures-help").textContent = PICTURES[print.pictures].help;
 	const grid = form.querySelector(".design-grid");
 	grid.replaceChildren(...Object.keys(DESIGNS).map(style => designTile({ style, checked: print.design == style, isDefault: false })));
@@ -63,8 +64,8 @@ async function showSample(settings) {
 	const prepared = await sample;
 	const best = topPicks(prepared)[0];
 	const style = settings.print.design != "best" && DESIGNS[settings.print.design] ? settings.print.design : best.style;
-	const choice = { style, pictures: settings.print.pictures, references: settings.print.references };
-	const entry = await desk.show([style, choice.pictures, choice.references].join("|"), compose(prepared, choice));
+	const choice = { style, pictures: settings.print.pictures, references: settings.print.references, paper: settings.print.paper };
+	const entry = await desk.show([style, choice.pictures, choice.references, choice.paper].join("|"), compose(prepared, choice));
 	form.querySelector(".design-help").textContent = settings.print.design == "best"
 		? `Best match for this sample: ${DESIGNS[style].name}. ${sentence(best.why)}`
 		: `${DESIGNS[style].name}: ${DESIGNS[style].line} The sample prints on ${entry.pages} page${entry.pages > 1 ? "s" : ""}.`;
@@ -127,6 +128,7 @@ form.addEventListener("change", async event => {
 			design,
 			pictures: form.querySelector("input[name=pictures]:checked")?.value || settings.print.pictures,
 			references: form.querySelector("input[name=references]:checked")?.value || settings.print.references,
+			paper: form.querySelector("input[name=paper]:checked")?.value || settings.print.paper,
 			duplex: form.elements.duplex.checked,
 			straightAway: form.querySelector("input[name=straightAway]:checked")?.value == "straight"
 		}

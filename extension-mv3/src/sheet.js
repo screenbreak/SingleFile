@@ -1,9 +1,15 @@
 // The document the print page previews and prints: one per design. The print page hands it the article as
 // printlab composes it (engine/layout.js); printlab's paginate.js then builds the A4 pages, unchanged.
-window.renderSheet = async function ({ css, bodyClass, bodyHTML, lang, title, greys }) {
+window.renderSheet = async function ({ css, bodyClass, bodyHTML, lang, title, greys, paper }) {
 	document.documentElement.lang = lang || "";
 	document.documentElement.classList.toggle("sb-greys", !!greys);
 	document.title = title || "Print";
+	// The paper the pages are built for: the paginator's page height, and the sheet drawn around each page.
+	window.__sbContentHeight = paper.contentHeight;
+	const root = document.documentElement.style;
+	root.setProperty("--paper-w", paper.width + "mm");
+	root.setProperty("--paper-h", paper.height + "mm");
+	root.setProperty("--paper-side", paper.side + "mm");
 	const style = document.createElement("style");
 	style.textContent = css;
 	document.head.append(style);
@@ -29,7 +35,7 @@ window.renderSheet = async function ({ css, bodyClass, bodyHTML, lang, title, gr
 		page.before(paper);
 		paper.append(page);
 	});
-	return { pages: window.__paged.pages };
+	return { pages: window.__paged.pages, paperWidth: paper.width };
 };
 
 window.setSpread = function (spread) {

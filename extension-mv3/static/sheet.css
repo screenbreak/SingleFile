@@ -4,8 +4,8 @@
 	html { background: transparent; }
 	body { margin: 0; }
 	#book { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; }
-	html.spread #book { display: grid; grid-template-columns: repeat(2, 210mm); justify-content: center; gap: 28px 18px; }
-	.paper { position: relative; box-sizing: border-box; width: 210mm; height: 297mm; padding: 16mm 15mm 0; background: #fff;
+	html.spread #book { display: grid; grid-template-columns: repeat(2, var(--paper-w, 210mm)); justify-content: center; gap: 28px 18px; }
+	.paper { position: relative; box-sizing: border-box; width: var(--paper-w, 210mm); height: var(--paper-h, 297mm); padding: 16mm var(--paper-side, 15mm) 0; background: #fff;
 		box-shadow: 0 1px 1px rgba(29, 30, 27, .06), 0 10px 30px rgba(29, 40, 33, .16); }
 	.paper > .page { position: relative; }
 }

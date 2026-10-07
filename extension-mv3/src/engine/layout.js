@@ -35,6 +35,11 @@ export const STYLES = {
 	dossier:    { cols: 1, width: 140 }
 };
 const colWidth = s => s.cols === 1 ? s.width : (MEASURE - s.gap * (s.cols - 1)) / s.cols;
+// Paper sizes. The text measure stays 180mm; Letter is shorter and a little wider, so its side margins grow.
+export const PAPERS = {
+	A4: { label: "A4", width: 210, height: 297, contentHeight: 262 },
+	Letter: { label: "US Letter", width: 215.9, height: 279.4, contentHeight: 244 }
+};
 const CSS_FILES = ["magazine.css", "types.css", "styles.css", "concepts.css", "styles-more.css"];
 // Reference lists at least this long count as "long" for the reader's references setting.
 const LONG_REFERENCES = 15;
@@ -305,7 +310,8 @@ function fontFaces() {
 
 // Step 2: the print document for one design. options: { style, pictures: colour|ink|bw|none, references: leave|small|keep }.
 // Returns { css, bodyClass, bodyHTML, lang, title } for sheet.html, which builds the pages.
-export async function compose(prepared, { style = "classic", pictures = "colour", references = "small" } = {}) {
+export async function compose(prepared, { style = "classic", pictures = "colour", references = "small", paper = "A4" } = {}) {
+	const P = PAPERS[paper] || PAPERS.A4;
 	const { man, byId, body, type } = prepared;
 	style = STYLES[style] ? style : "classic";
 	const S = STYLES[style];
@@ -329,7 +335,7 @@ export async function compose(prepared, { style = "classic", pictures = "colour"
 	const standfirst = man.excerpt && man.excerpt.length < 400 ? man.excerpt : "";
 	const out = finish(root, { swaps, colMM: G.COL, sidenotes: !!S.sidenotes, standfirst, byline: man.byline, references, pageURL: man.url });
 	const heroV = Object.values(byId).find(v => v.placed && v.placed.cls === "hero"), heroPx = heroV && heroV.px;
-	const coverOk = !!(S.cover && out.hero && heroPx && heroPx.h >= 262 / 25.4 * 150);
+	const coverOk = !!(S.cover && out.hero && heroPx && heroPx.h >= P.contentHeight / 25.4 * 150);
 	const words = body.features.words, qr = await QRCode.toString(man.url || "https://myscreenbreak.com", { type: "svg", margin: 0 });
 	const readcard = `<aside class="sidenote readcard"><div class="qr">${qr}</div><p><b>${Math.max(1, Math.round(words / 230))} min read</b> · ${words.toLocaleString("en")} words</p><p>Scan for the original, with video and links.</p></aside>`;
 	const title = decode(body.title || man.title);
@@ -340,7 +346,9 @@ export async function compose(prepared, { style = "classic", pictures = "colour"
 	const cut = (t, n) => t.length <= n ? t : t.slice(0, n).replace(/\s+\S*$/, "") + "…";
 	const runHead = `${site} · ${cut(title || "", 80)}`;
 	const css = `${fontFaces()}\n@page { @bottom-left { content: "${runHead.replace(/["\\]/g, "").replace(/\s+/g, " ")}"; } }\n${await engineCSS()}
-html.sb-greys img, html.sb-greys svg { filter: grayscale(1); }`;
+html.sb-greys img, html.sb-greys svg { filter: grayscale(1); }
+${P === PAPERS.A4 ? "" : `@page { size: ${P.width}mm ${P.height}mm; margin: 16mm ${((P.width - MEASURE) / 2).toFixed(2)}mm 18mm; }
+.page { height: ${P.contentHeight}mm; }`}`;
 	const bodyClass = `type-${type} style-${style}${coverOk ? " has-cover" : ""}`;
 	const bodyHTML = `<header class="masthead"><p class="kicker">${esc(site)}</p><h1>${esc(title)}</h1>
 ${standfirst && type !== "thread" && !out.dropStandfirst ? `<p class="standfirst">${esc(standfirst)}</p>` : ""}
@@ -348,7 +356,7 @@ ${standfirst && type !== "thread" && !out.dropStandfirst ? `<p class="standfirst
 ${out.hero}
 <main class="flow">${readcard}${out.html}</main>
 <footer class="source">Saved from <span>${esc(man.url)}</span> · printed with Screenbreak</footer>`;
-	return { css, bodyClass, bodyHTML, lang: man.lang, title, greys: pictures === "bw" };
+	return { css, bodyClass, bodyHTML, lang: man.lang, title, greys: pictures === "bw", paper: { ...P, side: (P.width - MEASURE) / 2 } };
 }
 
 // printlab layout.js, second page.evaluate: figures in, notes, sidenotes, pull quotes, transcript turns.

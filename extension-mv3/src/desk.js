@@ -1,6 +1,7 @@
 // The desk: the pages exactly as they print, scaled to fit. Each design is its own document (sheet.html),
 // kept once built, so switching back to a design is instant.
-const PAGE_WIDTH = 210 * 96 / 25.4;
+const MM = 96 / 25.4;
+const PAGE_WIDTH = 216 * MM;
 const PAD = 24;
 
 export class Desk {
@@ -33,6 +34,7 @@ export class Desk {
 				try {
 					const result = await iframe.contentWindow.renderSheet(await doc);
 					entry.pages = result.pages;
+					entry.pageWidth = result.paperWidth * MM;
 					resolve(entry);
 				} catch (error) {
 					reject(error);
@@ -72,7 +74,7 @@ export class Desk {
 			win.setSpread(this.spread);
 		}
 		const across = this.spread && entry.pages > 1 ? 2 : 1;
-		const naturalWidth = across * PAGE_WIDTH + (across - 1) * 18 + 2 * PAD;
+		const naturalWidth = across * (entry.pageWidth || PAGE_WIDTH) + (across - 1) * 18 + 2 * PAD;
 		const available = this.element.clientWidth;
 		const scale = Math.min(1, available / naturalWidth);
 		const height = entry.iframe.contentDocument ? entry.iframe.contentDocument.documentElement.scrollHeight : 0;

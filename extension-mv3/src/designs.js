@@ -21,6 +21,11 @@ export const PICTURES = {
 	none: { label: "None", help: "Words only. Photos, charts and diagrams are left out." }
 };
 
+export const PAPER = {
+	A4: { label: "A4" },
+	Letter: { label: "US Letter" }
+};
+
 export const REFERENCES = {
 	leave: { label: "Leave out", help: "The list stays on the original page." },
 	small: { label: "Small type", help: "The list prints in small type at the end." },

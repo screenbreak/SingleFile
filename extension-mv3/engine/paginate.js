@@ -14,7 +14,8 @@
 // marker, a label) would otherwise load after pagination and reflow the text past the page edge.
 window.addEventListener('load', () => Promise.all([...document.fonts].map(f => f.load().catch(() => null))).then(() => document.fonts.ready).then(function () {
   const MM = 96 / 25.4;
-  const H = 262 * MM;                          // content height of an A4 page with 16/18mm margins (+1mm safety)
+  // Screenbreak extension: the page height comes from the page (US Letter is 244mm); printlab's own A4 value otherwise.
+  const H = (window.__sbContentHeight || 262) * MM;   // content height of an A4 page with 16/18mm margins (+1mm safety)
   const FLOAT_BUDGET = 0.62 * H;               // floats met on a page may take at most this much of it
   const OVERDUE_BUDGET = 0.85 * H;             // floats carried over from the page before may take this much
   const GAP_OK = 14 * MM;                      // white space we tolerate above a column figure

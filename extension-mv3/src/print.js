@@ -4,7 +4,7 @@
 import { getSettings, updateSettings } from "./settings.js";
 import { prepare, compose, hasLongReferences } from "./engine/layout.js";
 import { sanitize, removeRepeatedByline, showExcerpt } from "./engine/sanitize.js";
-import { DESIGNS, PICTURES, REFERENCES, topPicks } from "./designs.js";
+import { DESIGNS, PICTURES, REFERENCES, PAPER, topPicks } from "./designs.js";
 import { getAccount, getQuota, countPrint } from "./plans.js";
 import { Desk } from "./desk.js";
 import { el, fillSegmented, setRadio, pickOption, designTile, renderQuota, renderAccount, renderWho, Wait, thumbURL } from "./panel.js";
@@ -61,14 +61,14 @@ async function init() {
 	const picks = topPicks(state.prepared);
 	const print = settings.print;
 	const fixed = print.design != "best" && DESIGNS[print.design] ? print.design : null;
-	state.choice = { style: fixed || picks[0].style, pictures: print.pictures, references: print.references, duplex: print.duplex };
+	state.choice = { style: fixed || picks[0].style, pictures: print.pictures, references: print.references, paper: print.paper, duplex: print.duplex };
 	state.remember = false;
 	wait.step(`Picked ${DESIGNS[state.choice.style].name}${fixed ? ", your design" : " for this article"}`);
 	state.account = await accountPromise;
 	state.quota = await getQuota(state.account);
 	renderPanel();
 	await showChoice();
-	wait.step(`Set it on ${desk.current.pages} A4 page${desk.current.pages > 1 ? "s" : ""}`);
+	wait.step(`Set it on ${desk.current.pages} ${PAPER[state.choice.paper].label} page${desk.current.pages > 1 ? "s" : ""}`);
 	await wait.done();
 	document.body.classList.remove("is-loading");
 	// The other picks render in the background, so switching to one is instant and its page count shows.
@@ -82,8 +82,8 @@ async function init() {
 }
 
 // Documents are kept per design and per picture and reference setting.
-function keyFor({ style, pictures, references }) {
-	return [style, pictures, references].join("|");
+function keyFor({ style, pictures, references, paper }) {
+	return [style, pictures, references, paper].join("|");
 }
 
 function renderDesign(style) {
@@ -121,6 +121,7 @@ function renderPanel() {
 	}
 	fillSegmented(panel.querySelector("[data-name=pictures]"), PICTURES, choice.pictures);
 	fillSegmented(panel.querySelector("[data-name=references]"), REFERENCES, choice.references);
+	fillSegmented(panel.querySelector("[data-name=paper]"), PAPER, choice.paper);
 	panel.querySelector(".references-opt").hidden = !hasLongReferences(prepared);
 	panel.querySelector("input[name=duplex]").checked = choice.duplex;
 	panel.querySelector(".straight-note").hidden = !settings.print.straightAway;
@@ -155,7 +156,7 @@ function updatePageCounts() {
 function updateSummary() {
 	const pages = desk.current.pages;
 	const minutes = state.prepared.facts.minutes;
-	document.querySelector(".summary").textContent = `${pages} A4 page${pages > 1 ? "s" : ""} · about ${minutes} minute${minutes > 1 ? "s" : ""} to read`;
+	document.querySelector(".summary").textContent = `${pages} ${PAPER[state.choice.paper].label} page${pages > 1 ? "s" : ""} · about ${minutes} minute${minutes > 1 ? "s" : ""} to read`;
 	const sheets = state.choice.duplex ? Math.ceil(pages / 2) : pages;
 	document.querySelector(".sheet-count").textContent = `${sheets} sheet${sheets > 1 ? "s" : ""} of paper`;
 	document.querySelector(".duplex-hint").hidden = !state.choice.duplex || pages < 2;
@@ -189,6 +190,7 @@ async function saveDefaults() {
 		design: fixed ? state.choice.style : "best",
 		pictures: state.choice.pictures,
 		references: state.choice.references,
+		paper: state.choice.paper,
 		duplex: state.choice.duplex,
 		straightAway: panel.querySelector("input[name=rememberMode]:checked").value == "straight"
 	};
@@ -213,7 +215,7 @@ panel.addEventListener("change", async event => {
 		state.choice.style = target.value;
 		panel.querySelector(".fixed-name").textContent = DESIGNS[target.value].name;
 		await showChoice();
-	} else if (target.name == "pictures" || target.name == "references") {
+	} else if (target.name == "pictures" || target.name == "references" || target.name == "paper") {
 		state.choice[target.name] = target.value;
 		updateHelp();
 		await showChoice();

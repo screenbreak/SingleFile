@@ -15,6 +15,8 @@ export const DEFAULT_SETTINGS = {
 		design: "best",
 		// "colour", "ink" (photos as light halftone dots), "bw" (greys) or "none".
 		pictures: "colour",
+		// "A4" or "Letter". The default follows the browser's language: Letter in the US and Canada.
+		paper: /^(en-US|en-CA|es-US|fr-CA|es-MX)\b/.test(globalThis.navigator?.language || "") ? "Letter" : "A4",
 		// Only for the sheet count and a reminder: the print dialog owns two-sided printing.
 		duplex: true,
 		// Long reference lists: "leave" out, "small" type, or "keep" at text size.
