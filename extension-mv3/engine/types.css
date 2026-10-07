@@ -1,0 +1,86 @@
+/* Screenbreak print designs per article type. magazine.css is the base ("news": two columns).
+   Each design only overrides what makes that kind of article read better on paper. */
+
+/* ESSAY / LONG READ: one calm, book-like column, larger type, ornamental breaks. */
+.type-essay { font-size: 10.6pt; line-height: 1.5; }
+.type-essay .masthead { text-align: center; margin: 8mm 0 9mm; }
+.type-essay .masthead h1 { font-size: 30pt; font-weight: 600; max-width: 150mm; margin-inline: auto; }
+.type-essay .standfirst { margin-inline: auto; max-width: 125mm; }
+.type-essay .byline { border-bottom: 0; text-transform: uppercase; letter-spacing: .1em; font-size: 7.5pt; }
+.type-essay .cols { columns: 1; width: 120mm; margin: 0 auto; column-rule: none; }
+.type-essay .flow p.lede::first-letter { font-size: 44pt; color: var(--ink); }
+.type-essay .flow p.lede::first-line { font-variant: small-caps; letter-spacing: .04em; }
+.type-essay .flow h2, .type-essay .flow h3 { font: italic 600 11pt/1.3 var(--serif); text-align: center; margin: 6mm 0 3mm; }
+.type-essay .flow blockquote { border: 0; padding: 0 8mm; font-size: 1em; }
+.type-essay figcaption { text-align: center; }
+
+/* PHOTO STORY: pictures lead, text is the caption to them. */
+.type-photo .masthead h1 { font-size: 32pt; }
+.type-photo figure.hero img { max-height: 160mm; }
+.type-photo .flow figure.col.photo img { width: 100% !important; }
+.type-photo .flow figure.wide.photo img { max-height: 125mm; }
+.type-photo figcaption { font-size: 7.8pt; color: var(--ink); border-left: 1.2pt solid var(--accent); padding-left: 2mm; }
+.type-photo .flow p { font-size: 9pt; }
+
+/* DATA STORY: charts are the point. Sans headings, chart notes, lining figures. */
+.type-data { font-variant-numeric: lining-nums; }
+.type-data .kicker::after { content: " \00B7  Data"; }
+.type-data .flow h2, .type-data .flow h3 { font-size: 11pt; border-top: 1.5pt solid var(--ink); padding-top: 1.5mm; }
+.type-data .flow figure.graphic { border-top: .5pt solid var(--rule); padding-top: 2mm; }
+.type-data figcaption { font-size: 7.4pt; }
+
+/* INTERVIEW: questions set apart so the conversation reads at a glance. */
+.type-interview .flow p.q { font: 600 9.2pt/1.35 var(--sans); text-indent: 0; text-align: left; margin: 3mm 0 1.2mm; color: var(--accent); }
+.type-interview .flow p.q + p, .type-interview .flow p.a { text-indent: 0; }
+.type-interview .flow p.q strong, .type-interview .flow p.q b { font-weight: 600; }
+
+/* RECIPE: ingredients in a box you can tick off, big numbered steps, all on as few pages as possible. */
+.type-recipe .flow .ingredients { background: #f1f4f2; border-top: 2pt solid var(--accent); padding: 3mm 3.5mm 2mm; margin: 0 0 4mm; break-inside: avoid; }
+.type-recipe .flow .ingredients h2, .type-recipe .flow .ingredients h3 { margin-top: 0; text-transform: uppercase; letter-spacing: .1em; font-size: 8pt; color: var(--accent); }
+.type-recipe .flow .ingredients ul { list-style: none; padding-left: 0; font: 8.8pt/1.35 var(--sans); }
+.type-recipe .flow .ingredients li { padding-left: 5mm; position: relative; margin-bottom: 1.1mm; }
+.type-recipe .flow .ingredients li::before { content: ""; position: absolute; left: 0; top: .35em; width: 2.4mm; height: 2.4mm; border: .6pt solid var(--ink); border-radius: 50%; }
+.type-recipe .flow ol.steps { list-style: none; counter-reset: step; padding-left: 0; }
+.type-recipe .flow ol.steps > li { counter-increment: step; position: relative; padding-left: 8mm; margin-bottom: 2.2mm; }
+.type-recipe .flow ol.steps > li::before { content: counter(step); position: absolute; left: 0; top: -.5mm; font: 700 14pt/1 var(--serif); color: var(--accent); }
+
+/* TUTORIAL: a wide single column so code doesn't wrap, code on light grey with a rule. */
+.type-tutorial { font: 9.6pt/1.45 var(--sans); }
+.type-tutorial .masthead h1 { font-family: var(--sans); font-weight: 700; letter-spacing: -.015em; }
+.type-tutorial .cols { columns: 1; width: 150mm; margin: 0 auto; column-rule: none; }
+.type-tutorial .flow p { text-align: left; text-indent: 0; margin-bottom: 2mm; hyphens: manual; }
+.type-tutorial .flow p.lede::first-letter { all: unset; }
+.type-tutorial .flow pre { font-size: 7.6pt; border-left: 1.5pt solid var(--accent); background: #f4f5f6; white-space: pre-wrap; }
+.type-tutorial .flow code { background: #f0f1f2; padding: 0 .25em; }
+.type-tutorial .flow pre code { background: none; padding: 0; }
+.type-tutorial .flow h2 { font-size: 12pt; margin-top: 6mm; }
+.type-recipe figure.hero img { max-height: 85mm; }
+.type-recipe .flow ul.recipe-facts { list-style: none; padding: 0; margin: 0 0 3mm; display: flex; flex-wrap: wrap; gap: 1mm 4mm; font: 8pt var(--sans); color: var(--soft); }
+.type-recipe .flow ul.recipe-facts b { color: var(--ink); font-weight: 600; }
+
+/* THREAD: a discussion page (Hacker News, GitHub, Reddit, Stack Exchange, a forum), read comment by comment
+   (thread.js). One book-like column, like the essay. Each comment opens with a small name-and-time line
+   (NYT comments, Refero 506367d2); a reply is indented with a thin line for each level above it (Windy forum,
+   27a0ae80); the original poster's replies are marked OP (Acuity forum's author badge, 58b5bee1). No avatars,
+   votes or reply links: they only work on a screen. The blocks are flat (the layout unwraps wrappers): each one
+   carries its depth as d0-d7, and the lines are drawn by every block, so they run on without a break. */
+.type-thread .cols { columns: 1; width: 120mm; margin: 0 auto; column-rule: none; }
+.type-thread .masthead h1 { font-size: 22pt; }
+.flow .thread-link { font: 600 9pt/1.3 var(--sans); text-indent: 0; text-align: left; margin: 0 0 1mm; overflow-wrap: anywhere; }
+.flow .thread-meta { font: 400 7.3pt/1.3 var(--sans); color: var(--soft); text-indent: 0; text-align: left; margin: 0 0 2mm; }
+.flow .thread-text { text-indent: 0; text-align: left; margin: 0 0 1.3mm; }
+.flow hr.thread-rule { border-top: .6pt solid var(--ink); margin: 2mm 0 1mm; } .flow hr.thread-rule::after { content: none; }
+.flow :is(.comment-meta, .comment-text) { --d: 0; margin: 0; padding: 0 0 0 calc(var(--d) * 3.4mm); text-indent: 0; text-align: left;
+  background: repeating-linear-gradient(to right, var(--rule) 0 .5pt, transparent .5pt 3.4mm) 0 0 / calc(var(--d) * 3.4mm) 100% no-repeat; }
+.flow .comment-meta { font: 600 7.3pt/1.3 var(--sans); color: var(--ink); padding-top: 2mm; padding-bottom: .7mm; break-after: avoid; hyphens: manual; }
+.flow .comment-meta.top { border-top: .3pt solid var(--rule); margin-top: 1.6mm; }
+.flow hr.thread-rule + .comment-meta.top { border-top: 0; margin-top: 0; }
+.flow .comment-time, .flow .comment-extra { font-weight: 400; color: var(--soft); margin-left: .35em; }
+.flow .comment-op { font: 700 6.2pt var(--sans); letter-spacing: .08em; color: var(--accent); margin-left: .35em; }
+.flow p.comment-text { font-size: 9pt; line-height: 1.4; padding-bottom: 1.3mm; }
+.flow pre.comment-text, .flow blockquote.comment-text { margin: 0; }
+.flow blockquote.comment-text { border-left: 0; font-size: .95em; padding-bottom: 1.3mm; }
+.flow :is(ul, ol).comment-text { padding-left: calc(var(--d) * 3.4mm + 4.5mm); padding-bottom: 1.3mm; }
+.flow .d1 { --d: 1; } .flow .d2 { --d: 2; } .flow .d3 { --d: 3; } .flow .d4 { --d: 4; } .flow .d5 { --d: 5; } .flow .d6 { --d: 6; } .flow .d7 { --d: 7; }
+.flow :is(h1, h2, h3, h4, h5, h6):is(.thread-text, .comment-text) { font: 700 10pt/1.25 var(--sans); margin: 3mm 0 1mm; padding-bottom: 0; }
+.flow :is(h4, h5, h6):is(.thread-text, .comment-text) { font-size: 9.2pt; }

@@ -1,25 +1,32 @@
-// The print page: shows the extracted article with the print layout, lets the user adjust it, and opens
-// the browser's print dialog (which also offers "Save as PDF").
+// The print page: the article set in our designs, page by page exactly as it prints, with the choices that
+// change it beside it. Opens when the reader presses Print; with "Print straight away" it opens the print
+// dialog by itself and goes back to the article afterwards.
 import { getSettings, updateSettings } from "./settings.js";
-import { renderKeys } from "./shortcuts.js";
+import { prepare, compose, hasLongReferences } from "./engine/layout.js";
+import { sanitize, removeRepeatedByline, showExcerpt } from "./engine/sanitize.js";
+import { DESIGNS, PICTURES, REFERENCES, topPicks } from "./designs.js";
+import { getAccount, getQuota, countPrint } from "./plans.js";
+import { Desk } from "./desk.js";
+import { el, fillSegmented, setRadio, pickOption, designTile, renderQuota, renderAccount, renderWho, Wait, thumbURL } from "./panel.js";
 
-const REMOVED_ELEMENTS = "script, style, link, meta, noscript, form, input, button, select, textarea, object, embed, applet, frame, frameset";
-const IMAGE_LOAD_TIMEOUT = 8000;
-const LONG_TITLE = 90;
 const MIN_ARTICLE_TEXT = 140;
-const MEDIA = "img, svg, video, picture, canvas, table, figure";
 
-const form = document.querySelector(".options");
-const articleElement = document.querySelector(".article");
+const panel = document.querySelector(".panel");
 const printButton = document.querySelector(".print-button");
-const printStatus = document.querySelector(".print-status");
+const pdfButton = document.querySelector(".pdf-button");
+const desk = new Desk(document.querySelector(".sheets"));
+const deskElement = document.querySelector(".desk");
+
+const state = { prepared: null, settings: null, account: { state: "guest" }, quota: null, choice: null, remember: false, previewOnly: false, article: null };
 
 init();
 
 async function init() {
 	const id = location.hash.substring(1);
-	const [article, settings] = await Promise.all([chrome.runtime.sendMessage({ method: "screenbreak.getPrintJob", id }), getSettings()]);
+	state.previewOnly = new URLSearchParams(location.search).has("preview");
 	initCloseTab();
+	const [article, settings] = await Promise.all([chrome.runtime.sendMessage({ method: "screenbreak.getPrintJob", id }), getSettings()]);
+	state.settings = settings;
 	if (!article) {
 		const { printJobSources = {} } = await chrome.storage.local.get("printJobSources");
 		const source = printJobSources[id];
@@ -30,12 +37,16 @@ async function init() {
 		});
 		return;
 	}
-	applyOptions(settings.print);
-	initToolbar(settings.print);
-	render(article);
-	// Readability returns its best guess even on pages without an article (a login form, an app shell).
-	const content = articleElement.querySelector(".content");
+	state.article = article;
+	document.title = article.title;
+	document.querySelector(".source-title").textContent = article.title;
+	document.querySelector(".source-site").textContent = article.siteName ? "· " + article.siteName : "";
+	const wait = new Wait(document.querySelector(".wait"));
+	wait.step(`Read the article from ${article.siteName || "the page"}`);
+	const content = sanitize(article.content, article.url);
+	removeRepeatedByline(content, article.byline);
 	if (content.textContent.trim().length < MIN_ARTICLE_TEXT && !content.querySelector("img")) {
+		wait.hide();
 		showMessage({
 			title: "There's no article to print",
 			text: "Screenbreak couldn't find the text of this page. Go back to the page to print it as it is.",
@@ -43,229 +54,255 @@ async function init() {
 		});
 		return;
 	}
+	const accountPromise = getAccount(settings.serverUrl);
+	state.prepared = await prepare({ ...article, excerpt: showExcerpt(article, content) ? article.excerpt : "", content });
+	const pictureCount = Object.values(state.prepared.byId).filter(v => !v.broken).length;
+	wait.step(pictureCount ? `Kept ${pictureCount} picture${pictureCount > 1 ? "s" : ""} at print size` : "Set the text without pictures");
+	const picks = topPicks(state.prepared);
+	const print = settings.print;
+	const fixed = print.design != "best" && DESIGNS[print.design] ? print.design : null;
+	state.choice = { style: fixed || picks[0].style, pictures: print.pictures, references: print.references, duplex: print.duplex };
+	state.remember = false;
+	wait.step(`Picked ${DESIGNS[state.choice.style].name}${fixed ? ", your design" : " for this article"}`);
+	state.account = await accountPromise;
+	state.quota = await getQuota(state.account);
+	renderPanel();
+	await showChoice();
+	wait.step(`Set it on ${desk.current.pages} A4 page${desk.current.pages > 1 ? "s" : ""}`);
+	await wait.done();
 	document.body.classList.remove("is-loading");
-	trackImages();
+	// The other picks render in the background, so switching to one is instant and its page count shows.
+	for (const pick of picks) {
+		renderDesign(pick.style).then(entry => updatePageCounts()).catch(() => {});
+	}
 	watchSave(id);
-	if (settings.print.openPrintDialog) {
-		printWhenReady();
+	if (print.straightAway && !state.previewOnly) {
+		printNow({ straightAway: true });
 	}
 }
 
-function render(article) {
-	document.title = article.title;
-	document.documentElement.lang = article.lang || "";
-	articleElement.dir = article.dir || "auto";
-	document.documentElement.style.setProperty("--sb-title", JSON.stringify(article.title || ""));
-	setText(".site", article.siteName);
-	setText(".byline", article.byline && article.byline != article.siteName ? article.byline : "");
-	setText(".date", formatDate(article.publishedTime));
-	setText(".title", article.title);
-	articleElement.querySelector(".title").classList.toggle("long", (article.title || "").length > LONG_TITLE);
-	const content = sanitize(article.content, article.url);
-	removeRepeatedByline(content, article.byline);
-	setText(".excerpt", showExcerpt(article, content) ? article.excerpt : "");
-	if (article.heroImage && !hasImage(content, article.heroImage)) {
-		const hero = articleElement.querySelector(".hero");
-		hero.querySelector("img").src = article.heroImage;
-		hero.hidden = false;
+// Documents are kept per design and per picture and reference setting.
+function keyFor({ style, pictures, references }) {
+	return [style, pictures, references].join("|");
+}
+
+function renderDesign(style) {
+	const choice = { ...state.choice, style };
+	return desk.render(keyFor(choice), compose(state.prepared, choice));
+}
+
+async function showChoice() {
+	deskElement.classList.add("swapping");
+	printButton.disabled = pdfButton.disabled = true;
+	try {
+		await desk.show(keyFor(state.choice), compose(state.prepared, state.choice));
+	} finally {
+		deskElement.classList.remove("swapping");
 	}
-	articleElement.querySelector(".content").replaceChildren(...content.childNodes);
-	markLeadingElements(articleElement.querySelector(".content"));
-	const source = articleElement.querySelector(".source");
-	source.href = article.url;
-	source.replaceChildren(...breakableURL(article.url));
-	articleElement.hidden = false;
+	updatePageCounts();
+	updateSummary();
+	updatePrintButton();
 }
 
-// The article HTML comes from an arbitrary web page: keep its markup, drop anything active.
-function sanitize(html, baseURL) {
-	const doc = new DOMParser().parseFromString(html, "text/html");
-	doc.querySelectorAll("iframe").forEach(iframe => {
-		// Embeds (videos, tweets, maps) can't be printed; leave a link to them.
-		const src = iframe.getAttribute("src");
-		if (src && /^https?:/.test(src)) {
-			const paragraph = doc.createElement("p");
-			paragraph.className = "embed-link";
-			const link = doc.createElement("a");
-			link.href = src;
-			link.textContent = "Embedded content: " + src;
-			paragraph.append(link);
-			iframe.replaceWith(paragraph);
-		} else {
-			iframe.remove();
-		}
-	});
-	doc.querySelectorAll(REMOVED_ELEMENTS).forEach(element => element.remove());
-	doc.querySelectorAll("*").forEach(element => {
-		for (const attribute of Array.from(element.attributes)) {
-			const name = attribute.name.toLowerCase();
-			const isURL = ["href", "src", "xlink:href", "action", "formaction", "poster"].includes(name);
-			if (name.startsWith("on") || name == "srcdoc" || (isURL && /^\s*javascript:/i.test(attribute.value))) {
-				element.removeAttribute(attribute.name);
-			} else if (isURL && attribute.value && !/^(data|https?|mailto):/i.test(attribute.value)) {
-				try {
-					element.setAttribute(attribute.name, new URL(attribute.value, baseURL).href);
-				} catch (error) {
-					element.removeAttribute(attribute.name);
-				}
-			}
-		}
-		if (element.localName == "img") {
-			element.loading = "eager";
-		}
-	});
-	const container = document.createElement("div");
-	container.append(...Array.from(doc.body.childNodes).map(node => document.adoptNode(node)));
-	return container;
+// Panel
+
+function renderPanel() {
+	const { prepared, choice, settings } = state;
+	const picks = topPicks(prepared);
+	const isDefault = style => settings.print.design == style;
+	document.querySelector(".picks").replaceChildren(...picks.map((pick, index) =>
+		pickOption({ style: pick.style, why: pick.why, best: index == 0, isDefault: isDefault(pick.style), checked: pick.style == choice.style })));
+	const pickStyles = picks.map(pick => pick.style);
+	const others = Object.keys(DESIGNS).filter(style => !pickStyles.includes(style));
+	const grid = document.querySelector(".design-grid");
+	grid.replaceChildren(...others.map(style => designTile({ style, checked: style == choice.style, isDefault: isDefault(style) })));
+	if (!pickStyles.includes(choice.style)) {
+		setGridOpen(true);
+	}
+	fillSegmented(panel.querySelector("[data-name=pictures]"), PICTURES, choice.pictures);
+	fillSegmented(panel.querySelector("[data-name=references]"), REFERENCES, choice.references);
+	panel.querySelector(".references-opt").hidden = !hasLongReferences(prepared);
+	panel.querySelector("input[name=duplex]").checked = choice.duplex;
+	panel.querySelector(".straight-note").hidden = !settings.print.straightAway;
+	renderWho(panel.querySelector(".who"), state.account, settings.serverUrl);
+	renderAccount(panel.querySelector(".account"), { account: state.account, quota: state.quota, serverUrl: settings.serverUrl, onDismiss: () => {} });
+	renderQuota(panel.querySelector(".quota"), state.quota);
+	updateHelp();
+	updateRemember();
 }
 
-// The header already shows the author; drop a "By …" line the article body opens with.
-function removeRepeatedByline(content, byline) {
-	if (!byline) {
+function setGridOpen(open) {
+	const toggle = document.querySelector(".all-toggle");
+	document.querySelector(".design-grid").hidden = !open;
+	toggle.setAttribute("aria-expanded", String(open));
+	toggle.textContent = open ? "Show fewer designs" : `See all ${Object.keys(DESIGNS).length} designs`;
+}
+setGridOpen(false);
+document.querySelector(".all-toggle").addEventListener("click", () => setGridOpen(document.querySelector(".design-grid").hidden));
+
+function updateHelp() {
+	panel.querySelector(".pictures-help").textContent = PICTURES[state.choice.pictures].help;
+	panel.querySelector(".references-help").textContent = REFERENCES[state.choice.references].help;
+}
+
+function updatePageCounts() {
+	for (const pick of document.querySelectorAll(".pick")) {
+		const frame = desk.frames.get(keyFor({ ...state.choice, style: pick.dataset.style }));
+		pick.querySelector(".pages").textContent = frame && frame.pages ? `${frame.pages} page${frame.pages > 1 ? "s" : ""}` : "";
+	}
+}
+
+function updateSummary() {
+	const pages = desk.current.pages;
+	const minutes = state.prepared.facts.minutes;
+	document.querySelector(".summary").textContent = `${pages} A4 page${pages > 1 ? "s" : ""} · about ${minutes} minute${minutes > 1 ? "s" : ""} to read`;
+	const sheets = state.choice.duplex ? Math.ceil(pages / 2) : pages;
+	document.querySelector(".sheet-count").textContent = `${sheets} sheet${sheets > 1 ? "s" : ""} of paper`;
+	document.querySelector(".duplex-hint").hidden = !state.choice.duplex || pages < 2;
+}
+
+function updatePrintButton() {
+	const pages = desk.current ? desk.current.pages : 0;
+	const out = state.quota && !state.quota.unlimited && state.quota.left <= 0;
+	printButton.disabled = pdfButton.disabled = out || !pages;
+	document.querySelector(".print-label").textContent = pages ? `Print ${pages} page${pages > 1 ? "s" : ""}` : "Print";
+}
+
+function updateRemember() {
+	const { settings, choice } = state;
+	panel.querySelector("input[name=remember]").checked = state.remember;
+	panel.querySelector(".remember-more").hidden = !state.remember;
+	panel.querySelector(".fixed-name").textContent = DESIGNS[choice.style].name;
+	setRadio(panel.querySelector(".remember-more"), null);
+	panel.querySelector(`input[name=rememberDesign][value=${settings.print.design == "best" ? "best" : "fixed"}]`).checked = true;
+	panel.querySelector(`input[name=rememberMode][value=${settings.print.straightAway ? "straight" : "page"}]`).checked = true;
+}
+
+// While "Remember these choices" is ticked, the page's choices are the defaults.
+async function saveDefaults() {
+	if (!state.remember) {
 		return;
 	}
-	const firstBlocks = Array.from(content.querySelectorAll("p, div, span, address")).slice(0, 5);
-	const bylineElement = firstBlocks.find(element => normalize(element.textContent) == normalize(byline));
-	if (bylineElement) {
-		bylineElement.remove();
-	}
-}
-
-// The standfirst is worth showing only when it adds something: not the byline again, not the first paragraph again.
-function showExcerpt(article, content) {
-	const excerpt = normalize(article.excerpt || "");
-	if (!excerpt || (article.byline && excerpt == normalize(article.byline))) {
-		return false;
-	}
-	return !normalize(content.textContent).startsWith(excerpt.substring(0, 60));
-}
-
-function normalize(text) {
-	return text.replace(/\s+/g, " ").trim().toLowerCase().replace(/^by\s+/, "");
-}
-
-// Wrappers at the top of the content often bring their own top margins, which push the first column
-// of a two-column print below the second. The chain of first elements starts flush instead.
-function markLeadingElements(content) {
-	let element = content.firstElementChild;
-	while (element) {
-		const isEmpty = !element.textContent.trim() && !element.matches(MEDIA) && !element.querySelector(MEDIA);
-		const next = isEmpty ? element.nextElementSibling : element.firstElementChild;
-		if (isEmpty) {
-			element.remove();
-		} else {
-			element.classList.add("sb-lead");
-		}
-		element = next;
-	}
-}
-
-// Long links break after "/", "?", "&" and "=", not in the middle of a word.
-function breakableURL(url) {
-	return url.split(/(?<=[/?&=])/).flatMap((part, index) => index ? [document.createElement("wbr"), document.createTextNode(part)] : [document.createTextNode(part)]);
-}
-
-function hasImage(content, url) {
-	const name = imageName(url);
-	return Array.from(content.querySelectorAll("img")).some(image => imageName(image.getAttribute("src") || "") == name);
-}
-
-function imageName(url) {
-	try {
-		return new URL(url).pathname.split("/").pop().replace(/[-_]?\d+x\d+(?=\.)/, "");
-	} catch (error) {
-		return url;
-	}
-}
-
-// Toolbar
-
-async function initToolbar(options) {
-	form.elements.font.value = options.font;
-	form.elements.size.value = options.size;
-	form.elements.columns.value = String(options.columns);
-	form.elements.images.checked = options.images;
-	form.addEventListener("change", async () => {
-		const settings = await getSettings();
-		const print = {
-			...settings.print,
-			font: form.elements.font.value,
-			size: form.elements.size.value,
-			columns: Number(form.elements.columns.value),
-			images: form.elements.images.checked
-		};
-		applyOptions(print);
-		trackImages();
-		// Remember the choice for next time.
-		updateSettings({ print });
-	});
-	printButton.addEventListener("click", printWhenReady);
-	// Cmd/Ctrl+P takes the same path as the button, so fonts and images are ready first.
-	addEventListener("keydown", event => {
-		if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() == "p") {
-			event.preventDefault();
-			printWhenReady();
-		}
-	});
-	const isMac = navigator.platform.startsWith("Mac");
-	document.querySelector(".print-keys").append(renderKeys(isMac ? ["⌘", "P"] : ["Ctrl", "P"]));
-	const toggle = document.querySelector(".options-toggle");
-	toggle.addEventListener("click", () => {
-		const open = form.classList.toggle("open");
-		toggle.setAttribute("aria-expanded", String(open));
-	});
-}
-
-function applyOptions(options) {
-	const classList = document.body.classList;
-	classList.remove("font-serif", "font-sans", "size-small", "size-normal", "size-large", "columns-1", "columns-2", "no-images");
-	classList.add("font-" + options.font, "size-" + options.size, "columns-" + options.columns);
-	if (!options.images) {
-		classList.add("no-images");
-	}
-}
-
-function visibleImages() {
-	return document.body.classList.contains("no-images") ? [] : Array.from(articleElement.querySelectorAll("img"));
-}
-
-// "Loading images · 3 of 7" beside Print until every image has arrived.
-function trackImages() {
-	const update = () => {
-		const images = visibleImages();
-		const loaded = images.filter(image => image.complete).length;
-		printStatus.textContent = loaded < images.length ? `Loading images · ${loaded} of ${images.length}` : "";
+	const fixed = panel.querySelector("input[name=rememberDesign]:checked").value == "fixed";
+	const print = {
+		...state.settings.print,
+		design: fixed ? state.choice.style : "best",
+		pictures: state.choice.pictures,
+		references: state.choice.references,
+		duplex: state.choice.duplex,
+		straightAway: panel.querySelector("input[name=rememberMode]:checked").value == "straight"
 	};
-	visibleImages().forEach(image => {
-		image.addEventListener("load", update, { once: true });
-		image.addEventListener("error", update, { once: true });
+	state.settings = { ...state.settings, print };
+	await updateSettings({ print });
+	panel.querySelector(".straight-note").hidden = !print.straightAway;
+	document.querySelectorAll(".pick, .tile").forEach(option => {
+		const isDefault = print.design == option.dataset.style;
+		const badge = Array.from(option.querySelectorAll(".badge")).find(badge => /default/i.test(badge.textContent));
+		if (isDefault && !badge) {
+			(option.querySelector(".name") || option.querySelector(".thumb")).append(el("span", { class: "badge", text: option.classList.contains("tile") ? "Default" : "Your default" }));
+		} else if (!isDefault && badge) {
+			badge.remove();
+		}
 	});
-	update();
 }
 
-async function printWhenReady() {
-	if (printButton.getAttribute("aria-busy") == "true") {
+panel.addEventListener("change", async event => {
+	const target = event.target;
+	if (target.name == "design") {
+		document.querySelectorAll("input[name=design]").forEach(input => input.checked = input.value == target.value);
+		state.choice.style = target.value;
+		panel.querySelector(".fixed-name").textContent = DESIGNS[target.value].name;
+		await showChoice();
+	} else if (target.name == "pictures" || target.name == "references") {
+		state.choice[target.name] = target.value;
+		updateHelp();
+		await showChoice();
+		state.prepared.picks.slice(0, 3).forEach(pick => DESIGNS[pick.style] && renderDesign(pick.style).then(updatePageCounts).catch(() => {}));
+	} else if (target.name == "duplex") {
+		state.choice.duplex = target.checked;
+		updateSummary();
+	} else if (target.name == "remember") {
+		state.remember = target.checked;
+		panel.querySelector(".remember-more").hidden = !state.remember;
+		if (state.remember) {
+			panel.querySelector("input[name=rememberDesign][value=fixed]").checked = true;
+		}
+	}
+	await saveDefaults();
+});
+
+document.querySelector(".show-page-next").addEventListener("click", async () => {
+	state.settings = { ...state.settings, print: { ...state.settings.print, straightAway: false } };
+	await updateSettings({ print: state.settings.print });
+	panel.querySelector(".straight-note").hidden = true;
+	updateRemember();
+});
+
+document.querySelectorAll("input[name=view]").forEach(input => input.addEventListener("change", () => desk.setSpread(input.value == "spread" && input.checked)));
+
+// Printing
+
+printButton.addEventListener("click", () => printNow());
+pdfButton.addEventListener("click", () => printNow());
+addEventListener("keydown", event => {
+	if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() == "p") {
+		event.preventDefault();
+		printNow();
+	}
+});
+
+async function printNow({ straightAway = false } = {}) {
+	if (printButton.getAttribute("aria-busy") == "true" || !desk.current) {
+		return;
+	}
+	if (state.quota && !state.quota.unlimited && state.quota.left <= 0) {
+		panel.querySelector(".account").scrollIntoView({ behavior: "smooth", block: "nearest" });
 		return;
 	}
 	printButton.setAttribute("aria-busy", "true");
-	document.querySelector(".print-label").textContent = "Preparing…";
-	await waitForImages();
+	await countPrint(state.account);
+	await desk.print();
 	printButton.removeAttribute("aria-busy");
-	document.querySelector(".print-label").textContent = "Print";
-	window.print();
+	state.quota = await getQuota(state.account);
+	renderQuota(panel.querySelector(".quota"), state.quota);
+	renderAccount(panel.querySelector(".account"), { account: state.account, quota: state.quota, serverUrl: state.settings.serverUrl, onDismiss: () => {} });
+	updatePrintButton();
+	if (straightAway) {
+		// The button works as a printer: back to the article once the dialog closes.
+		const tab = await chrome.tabs.getCurrent();
+		if (tab && tab.openerTabId) {
+			await chrome.tabs.update(tab.openerTabId, { active: true }).catch(() => {});
+			chrome.tabs.remove(tab.id);
+			return;
+		}
+	}
+	if (state.account.state == "guest") {
+		showDone();
+	}
 }
 
-async function waitForImages() {
-	// A font picked a moment ago may still be loading; printing now would leave its text blank.
-	const pending = visibleImages().filter(image => !image.complete);
-	const loaded = Promise.all(pending.map(image => new Promise(resolve => {
-		image.addEventListener("load", resolve, { once: true });
-		image.addEventListener("error", resolve, { once: true });
-	})));
-	await Promise.race([Promise.all([loaded, document.fonts.ready]), new Promise(resolve => setTimeout(resolve, IMAGE_LOAD_TIMEOUT))]);
+// After a guest prints: the ask for an account comes here, after it worked.
+function showDone() {
+	const scrim = document.querySelector(".scrim.done");
+	const style = state.choice.style;
+	document.querySelector(".done-stack").replaceChildren(el("img", { src: thumbURL(style), alt: "" }));
+	const left = state.quota.left;
+	document.querySelector(".done-body").replaceChildren(
+		el("p", { text: `${left > 0 ? `You have ${left} free print${left == 1 ? "" : "s"} left on this browser.` : "That was your last free print on this browser."} A free account keeps this article in your pile and gives you more prints, on any computer.` }),
+		el("div", { class: "row" },
+			el("a", { class: "button", href: `${state.settings.serverUrl}/signup/`, target: "_blank", text: "Create a free account" }),
+			el("button", { type: "button", class: "link-button", text: "Not now", onclick: () => scrim.hidden = true })));
+	scrim.hidden = false;
+	scrim.querySelector(".button").focus();
 }
+document.querySelector(".scrim.done").addEventListener("click", event => {
+	if (event.target.classList.contains("scrim")) event.currentTarget.hidden = true;
+});
+addEventListener("keydown", event => {
+	if (event.key == "Escape") document.querySelector(".scrim.done").hidden = true;
+});
 
-// Print and save: the article is saved in the background, and its status shows in the toolbar.
+// Print and save: the article is saved in the background, and its status shows under Print.
 
 const SAVE_ICONS = {
 	working: `<svg viewBox="0 0 16 16" class="spinner"><circle cx="8" cy="8" r="6.25" fill="none" stroke-width="1.75" opacity=".2"/><path d="M8 1.75a6.25 6.25 0 0 1 6.25 6.25" fill="none" stroke-width="1.75" stroke-linecap="round"/></svg>`,
@@ -292,11 +329,11 @@ function showSaveStatus({ status, articleTabId }) {
 		element.hidden = true;
 		return;
 	}
-	const { state, title, detail, autoHide } = status;
-	element.className = "save-status " + state;
+	const { state: saveState, title, detail, autoHide } = status;
+	element.className = "save-status " + saveState;
 	element.title = detail || "";
-	element.querySelector(".save-icon").innerHTML = SAVE_ICONS[state] || "";
-	element.querySelector(".save-text").textContent = state == "working" && title.startsWith("Saving") ? "Saving to Screenbreak…" : state == "login" ? "Not saved yet" : title;
+	element.querySelector(".save-icon").innerHTML = SAVE_ICONS[saveState] || "";
+	element.querySelector(".save-text").textContent = saveState == "working" && title.startsWith("Saving") ? "Saving to Screenbreak…" : saveState == "login" ? "Not saved yet" : title;
 	const actions = (status.actions || []).filter(action => !PAGE_ONLY_ACTIONS.includes(action.action)).map(({ label, action, href }) => {
 		const control = document.createElement(href ? "a" : "button");
 		control.textContent = label == "Open in Screenbreak" ? "Open" : label;
@@ -314,9 +351,8 @@ function showSaveStatus({ status, articleTabId }) {
 	element.querySelector(".save-actions").replaceChildren(...actions);
 	element.hidden = false;
 	if (autoHide) {
-		// Undo is offered for a moment, like on the card; a passing note ("Removed", "Not saved") then goes away.
 		element.timeout = setTimeout(() => {
-			if (state == "done") {
+			if (saveState == "done") {
 				element.querySelector("[data-action=undo]")?.remove();
 			} else {
 				element.hidden = true;
@@ -331,7 +367,7 @@ function showMessage({ title, text, action }) {
 	document.title = title + " · Screenbreak";
 	document.body.classList.remove("is-loading");
 	document.body.classList.add("is-message");
-	articleElement.hidden = true;
+	document.querySelector(".wait").hidden = true;
 	const message = document.querySelector(".message");
 	message.querySelector(".message-title").textContent = title;
 	message.querySelector(".message-text").textContent = text;
@@ -349,13 +385,4 @@ function initCloseTab() {
 		const tab = await chrome.tabs.getCurrent();
 		chrome.tabs.remove(tab.id);
 	});
-}
-
-function formatDate(value) {
-	const date = value ? new Date(value) : null;
-	return date && !isNaN(date) ? date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "";
-}
-
-function setText(selector, text) {
-	articleElement.querySelector(selector).textContent = text || "";
 }

@@ -5,62 +5,28 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Print · Screenbreak</title>
 	<link rel="stylesheet" href="ui.css">
-	<link rel="stylesheet" href="print.css">
+	<link rel="stylesheet" href="flow.css">
 </head>
-<body class="font-sans size-normal columns-1 is-loading">
-	<header class="toolbar">
-		<img src="icons/logo.png" alt="Screenbreak" class="wordmark" width="141" height="20">
-		<img src="icons/icon_48.png" alt="Screenbreak" class="mark" width="24" height="24">
-		<button type="button" class="options-toggle" aria-expanded="false" aria-controls="print-options" title="Print options">
-			<span class="sample-serif" aria-hidden="true">Aa</span><span class="visually-hidden">Print options</span>
-		</button>
-		<form class="options" id="print-options" aria-label="Print options">
-			<div class="segmented" role="radiogroup" aria-label="Font" title="Font">
-				<label><input type="radio" name="font" value="sans"><span class="sample-sans">Sans</span></label>
-				<label><input type="radio" name="font" value="serif"><span class="sample-serif">Serif</span></label>
+<body class="is-loading">
+	<section class="desk" aria-label="Print preview">
+		<div class="desk-bar">
+			<p class="source"><img class="favicon" alt="" width="16" height="16" hidden><strong class="source-title"></strong><span class="source-site"></span></p>
+			<div class="segmented view-toggle" role="radiogroup" aria-label="View">
+				<label><input type="radio" name="view" value="pages" checked><span>Pages</span></label>
+				<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
 			</div>
-			<div class="segmented" role="radiogroup" aria-label="Text size" title="Text size">
-				<label title="Small text"><input type="radio" name="size" value="small" aria-label="Small"><span class="size-a" style="font-size:12px">A</span></label>
-				<label title="Medium text"><input type="radio" name="size" value="normal" aria-label="Medium"><span class="size-a" style="font-size:15px">A</span></label>
-				<label title="Large text"><input type="radio" name="size" value="large" aria-label="Large"><span class="size-a" style="font-size:18px">A</span></label>
-			</div>
-			<div class="segmented icons" role="radiogroup" aria-label="Columns" title="Columns">
-				<label title="One column"><input type="radio" name="columns" value="1" aria-label="One column"><span><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5h5M5.5 7.5h5M5.5 10h5"/></svg></span></label>
-				<label title="Two columns"><input type="radio" name="columns" value="2" aria-label="Two columns"><span><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M4.5 5h2.5M4.5 7.5h2.5M4.5 10h2.5M9 5h2.5M9 7.5h2.5M9 10h2.5"/></svg></span></label>
-			</div>
-			<label class="switch"><input type="checkbox" name="images" role="switch"><span class="track"></span>Images</label>
-		</form>
-		<div class="toolbar-end">
-			<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
-			<span class="print-status" aria-live="polite"></span>
-			<span class="keys print-keys" aria-hidden="true"></span>
-			<button type="button" class="button print-button" title="Opens the print dialog. Choose Save as PDF there for a PDF.">
-				<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
-				<span class="print-label">Print</span>
-			</button>
 		</div>
-	</header>
-	<main class="desk">
-		<div class="sheet skeleton" aria-hidden="true">
-			<span class="bone meta"></span><span class="bone title"></span><span class="bone title short"></span>
-			<span class="bone line"></span><span class="bone hero"></span>
-			<span class="bone line"></span><span class="bone line"></span><span class="bone line"></span><span class="bone line short"></span>
+		<div class="sheets"></div>
+		<div class="wait" aria-live="polite">
+			<div class="wait-inner">
+				<div class="web" aria-hidden="true">
+					<span class="blk nav"></span><span class="blk title"></span><span class="blk title2"></span><span class="blk photo"></span>
+					<span class="blk ad"></span><span class="blk share"></span><span class="blk lines"></span><span class="blk cookie"></span><span class="blk ad2"></span>
+				</div>
+				<ol class="steps"></ol>
+			</div>
 		</div>
-		<article class="sheet article" hidden>
-			<header>
-				<p class="meta"><span class="site"></span><span class="byline"></span><span class="date"></span></p>
-				<h1 class="title"></h1>
-				<p class="excerpt"></p>
-				<hr>
-				<figure class="hero" hidden><img alt=""></figure>
-			</header>
-			<section class="content"></section>
-			<footer>
-				<hr>
-				<p>Printed with Screenbreak from <a class="source"></a></p>
-			</footer>
-		</article>
-		<section class="sheet message" hidden aria-live="polite">
+		<section class="message" hidden aria-live="polite">
 			<h1 class="message-title"></h1>
 			<p class="message-text"></p>
 			<p class="message-actions">
@@ -68,7 +34,85 @@
 				<button type="button" class="link-button close-tab">Close this tab</button>
 			</p>
 		</section>
-	</main>
+	</section>
+
+	<aside class="panel" aria-label="Print settings">
+		<div class="panel-head">
+			<img src="icons/logo.png" alt="Screenbreak" class="wordmark" width="141" height="20">
+			<div class="who"></div>
+		</div>
+		<div class="panel-body">
+			<div class="intro">
+				<h1>Ready to print</h1>
+				<p class="summary"></p>
+			</div>
+			<p class="straight-note" hidden>The button prints straight away. <button type="button" class="link-button show-page-next">Show this page next time</button></p>
+
+			<section class="sec" aria-labelledby="design-heading">
+				<div class="sec-h"><h2 id="design-heading">Design</h2><span class="help">Picked for this article</span></div>
+				<div class="picks" role="radiogroup" aria-labelledby="design-heading"></div>
+				<button type="button" class="link-button all-toggle" aria-expanded="false">See all designs</button>
+				<div class="design-grid" role="radiogroup" aria-label="All designs" hidden></div>
+			</section>
+
+			<section class="sec" aria-labelledby="paper-heading">
+				<div class="sec-h"><h2 id="paper-heading">Paper and ink</h2><span class="help">A4</span></div>
+				<div class="opt">
+					<p class="lbl" id="pictures-label">Pictures</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
+					<p class="help pictures-help"></p>
+				</div>
+				<div class="opt references-opt" hidden>
+					<p class="lbl" id="references-label">Reference list</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
+					<p class="help references-help"></p>
+				</div>
+				<div class="opt-row">
+					<label class="switch duplex"><input type="checkbox" name="duplex" role="switch"><span class="track"></span>Print on both sides</label>
+				</div>
+			</section>
+
+			<div class="actions">
+				<button type="button" class="button print-button" disabled>
+					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
+					<span class="print-label">Print</span>
+				</button>
+				<div class="secondary-row">
+					<button type="button" class="link-button pdf-button" disabled>Save as PDF</button>
+					<span class="help sheet-count"></span>
+				</div>
+				<p class="help duplex-hint" hidden>Turn on Two-sided under More settings in the print dialog.</p>
+				<div class="quota"></div>
+				<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
+			</div>
+
+			<div class="remember">
+				<label class="remember-top"><input type="checkbox" name="remember"><span><strong>Remember these choices</strong><small>Use them for the next article too.</small></span></label>
+				<div class="remember-more" hidden>
+					<fieldset>
+						<legend>Design</legend>
+						<label class="radio"><input type="radio" name="rememberDesign" value="fixed"><span><span class="fixed-name"></span> for every article</span></label>
+						<label class="radio"><input type="radio" name="rememberDesign" value="best"><span>The best match for each article</span></label>
+					</fieldset>
+					<fieldset>
+						<legend>When I press the button</legend>
+						<label class="radio"><input type="radio" name="rememberMode" value="page"><span>Show me this page first</span></label>
+						<label class="radio"><input type="radio" name="rememberMode" value="straight"><span>Print straight away<small>Right-click the button any time to come back here.</small></span></label>
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="account"></div>
+		</div>
+	</aside>
+
+	<div class="scrim done" hidden>
+		<div class="done-card" role="dialog" aria-modal="true" aria-labelledby="done-title">
+			<div class="done-stack"></div>
+			<h2 id="done-title">Sent to your printer</h2>
+			<div class="done-body"></div>
+		</div>
+	</div>
 	<script src="print.js"></script>
 </body>
 </html>

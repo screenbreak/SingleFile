@@ -7,6 +7,8 @@ import * as STATUS from "./status-copy.js";
 
 const MENU_SAVE = "save";
 const MENU_PRINT = "print";
+const MENU_PRINT_PREVIEW = "print-preview";
+const MENU_STRAIGHT_AWAY = "print-straight-away";
 const MENU_DEFAULT_PARENT = "default-action";
 const MENU_DEFAULT_PREFIX = "default-action:";
 const BUTTON_TITLES = {
@@ -43,7 +45,7 @@ chrome.runtime.onInstalled.addListener(async details => {
 chrome.runtime.onStartup.addListener(applyDefaultAction);
 
 chrome.storage.onChanged.addListener((changes, area) => {
-	if (area == "sync" && (changes.defaultAction || changes.saveWhenPrinting)) {
+	if (area == "sync" && (changes.defaultAction || changes.saveWhenPrinting || changes.print)) {
 		applyDefaultAction();
 	}
 });
@@ -57,6 +59,10 @@ chrome.action.onClicked.addListener(async tab => {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
 	if (info.menuItemId == MENU_SAVE || info.menuItemId == MENU_PRINT) {
 		runAction(info.menuItemId, tab);
+	} else if (info.menuItemId == MENU_PRINT_PREVIEW) {
+		runAction("print", tab, { preview: true });
+	} else if (info.menuItemId == MENU_STRAIGHT_AWAY) {
+		setStraightAway(info.checked);
 	} else if (String(info.menuItemId).startsWith(MENU_DEFAULT_PREFIX)) {
 		updateSettings({ defaultAction: info.menuItemId.substring(MENU_DEFAULT_PREFIX.length) });
 	}
@@ -94,7 +100,7 @@ chrome.tabs.onRemoved.addListener(tabId => {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	switch (message.method) {
 		case "screenbreak.run":
-			runAction(message.action, message.tab);
+			runAction(message.action, message.tab, { preview: !!message.preview });
 			break;
 		case "screenbreak.statusAction":
 			// The print page acts on the article tab it came from; the status card acts on its own tab.
@@ -141,6 +147,14 @@ async function applyDefaultAction() {
 	for (const action of Object.keys(DEFAULT_ACTION_LABELS)) {
 		chrome.contextMenus.update(MENU_DEFAULT_PREFIX + action, { checked: action == defaultAction }).catch(() => {});
 	}
+	chrome.contextMenus.update(MENU_STRAIGHT_AWAY, { checked: (await getSettings()).print.straightAway }).catch(() => {});
+}
+
+// "Print straight away": the button prints with the reader's settings and comes back to the article.
+// The right-click menu turns it on and off, and "Choose a design, then print" always shows the print page.
+async function setStraightAway(straightAway) {
+	const { print } = await getSettings();
+	await updateSettings({ print: { ...print, straightAway } });
 }
 
 async function createMenus() {
@@ -148,6 +162,8 @@ async function createMenus() {
 	await chrome.contextMenus.removeAll();
 	chrome.contextMenus.create({ id: MENU_SAVE, title: "Save to Screenbreak", contexts: ["action", "page"] });
 	chrome.contextMenus.create({ id: MENU_PRINT, title: PRINT_MENU_TITLES[saveWhenPrinting ? "printAndSave" : "print"], contexts: ["action", "page"] });
+	chrome.contextMenus.create({ id: MENU_PRINT_PREVIEW, title: "Choose a design, then print…", contexts: ["action", "page"] });
+	chrome.contextMenus.create({ id: MENU_STRAIGHT_AWAY, type: "checkbox", title: "Print straight away", checked: (await getSettings()).print.straightAway, contexts: ["action"] });
 	chrome.contextMenus.create({ id: MENU_DEFAULT_PARENT, title: "When I click the button", contexts: ["action"] });
 	for (const [action, label] of Object.entries(DEFAULT_ACTION_LABELS)) {
 		chrome.contextMenus.create({
@@ -161,14 +177,14 @@ async function createMenus() {
 	}
 }
 
-async function runAction(action, tab) {
+async function runAction(action, tab, { preview = false } = {}) {
 	if (!tab || runningTabs.has(tab.id)) {
 		return;
 	}
 	runningTabs.add(tab.id);
 	try {
 		if (action == "print") {
-			const printed = await printTab(tab);
+			const printed = await printTab(tab, { preview });
 			if ((await getSettings()).saveWhenPrinting) {
 				// The print version is already open; save from the article tab while the user reads or prints.
 				await saveTab(tab, { printJobId: printed.id, returnTabId: printed.tabId });
@@ -359,7 +375,7 @@ async function takeTip() {
 
 // Print
 
-async function printTab(tab) {
+async function printTab(tab, { preview = false } = {}) {
 	let article;
 	try {
 		article = await runInPage(tab, "content-print.js", "__screenbreakExtract");
@@ -372,7 +388,7 @@ async function printTab(tab) {
 	const id = crypto.randomUUID();
 	printJobs.set(id, article);
 	await storePrintJob(id, article);
-	const printTab = await chrome.tabs.create({ url: chrome.runtime.getURL("print.html#" + id), index: tab.index + 1, openerTabId: tab.id });
+	const printTab = await chrome.tabs.create({ url: chrome.runtime.getURL((preview ? "print.html?preview" : "print.html") + "#" + id), index: tab.index + 1, openerTabId: tab.id });
 	return { id, tabId: printTab.id };
 }
 

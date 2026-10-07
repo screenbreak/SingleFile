@@ -32,31 +32,67 @@ try {
 	await article.goto(ARTICLE_URL);
 	const extensionPage = await context.newPage();
 	await extensionPage.goto(`chrome-extension://${extensionId}/options.html`);
-	await extensionPage.evaluate(base => chrome.storage.sync.set({ serverUrl: base, print: { font: "sans", size: "normal", columns: 1, images: true, openPrintDialog: false } }), BASE);
+	await extensionPage.evaluate(base => chrome.storage.sync.set({ serverUrl: base, print: { design: "best", pictures: "colour", duplex: true, references: "small", straightAway: false } }), BASE);
 	const run = action => extensionPage.evaluate(async ({ action, url }) => {
 		const [tab] = await chrome.tabs.query({ url });
 		return chrome.runtime.sendMessage({ method: "screenbreak.run", action, tab });
 	}, { action, url: ARTICLE_URL });
 
-	// Print: the article opens in the print page, cleaned up, with code-built charts turned into images.
+	// Print: the article opens in the print page, set by the print engine in the best design for it, with
+	// code-built charts turned into images and the site's furniture left out.
 	const printPagePromise = context.waitForEvent("page", page => page.url().includes("print.html"));
 	await run("print");
 	const printPage = await printPagePromise;
-	await printPage.waitForSelector(".article:not([hidden])");
-	const printed = await printPage.evaluate(() => ({
-		title: document.querySelector("h1.title").textContent,
-		meta: document.querySelector(".article .meta").textContent,
-		images: Array.from(document.querySelectorAll(".content img")).map(image => image.getAttribute("src").split(/[,;]/)[0]),
-		tables: document.querySelectorAll(".content table").length,
-		embeds: document.querySelectorAll(".embed-link").length,
-		text: document.querySelector(".content").textContent
-	}));
+	await printPage.waitForSelector("body:not(.is-loading)", { timeout: 60000 });
+	const sheet = () => printPage.evaluate(() => {
+		const doc = document.querySelector(".sheet-holder.shown iframe").contentDocument;
+		return {
+			style: doc.body.className,
+			pages: doc.querySelectorAll(".page").length,
+			title: doc.querySelector(".masthead h1").textContent,
+			byline: doc.querySelector(".masthead .byline").textContent,
+			images: Array.from(doc.querySelectorAll("figure img")).map(image => image.getAttribute("src").split(/[:,;]/)[0]),
+			tables: doc.querySelectorAll("table").length,
+			embeds: doc.querySelectorAll(".embed-link").length,
+			text: doc.querySelector("#book").textContent
+		};
+	});
+	const printed = await sheet();
 	assert.equal(printed.title, "The Quiet Return of Paper");
-	assert.match(printed.meta, /Longform Weekly.*Maria Papadopoulou/);
-	assert.deepEqual(printed.images, [BASE + "/photo.png", "data:image/svg+xml", "data:image/png"]);
+	assert.match(printed.byline, /Maria Papadopoulou/);
+	assert.ok(printed.pages >= 1);
+	// The photo and the two code-built charts (SVG and canvas, turned into images on the page) are all read by
+	// the extension and printed from its own copy.
+	assert.deepEqual(printed.images, ["blob", "blob", "blob"]);
 	assert.equal(printed.tables, 1);
 	assert.equal(printed.embeds, 1);
 	assert.doesNotMatch(printed.text, /Most popular|Advertisement|Privacy|By Maria/);
+	assert.equal(await printPage.locator(".pick").count(), 3);
+	assert.match(await printPage.locator(".print-label").textContent(), /^Print \d+ pages?$/);
+	assert.match(await printPage.locator(".quota").textContent(), /3 of 3 free prints left/);
+
+	// Another design: the pages are set again in it.
+	await printPage.click(".all-toggle");
+	await printPage.locator(".tile", { hasText: "Riso zine" }).click();
+	await printPage.waitForFunction(() => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-riso"));
+
+	// Remember these choices: the design becomes the default.
+	await printPage.locator("input[name=remember]").check();
+	await printPage.waitForFunction(() => document.querySelector(".pick, .tile") && true);
+	const stored = await extensionPage.evaluate(() => chrome.storage.sync.get("print"));
+	assert.equal(stored.print.design, "riso");
+	await extensionPage.evaluate(() => chrome.storage.sync.set({ print: { design: "best", pictures: "colour", duplex: true, references: "small", straightAway: false } }));
+	await printPage.close();
+
+	// Print straight away: the button works as a printer. The print page opens the print dialog by itself,
+	// counts the print, then closes and leaves the reader on the article.
+	await extensionPage.evaluate(() => chrome.storage.sync.set({ print: { design: "best", pictures: "colour", duplex: true, references: "small", straightAway: true } }));
+	const straightPagePromise = context.waitForEvent("page", page => page.url().includes("print.html"));
+	await run("print");
+	const straightPage = await straightPagePromise;
+	await straightPage.waitForEvent("close", { timeout: 60000 });
+	assert.equal((await extensionPage.evaluate(() => chrome.storage.local.get("guestPrints"))).guestPrints, 1);
+	await extensionPage.evaluate(() => chrome.storage.sync.set({ print: { design: "best", pictures: "colour", duplex: true, references: "small", straightAway: false } }));
 
 	// Save: not logged in, so the status card asks first; "Log in" opens the login page, and once logged in the
 	// upload goes through. The card's shadow root is closed, so it is opened up here to click the button.

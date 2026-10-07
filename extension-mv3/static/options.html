@@ -5,103 +5,117 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Settings · Screenbreak</title>
 	<link rel="stylesheet" href="ui.css">
+	<link rel="stylesheet" href="flow.css">
 	<link rel="stylesheet" href="options.css">
 </head>
 <body>
-	<main class="page">
-		<img src="icons/logo.png" alt="Screenbreak" class="wordmark" width="141" height="20">
-		<h1>Settings</h1>
-		<p class="lede">Changes save automatically.</p>
-		<form>
-			<section aria-labelledby="button-heading">
-				<h2 id="button-heading">The Screenbreak button</h2>
-				<div class="row stack-narrow">
-					<div class="row-text"><p class="row-label" id="default-label">When I click it</p><p class="row-desc" id="default-desc"></p></div>
-					<span class="saved" aria-live="polite"></span>
-					<div class="segmented" role="radiogroup" aria-labelledby="default-label" aria-describedby="default-desc">
+	<section class="desk" aria-label="Sample print">
+		<div class="desk-bar">
+			<p class="source"><img class="favicon" src="icons/icon_16.png" alt="" width="16" height="16"><strong class="source-title">How to read on paper again</strong><span class="source-site">· Sample article</span></p>
+			<div class="segmented view-toggle" role="radiogroup" aria-label="View">
+				<label><input type="radio" name="view" value="pages" checked><span>Pages</span></label>
+				<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
+			</div>
+		</div>
+		<div class="sheets"></div>
+	</section>
+
+	<aside class="panel" aria-label="Settings">
+		<div class="panel-head">
+			<img src="icons/logo.png" alt="Screenbreak" class="wordmark" width="141" height="20">
+			<div class="who"></div>
+		</div>
+		<form class="panel-body">
+			<div class="intro">
+				<h1>Settings</h1>
+				<p>Changes save as you make them. The sample article shows each one.</p>
+			</div>
+
+			<section class="sec" aria-labelledby="button-heading">
+				<div class="sec-h"><h2 id="button-heading">The Screenbreak button</h2><span class="saved" aria-live="polite"></span></div>
+				<div class="opt">
+					<p class="lbl" id="default-label">When I click it</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="default-label" aria-describedby="default-desc">
 						<label><input type="radio" name="defaultAction" value="ask"><span>Ask me</span></label>
 						<label><input type="radio" name="defaultAction" value="save"><span>Save</span></label>
 						<label><input type="radio" name="defaultAction" value="print"><span>Print</span></label>
 					</div>
+					<p class="help" id="default-desc"></p>
 				</div>
-				<div class="row">
-					<div class="row-text"><p class="row-label">Save shortcut</p><p class="row-desc">Saves the page to your Screenbreak account.</p></div>
-					<span></span>
-					<span class="keycaps" data-shortcut="save"></span>
-				</div>
-				<div class="row">
-					<div class="row-text"><p class="row-label">Print shortcut</p><p class="row-desc">Opens the clean print version.</p></div>
-					<span></span>
-					<span class="keycaps" data-shortcut="print"></span>
-				</div>
-				<p class="note">Save and Print are also in the right-click menu, on the button and on any page. <button type="button" class="link-button shortcuts">Change shortcuts</button></p>
-			</section>
-			<section aria-labelledby="print-heading">
-				<h2 id="print-heading">Print</h2>
-				<div class="row">
-					<div class="row-text"><p class="row-label" id="also-save-label">Also save what I print</p><p class="row-desc">Saves each article you print to your account. Needs a login.</p></div>
-					<span class="saved" aria-live="polite"></span>
-					<label class="switch"><input type="checkbox" name="saveWhenPrinting" role="switch" aria-labelledby="also-save-label"><span class="track"></span></label>
-				</div>
-				<p class="section-desc">Defaults for the print version. You can still change them before you print.</p>
-				<div class="row">
-					<div class="row-text"><p class="row-label" id="font-label">Font</p></div>
-					<span class="saved" aria-live="polite"></span>
-					<div class="segmented" role="radiogroup" aria-labelledby="font-label">
-						<label><input type="radio" name="font" value="sans"><span class="sample-sans">Sans</span></label>
-						<label><input type="radio" name="font" value="serif"><span class="sample-serif">Serif</span></label>
+				<div class="opt">
+					<p class="lbl" id="mode-label">When I print</p>
+					<div class="choices" role="radiogroup" aria-labelledby="mode-label">
+						<label class="choice">
+							<input type="radio" name="straightAway" value="page">
+							<svg viewBox="0 0 120 64" aria-hidden="true"><rect x="1" y="1" width="118" height="62" rx="6" fill="none" stroke="currentColor" stroke-opacity=".25"/><rect x="10" y="9" width="34" height="47" fill="#fff" stroke="currentColor" stroke-opacity=".3"/><rect x="15" y="15" width="22" height="4" fill="currentColor" fill-opacity=".7"/><rect x="15" y="23" width="24" height="10" fill="#4c9b6e"/><rect x="15" y="37" width="24" height="2" fill="currentColor" fill-opacity=".35"/><rect x="15" y="42" width="24" height="2" fill="currentColor" fill-opacity=".35"/><rect x="15" y="47" width="18" height="2" fill="currentColor" fill-opacity=".35"/><rect x="56" y="12" width="52" height="8" rx="2" fill="currentColor" fill-opacity=".12"/><rect x="56" y="24" width="52" height="8" rx="2" fill="currentColor" fill-opacity=".12"/><rect x="56" y="42" width="52" height="11" rx="3" fill="#005d4c"/></svg>
+							<strong>Show me the print page</strong>
+							<span>See the pages, pick a design, then print.</span>
+						</label>
+						<label class="choice">
+							<input type="radio" name="straightAway" value="straight">
+							<svg viewBox="0 0 120 64" aria-hidden="true"><rect x="1" y="1" width="118" height="62" rx="6" fill="none" stroke="currentColor" stroke-opacity=".25"/><path d="M40 20h40v10H40z" fill="currentColor" fill-opacity=".55"/><path d="M34 31h52a4 4 0 0 1 4 4v14h-9v8H39v-8h-9V35a4 4 0 0 1 4-4z" fill="currentColor" fill-opacity=".8"/><rect x="45" y="44" width="30" height="13" fill="#fff" stroke="currentColor" stroke-opacity=".3"/><rect x="49" y="48" width="22" height="2" fill="#4c9b6e"/><rect x="49" y="52" width="16" height="2" fill="currentColor" fill-opacity=".35"/></svg>
+							<strong>Print straight away</strong>
+							<span>The print dialog opens with these settings.</span>
+						</label>
 					</div>
+					<p class="help mode-help"></p>
 				</div>
-				<div class="row">
-					<div class="row-text"><p class="row-label" id="size-label">Text size</p></div>
-					<span class="saved" aria-live="polite"></span>
-					<div class="segmented" role="radiogroup" aria-labelledby="size-label">
-						<label title="Small text"><input type="radio" name="size" value="small" aria-label="Small"><span class="size-a" style="font-size:12px">A</span></label>
-						<label title="Medium text"><input type="radio" name="size" value="normal" aria-label="Medium"><span class="size-a" style="font-size:15px">A</span></label>
-						<label title="Large text"><input type="radio" name="size" value="large" aria-label="Large"><span class="size-a" style="font-size:18px">A</span></label>
-					</div>
-				</div>
-				<div class="row">
-					<div class="row-text"><p class="row-label" id="columns-label">Columns</p></div>
-					<span class="saved" aria-live="polite"></span>
-					<div class="segmented icons" role="radiogroup" aria-labelledby="columns-label">
-						<label title="One column"><input type="radio" name="columns" value="1" aria-label="One column"><span><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5h5M5.5 7.5h5M5.5 10h5"/></svg></span></label>
-						<label title="Two columns"><input type="radio" name="columns" value="2" aria-label="Two columns"><span><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M4.5 5h2.5M4.5 7.5h2.5M4.5 10h2.5M9 5h2.5M9 7.5h2.5M9 10h2.5"/></svg></span></label>
-					</div>
-				</div>
-				<div class="row">
-					<div class="row-text"><p class="row-label" id="images-label">Include images</p><p class="row-desc">Photos, charts and diagrams from the article.</p></div>
-					<span class="saved" aria-live="polite"></span>
-					<label class="switch"><input type="checkbox" name="images" role="switch" aria-labelledby="images-label"><span class="track"></span></label>
-				</div>
-				<div class="row">
-					<div class="row-text"><p class="row-label" id="dialog-label">Open the print dialog straight away</p><p class="row-desc">Skip the preview and go straight to printing.</p></div>
-					<span class="saved" aria-live="polite"></span>
-					<label class="switch"><input type="checkbox" name="openPrintDialog" role="switch" aria-labelledby="dialog-label"><span class="track"></span></label>
-				</div>
+				<label class="switch"><input type="checkbox" name="saveWhenPrinting" role="switch"><span class="track"></span>Also save what I print to my account</label>
 			</section>
-			<section aria-labelledby="account-heading">
-				<h2 id="account-heading">Account</h2>
-				<div class="row stack-narrow">
-					<div class="row-text"><p class="row-label">Screenbreak account</p><p class="row-desc">Save uses the account you're logged in to on Screenbreak. Print works without one.</p></div>
-					<span></span>
-					<a class="button button-outline button-small library" target="_blank">Open Screenbreak</a>
-				</div>
+
+			<section class="sec" aria-labelledby="design-heading">
+				<div class="sec-h"><h2 id="design-heading">Design</h2><span class="saved" aria-live="polite"></span></div>
+				<label class="radio"><input type="radio" name="designMode" value="best"><span><strong>The best match for each article</strong><small>Picked from what the article holds: photos, footnotes, recipes, code. You can change it on the print page.</small></span></label>
+				<label class="radio"><input type="radio" name="designMode" value="fixed"><span><strong>The same design every time</strong><small>Pick it below.</small></span></label>
+				<div class="design-grid" role="radiogroup" aria-label="Designs"></div>
+				<p class="help design-help"></p>
 			</section>
+
+			<section class="sec" aria-labelledby="paper-heading">
+				<div class="sec-h"><h2 id="paper-heading">Paper and ink</h2><span class="saved" aria-live="polite"></span></div>
+				<div class="opt">
+					<p class="lbl" id="pictures-label">Pictures</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
+					<p class="help pictures-help"></p>
+				</div>
+				<div class="opt">
+					<p class="lbl" id="references-label">Long reference lists</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
+					<p class="help">Some pages end with hundreds of references. A Wikipedia biography can run to 40 pages of them.</p>
+				</div>
+				<label class="switch"><input type="checkbox" name="duplex" role="switch"><span class="track"></span>I print on both sides</label>
+				<p class="help">Paper is A4. US Letter is coming.</p>
+			</section>
+
+			<section class="sec" aria-labelledby="keys-heading">
+				<div class="sec-h"><h2 id="keys-heading">Shortcuts</h2></div>
+				<div class="key-row"><span>Print</span><span class="keycaps" data-shortcut="print"></span></div>
+				<div class="key-row"><span>Save</span><span class="keycaps" data-shortcut="save"></span></div>
+				<p class="help">Both are also in the right-click menu, on the button and on any page. <button type="button" class="link-button shortcuts">Change shortcuts</button></p>
+			</section>
+
+			<section class="sec" aria-labelledby="account-heading">
+				<div class="sec-h"><h2 id="account-heading">Account</h2></div>
+				<div class="quota"></div>
+				<div class="account"></div>
+			</section>
+
 			<details>
 				<summary><span>Advanced</span><svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 6.5l3 3 3-3"/></svg></summary>
 				<div class="field">
-					<label class="row-label" for="server-url">Server address</label>
-					<p class="row-desc">Only change this if Screenbreak support asks you to.</p>
+					<label class="lbl" for="server-url">Server address</label>
+					<p class="help">Only change this if Screenbreak support asks you to.</p>
 					<input type="url" id="server-url" name="serverUrl" required spellcheck="false">
 				</div>
+				<p class="help">For testing: <button type="button" class="link-button reset-prints">Reset the free print count</button></p>
 			</details>
+
+			<footer class="foot">
+				<p><span class="version"></span> · <a href="welcome.html">Welcome page</a></p>
+				<p class="reset-area"><button type="button" class="link-button reset">Reset to defaults</button></p>
+			</footer>
 		</form>
-		<footer class="foot">
-			<p><span class="version"></span> · <a href="welcome.html">Welcome page</a></p>
-			<p class="reset-area"><button type="button" class="link-button reset">Reset to defaults</button></p>
-		</footer>
-	</main>
+	</aside>
 	<script src="options.js"></script>
 </body>
 </html>

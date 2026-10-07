@@ -1,0 +1,21 @@
+/* The print document inside the print page's preview. On paper the pages are what printlab's paginate.js
+   builds; on screen each page also gets its sheet of paper around it, the size of A4. */
+@media screen {
+	html { background: transparent; }
+	body { margin: 0; }
+	#book { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px; }
+	html.spread #book { display: grid; grid-template-columns: repeat(2, 210mm); justify-content: center; gap: 28px 18px; }
+	.paper { position: relative; box-sizing: border-box; width: 210mm; height: 297mm; padding: 16mm 15mm 0; background: #fff;
+		box-shadow: 0 1px 1px rgba(29, 30, 27, .06), 0 10px 30px rgba(29, 40, 33, .16); }
+	.paper > .page { position: relative; }
+}
+@media print {
+	.paper { display: contents; }
+}
+/* Chrome prints its own date, title and URL in any page margin box left empty, so the empty ones are claimed. */
+@page {
+	@top-left { content: ""; }
+	@top-center { content: ""; }
+	@top-right { content: ""; }
+	@bottom-center { content: ""; }
+}
