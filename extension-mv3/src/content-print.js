@@ -35,7 +35,7 @@ globalThis.__screenbreakExtract = async function extract() {
 			siteName: article.siteName || metadata.siteName || location.hostname.replace(/^www\./, ""),
 			publishedTime: article.publishedTime || metadata.publishedTime,
 			excerpt: article.excerpt,
-			heroImage: metadata.image,
+			heroImage: containsImage(article.content, metadata.image) ? undefined : metadata.image,
 			lang: article.lang || document.documentElement.lang,
 			dir: article.dir,
 			content: removeSiteFurniture(article.content)
@@ -146,6 +146,25 @@ function removeSiteFurniture(html) {
 		}
 	}
 	return doc.body.innerHTML;
+}
+
+// The share image (og:image) is often a photo the article already shows, in another size: Wikimedia
+// "960px-Name.jpg" against "250px-Name.jpg", WordPress "name-1024x768.jpg" against "name.jpg". Compare the
+// image's folder and file name without those size marks.
+function containsImage(html, url) {
+	const target = imageKey(url);
+	return Boolean(target) && Array.from(html.matchAll(/<img[^>]+src="([^"]+)"/g)).some(match => imageKey(match[1].replace(/&amp;/g, "&")) == target);
+}
+
+function imageKey(url) {
+	try {
+		const path = decodeURIComponent(new URL(url, document.baseURI).pathname).replace(/\/thumb(\/.+)\/[^/]+$/, "$1");
+		const slash = path.lastIndexOf("/");
+		const name = path.substring(slash + 1).replace(/^\d+px-/, "").replace(/[-_]?\d+x\d+(?=\.)/, "");
+		return path.substring(0, slash + 1) + name;
+	} catch (error) {
+		return null;
+	}
 }
 
 function getCodeBuiltImages(doc) {
