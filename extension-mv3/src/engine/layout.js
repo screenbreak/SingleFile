@@ -60,7 +60,7 @@ function classify(f) {
 	if (f.codeBlocks >= 2) return pick("tutorial", `${f.codeBlocks} code blocks`);
 	if (f.charts >= 2 && f.charts * 700 >= f.words) return pick("data", `${f.charts} charts for ${f.words} words`);
 	if (f.photos >= 5 && f.words / f.photos < 220) return pick("photo", `${f.photos} photos, ${Math.round(f.words / f.photos)} words per photo`);
-	if (f.words >= 2500 && f.photos + f.charts <= 4) return pick("essay", `${f.words} words, few images`);
+	if (f.words >= 2500 && f.photos + f.charts + f.graphics <= 4) return pick("essay", `${f.words} words, few images`);
 	return pick("news", "default");
 }
 
@@ -211,9 +211,10 @@ export async function prepare(article) {
 	for (const v of visuals) if (v.blank || (v.px && v.px.w < MIN_PICTURE && v.px.h < MIN_PICTURE)) v.broken = true;
 	const byId = Object.fromEntries(visuals.map(v => [v.id, v]));
 	const body = structure(root, man);
-	const f = { ...body.features, photos: 0, charts: 0, videos: 0, recipeSchema: false };
+	const f = { ...body.features, photos: 0, charts: 0, graphics: 0, videos: 0, recipeSchema: false };
+	// As in printlab: a graphic saved as an image file (a chart, a screenshot or a logo) is counted on its own, not as a photo or a chart.
 	for (const b of body.blocks) { const v = byId[b.id]; if (!v || v.broken || strip(v)) continue;
-		if (v.kind === "img" && !v.graphic) f.photos++; else f.charts++; }
+		if (v.kind === "img" && v.graphic) f.graphics++; else if (v.kind === "img") f.photos++; else f.charts++; }
 	const cls = classify(f);
 	const rec = recommend(f, { man, byId, blocks: body.blocks, heroId: body.heroId, type: cls.type });
 	return { man, byId, body, features: f, type: cls.type, picks: rec.picks, options: rec.options, facts: rec.facts };

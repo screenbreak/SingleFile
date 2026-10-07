@@ -1,4 +1,4 @@
-// Copied from screenbreak/webapp printlab/recommend.js (branch claude/project-thread-2c6roz, 6346675). Keep the two in step.
+// Copied from screenbreak/webapp printlab/recommend.js (branch claude/project-thread-2c6roz, 3abca47). Keep the two in step.
 // Pick print designs for an article from what it contains. Plain, explainable rules: every score comes
 // with the reason a reader would accept ("8 footnotes: they sit in the margin next to the text").
 // Runs in a millisecond, so it can rank options before anything is rendered.
@@ -12,15 +12,18 @@ const PAGE_AREA = 180 * 262;                       // printable mm² of an A4 pa
 
 function facts(f, { man, byId, blocks, heroId, type }) {
   const vis = blocks.map(b => byId[b.id]).filter(Boolean);
-  const photos = vis.filter(v => (v.kind === 'img' || v.kind === 'css_background') && !v.error && !v.broken);
+  const images = vis.filter(v => (v.kind === 'img' || v.kind === 'css_background') && !v.error && !v.broken);
+  // A chart saved as an image file (white ground, few tones: "graphic") is not a photo: Our World in Data charts are
+  // PNGs, and counting them as photos sent data stories to photo layouts and full-page covers.
+  const photos = images.filter(v => !v.graphic), graphics = images.length - photos.length;
   const pxOf = v => v.px || v.natural || (v.box ? { w: v.box.w * 3, h: v.box.h * 3 } : null);
   // Area each photo will roughly take on paper (200 dpi, never wider than the page or taller than 120mm).
   const photoArea = photos.reduce((a, v) => { const p = pxOf(v); if (!p || !p.w) return a;
     const w = Math.min(180, p.w / 200 * 25.4), h = Math.min(120, w * p.h / p.w); return a + w * h; }, 0);
-  const hero = heroId != null ? byId[heroId] : null, heroPx = hero && pxOf(hero);
+  const hero = heroId != null && byId[heroId] && !byId[heroId].graphic ? byId[heroId] : null, heroPx = hero && pxOf(hero);
   return {
     type, words: f.words, minutes: Math.max(1, Math.round(f.words / 230)),
-    photos: photos.length, charts: f.charts, code: f.codeBlocks, footnotes: f.footnotes || 0,
+    photos: photos.length, charts: f.charts, graphics, code: f.codeBlocks, footnotes: f.footnotes || 0,
     sections: f.sections || 0, quotes: f.quotes || 0, tables: f.tables || 0,
     photoPages: +(photoArea / PAGE_AREA).toFixed(2),                       // how many A4 pages of photo ink
     heroPx: heroPx ? { w: heroPx.w, h: heroPx.h } : null,
@@ -33,6 +36,7 @@ function recommend(f, ctx) {
   const x = facts(f, ctx), picks = [];
   const add = (style, score, why) => picks.push({ style, score: Math.round(score), why });
   const long = x.words >= 2500, medium = x.words >= 900;
+  const newsLength = x.words >= 600 && x.words <= 1800, figures = x.charts + x.graphics;
 
   // Structure-led types keep their own design; styles only change the look.
   if (x.type === 'tutorial') {
@@ -60,10 +64,9 @@ function recommend(f, ctx) {
     add('swiss', 30 + Math.min(30, x.sections * 5) + Math.min(20, (x.charts + x.tables) * 5) + (x.type === 'data' ? 20 : 0),
       x.sections >= 4 ? `${x.sections} sections: numbered heads in the margin make it easy to navigate` : x.charts + x.tables ? 'charts and tables on a strict grid' : 'a clean grid');
     // Book: long, mostly words.
-    add('book', long && x.photos + x.charts <= 2 ? 75 : long ? 50 : 20,
+    add('book', long && x.photos + figures <= 2 ? 75 : long ? 50 : 20,                  // illustrations count as pictures here
       long ? `${x.minutes} minutes of mostly text: one calm column, like a book` : 'one calm column');
     // Broadsheet: news-length pieces with a photo or two fill whole newspaper pages; not with maps or charts.
-    const newsLength = x.words >= 600 && x.words <= 1800;
     add('broadsheet', newsLength && x.photos >= 1 && x.photos <= 6 && !x.charts ? 64 : 25,
       newsLength ? `a ${x.minutes}-minute story with ${x.photos === 1 ? 'a photo' : x.photos + ' photos'}: one or two dense newspaper pages` : 'a newspaper page');
     // Magazine: photo features, where big pictures and a display title carry the story. Not reference pages.
@@ -72,8 +75,9 @@ function recommend(f, ctx) {
       x.words >= 1500 && x.photos >= 2 ? `a feature with ${x.photos} photos: large pictures, a display title and pull quotes` : 'a feature layout');
     // Classic: the judges' most frequent choice: compact, photos uncropped beside their text. Best for very short
     // items (one calm page), long reference pages and anything with maps or charts in the text.
-    add('classic', 55 + (x.words < 600 ? 12 : 0) + (reference ? 20 : 0) + (x.charts && x.charts <= 4 ? 8 : 0),
-      x.words < 600 ? 'a short piece: one calm two-column page' : reference ? `${x.sections} sections of reference text: dense, even columns` : x.charts ? 'charts stay next to the text that explains them' : 'the standard two-column layout');
+    add('classic', 55 + (x.words < 600 ? 12 : 0) + (reference ? 20 : 0) + (figures && figures <= 8 ? 8 : 0),
+      x.words < 600 ? 'a short piece: one calm two-column page' : reference ? `${x.sections} sections of reference text: dense, even columns`
+        : figures ? `${figures === 1 ? 'a chart stays' : figures + ' charts and diagrams stay'} next to the text that explains ${figures === 1 ? 'it' : 'them'}` : 'the standard two-column layout');
     // Photo essay: many big photos and not much text per photo.
     add('gallery', x.photos >= 5 && x.words / x.photos < 250 ? 70 + Math.min(20, x.photos) : x.photos >= 4 ? 45 : 0,
       `${x.photos} photos: each one large, the text between them`);
@@ -92,6 +96,22 @@ function recommend(f, ctx) {
   // Very long articles: single-column and margin layouts run to 30+ pages; prefer denser pages.
   if (x.words > 7000) for (const p of picks) if (['notes', 'book', 'gallery', 'dossier', 'large'].includes(p.style)) {
     p.score -= 25; p.why += ` (but about ${Math.round(x.words / 330)} pages at this length)`; }
+  // Design judges 2026-10-07 (40 articles, blind, Opus): two columns beat one column 34 to 6, mostly on paper (one
+  // column ran 40-80% longer for about the same comfort), and the one-column designs (swiss, gallery, book) ranked first
+  // too often. Yorgos: a column design first for news, data, photo and interview articles; one column second, with its
+  // cost. Which column design follows the content, as the judges of 2026-10-05 chose: magazine for photo features,
+  // broadsheet for news-length stories with a photo or two (fewer pages), classic for the rest (charts, interviews).
+  if (['news', 'data', 'photo', 'interview'].includes(x.type)) {
+    const photoFeature = x.type === 'photo' || (x.photos >= 3 && x.photoPages >= 1 && x.words >= 600 && !x.charts && x.graphics <= 1);
+    const shortNews = x.type === 'news' && newsLength && x.photos >= 1 && x.photos <= 6 && !x.charts && x.graphics <= 2;  // a logo or a screenshot is a graphic too
+    const lead = x.type === 'interview' ? 'classic' : photoFeature ? 'magazine' : shortNews ? 'broadsheet' : 'classic';
+    const best = Math.max(...picks.map(p => p.score)), first = picks.find(p => p.style === lead), book = picks.find(p => p.style === 'book');
+    if (first) { first.score = best + 2; first.why = {
+      magazine: `a feature with ${x.photos} photos: big pictures and a display title, in two columns`,
+      broadsheet: `a ${x.minutes}-minute story with ${x.photos === 1 ? 'a photo' : x.photos + ' photos'}: newspaper columns, the fewest pages`,
+      classic: figures ? `${figures === 1 ? 'a chart stays' : figures + ' charts and diagrams stay'} next to the text, in two columns` : 'two columns: what readers preferred for this kind of article, on the fewest sheets',
+    }[lead]; }
+    if (book) { book.score = best + 1; book.why = 'one calm column with larger type, for a slower read: about 40% more pages'; } }
   picks.sort((a, b) => b.score - a.score);
   // The top three should be real alternatives: at most one per family of page layouts.
   const FAMILY = { classic: 'two', house: 'two', magazine: 'two', modern: 'two', quiet: 'two', loud: 'loud', riso: 'loud',
