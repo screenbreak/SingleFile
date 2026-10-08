@@ -1,5 +1,5 @@
 /* The done state (src/done.js), its offer slot, the receipt sheet (src/receipt.js) and Settings "Your prints".
-   Tokens come from ui.css. One left edge with the panel: every text line starts at the panel's 24 px padding;
+   Tokens come from ui.css. One left edge with the panel: every text line starts at the panel's padding;
    the done tick and the ladder marks hang in the gutter so they do not push the text in. */
 
 .done-state { display: grid; gap: 20px; }
@@ -17,8 +17,9 @@
 .done-saving { margin: 2px 0 0; font: 400 13px/20px var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .done-saving mark { padding: 1px 3px; margin: 0 -1px; color: var(--ink); background: var(--mark); border-radius: 2px; }
 .done-hint { margin: 0; font: 400 13.5px/20px var(--sans); color: var(--muted); }
-.done-thumb { display: none; }
-.done-thumb img, .done-thumb canvas { display: block; width: 52px; height: 74px; object-fit: cover; background: var(--paper); border-radius: 2px; box-shadow: 0 1px 3px rgba(22, 26, 24, .18); }
+/* Page 1 at 52 x 74: an image URL, or the live frame desk.thumbnail() returns (its own inline size). */
+.done-thumb { display: none; width: 52px; height: 74px; overflow: hidden; background: var(--paper); border-radius: 2px; box-shadow: 0 1px 3px rgba(22, 26, 24, .18); }
+.done-thumb > * { display: block; width: 52px; height: 74px; object-fit: cover; }
 
 /* Pills: one filled (ink) pill per state; the rest are secondary. The green fill is for print actions only. */
 .pill {
@@ -49,13 +50,17 @@
 .done-change { padding-top: 16px; border-top: 1px solid var(--line); }
 
 /* Narrow windows: the panel sits under the pages, so the same content rises as a bottom sheet over them,
-   with page 1 of this article beside the title. No scrim: the pages stay bright. */
+   with page 1 of this article beside the title. No scrim: the pages stay bright. The sheet is full-bleed with
+   the page's 16 px gutter, so its text starts at x = 16 like the head and intro; the tick hangs in the gutter. */
 @media (max-width: 860px) {
 	.done-state {
 		position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 85vh; overflow: auto;
-		padding: 20px 24px calc(24px + env(safe-area-inset-bottom)); background: var(--surface);
+		padding: 20px 16px calc(24px + env(safe-area-inset-bottom)); background: var(--surface);
 		border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 32px rgba(22, 26, 24, .14);
 	}
+	.done-state:not([hidden]) { margin: 0; }
+	.done-state .done-tick { left: -14px; top: 2px; width: 12px; height: 12px; }
+	.done-state .done-tick svg { width: 12px; height: 12px; }
 	.done-top:has(.done-thumb) { grid-template-columns: minmax(0, 1fr) 52px; align-items: start; }
 	.done-thumb { display: block; }
 }
@@ -103,3 +108,9 @@
 .ladder .ahead { color: var(--muted); }
 .ladder-dot { position: absolute; left: -17px; top: 6px; width: 8px; height: 8px; border: 1.5px solid var(--line); border-radius: 50%; }
 .ladder time { font: 400 12px/20px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Settings under 860 px has a 16 px gutter: the marks shrink to fit it, clear of the text edge. */
+@media (max-width: 860px) {
+	.ladder .done-tick { left: -14px; top: 4px; width: 12px; height: 12px; }
+	.ladder .done-tick svg { width: 12px; height: 12px; }
+	.ladder-dot { left: -12px; }
+}
