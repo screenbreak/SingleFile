@@ -59,34 +59,54 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 /* Icons: 20 px line icons in the text colour. */
 .icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 
-/* Buttons */
+/* Buttons: pills (BRAND-SPEC). Green (.button) = a print action only; ink pill = the page's main step when it is
+   not a print; outline = secondary (surface + 1 px line). */
 .button {
-	display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 16px;
-	font: 600 14px/1 var(--sans); color: #fff; background: var(--green); border: 1px solid var(--green); border-radius: 8px;
+	display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 18px;
+	font: 600 14px/1 var(--sans); color: #fff; background: var(--green); border: 1px solid var(--green); border-radius: 999px;
 	cursor: pointer; white-space: nowrap; text-decoration: none;
 }
 .button:hover { background: var(--green-hover); border-color: var(--green-hover); text-decoration: none; }
 .button .icon { width: 18px; height: 18px; }
-.button-outline { color: var(--ink); background: var(--canvas); border-color: var(--line); }
-.button-outline:hover { background: var(--tint); border-color: var(--line); }
-.button-small { height: 32px; padding: 0 12px; font-size: 13px; }
-.link-button { padding: 0; font: 500 14px/20px var(--sans); color: var(--green); background: none; border: 0; cursor: pointer; }
+.button-ink { color: #fff; background: var(--ink); border-color: var(--ink); }
+.button-ink:hover { background: #2c322f; border-color: #2c322f; }
+.button-outline { color: var(--ink); background: var(--surface); border-color: var(--line); }
+.button-outline:hover { background: var(--accent-soft); border-color: var(--line); }
+.button-small { height: 32px; padding: 0 14px; font-size: 13px; }
+.link-button { padding: 0; font: 500 14px/20px var(--sans); color: var(--green); background: none; border: 0; cursor: pointer; text-align: left; }
 .link-button:hover { text-decoration: underline; text-underline-offset: 2px; }
 button:disabled, .button[aria-disabled=true] { opacity: .45; cursor: default; pointer-events: none; }
+
+/* Mono eyebrow: small uppercase labels (BRAND-SPEC). */
+.eyebrow { margin: 0; font: 400 11px/16px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+/* Locks: a line padlock in --muted (never green). Locked labels are --muted text at full opacity (4.6:1). */
+.lock { flex: none; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; color: var(--muted); }
+.lock-chip { position: absolute; right: 4px; bottom: 4px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); }
+.lock-chip .lock { color: var(--ink); }
+
+/* Checkbox with its label */
+.check { display: inline-flex; align-items: center; gap: 8px; font: 400 13px/20px var(--sans); color: var(--ink); cursor: pointer; }
+.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 
 /* Segmented control: radio inputs inside labels. White thumb on a tint track; no green (05-print-toolbar). */
 .segmented { display: inline-flex; padding: 2px; gap: 2px; background: var(--tint); border-radius: 8px; }
 .segmented label { position: relative; display: block; cursor: pointer; }
 .segmented input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.segmented span {
+.segmented label > span {
 	display: flex; align-items: center; justify-content: center; gap: 6px; height: 28px; min-width: 32px; padding: 0 12px;
 	font: 500 13px/1 var(--sans); color: var(--ink-2); border-radius: 6px; transition: background-color .12s, color .12s;
 }
-.segmented label:hover span { color: var(--ink); }
+.segmented label:hover > span { color: var(--ink); }
 .segmented input:checked + span { color: var(--ink); background: #fff; box-shadow: 0 1px 2px rgba(29, 29, 27, .12), 0 0 0 .5px rgba(29, 29, 27, .06); }
 .segmented input:focus-visible + span { outline: 2px solid var(--green); outline-offset: 1px; }
 .segmented .icon { width: 16px; height: 16px; }
-.segmented.icons span { padding: 0 8px; }
+/* A locked segment keeps --ink-2: --muted on the track is 4.28:1, under AA. The lock marks it; in preview it gets the ink edge. */
+.segmented label[data-locked] input:checked + span { box-shadow: 0 0 0 2px var(--ink); }
+.segmented .lock { margin-left: -2px; }
+.segmented .short { display: none; }
+@media (max-width: 399px) { .segmented .long { display: none; } .segmented .short { display: inline; } }
+.segmented.icons label > span { padding: 0 8px; }
 .segmented .sample-serif { font-family: var(--serif); font-size: 14px; font-weight: 400; }
 .segmented .sample-sans { font-family: var(--sans); font-size: 13px; }
 .segmented .size-a { font-family: var(--serif); font-weight: 400; line-height: 1; }

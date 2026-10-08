@@ -66,9 +66,9 @@
 			<section class="sec" aria-labelledby="design-heading">
 				<div class="sec-h"><h2 id="design-heading">Design</h2><span class="saved" aria-live="polite"></span></div>
 				<label class="radio"><input type="radio" name="designMode" value="best"><span><strong>The best match for each article</strong><small>Picked from what the article holds: photos, footnotes, recipes, code. You can change it on the print page.</small></span></label>
-				<label class="radio"><input type="radio" name="designMode" value="fixed"><span><strong>The same design every time</strong><small>Pick it below.</small></span></label>
+				<label class="radio design-fixed"><input type="radio" name="designMode" value="fixed"><span><strong>The same design every time</strong><small>Pick it below.</small></span></label>
 				<div class="design-grid" role="radiogroup" aria-label="Designs"></div>
-				<p class="help design-help"></p>
+				<p class="help design-help" aria-live="polite"></p>
 			</section>
 
 			<section class="sec" aria-labelledby="paper-heading">
@@ -80,14 +80,14 @@
 				<div class="opt">
 					<p class="lbl" id="pictures-label">Pictures</p>
 					<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
-					<p class="help pictures-help"></p>
+					<p class="help pictures-help" aria-live="polite"></p>
 				</div>
 				<div class="opt">
 					<p class="lbl" id="references-label">Long reference lists</p>
 					<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
-					<p class="help">Some pages end with hundreds of references. A Wikipedia biography can run to 40 pages of them.</p>
+					<p class="help references-help" aria-live="polite">Some pages end with hundreds of references. A Wikipedia biography can run to 40 pages of them.</p>
 				</div>
-				<label class="switch"><input type="checkbox" name="duplex" role="switch"><span class="track"></span>I print on both sides</label>
+				<p class="help lock-line" id="lock-line" hidden>All 11 designs and every option. Free, just an email. <button type="button" class="link-button lock-continue">Continue with email</button></p>
 			</section>
 
 			<section class="sec" aria-labelledby="keys-heading">
@@ -97,10 +97,25 @@
 				<p class="help">Both are also in the right-click menu, on the button and on any page. <button type="button" class="link-button shortcuts">Change shortcuts</button></p>
 			</section>
 
+			<section class="sec your-prints" aria-labelledby="prints-heading" hidden>
+				<div class="sec-h"><h2 id="prints-heading">Your prints</h2></div>
+				<div class="your-prints-body"></div>
+			</section>
+
 			<section class="sec" aria-labelledby="account-heading">
 				<div class="sec-h"><h2 id="account-heading">Account</h2></div>
-				<div class="quota"></div>
 				<div class="account"></div>
+				<div class="door-slot account-door" hidden></div>
+			</section>
+
+			<section class="sec" aria-labelledby="share-heading">
+				<div class="sec-h"><h2 id="share-heading">Share</h2></div>
+				<p class="share-row"><a class="rate-link" target="_blank" rel="noopener">Rate Screenbreak on the Chrome Web Store ↗</a></p>
+				<div class="share-row friend">
+					<p class="lbl">Tell a friend</p>
+					<p class="help">Know someone who prints articles? Send them myscreenbreak.com.</p>
+					<p class="friend-actions"><button type="button" class="button button-outline button-small copy-link">Copy link</button><span class="copied help" role="status"></span></p>
+				</div>
 			</section>
 
 			<details>
@@ -110,7 +125,6 @@
 					<p class="help">Only change this if Screenbreak support asks you to.</p>
 					<input type="url" id="server-url" name="serverUrl" required spellcheck="false">
 				</div>
-				<p class="help">For testing: <button type="button" class="link-button reset-prints">Reset the free print count</button></p>
 			</details>
 
 			<footer class="foot">

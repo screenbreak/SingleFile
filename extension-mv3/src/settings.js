@@ -17,8 +17,6 @@ export const DEFAULT_SETTINGS = {
 		pictures: "colour",
 		// "A4" or "Letter". The default follows the browser's language: Letter in the US and Canada.
 		paper: /^(en-US|en-CA|es-US|fr-CA|es-MX)\b/.test(globalThis.navigator?.language || "") ? "Letter" : "A4",
-		// Only for the sheet count and a reminder: the print dialog owns two-sided printing.
-		duplex: true,
 		// Long reference lists: "leave" out, "small" type, or "keep" at text size.
 		references: "small",
 		// The button prints with these settings instead of showing the print page first.
@@ -40,7 +38,7 @@ export async function updateSettings(changes) {
 	await chrome.storage.sync.set(changes);
 }
 
-// Only the keys we know, so settings left from an older version (font, columns…) drop out.
+// Only the keys we know, so settings left from an older version (font, columns, duplex…) drop out.
 function pick(defaults, stored = {}) {
 	return Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, stored && typeof stored[key] == typeof value ? stored[key] : value]));
 }
