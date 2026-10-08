@@ -248,6 +248,7 @@ function updateLocks() {
 	} else {
 		state.freeChoice = { ...state.choice };
 	}
+	desk.setPrintBlocked(!!locked);
 	banner.hidden = !locked;
 	document.querySelector(".act-print").hidden = !!locked;
 	document.querySelector(".act-locked").hidden = !locked;

@@ -69,3 +69,30 @@ function drawMargins() {
 window.setSpread = function (spread) {
 	document.documentElement.classList.toggle("spread", spread);
 };
+
+// Keys pressed while the desk has focus belong to the page around it: Cmd/Ctrl+P does what that page's main pill
+// does (in a locked preview, the door), and Escape closes its gallery, sheet, door or preview. Same origin, so the
+// key is handed to the parent window as its own keydown.
+addEventListener("keydown", event => {
+	const print = (event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() == "p";
+	if ((!print && event.key != "Escape") || parent == window) {
+		return;
+	}
+	event.preventDefault();
+	const { key, code, metaKey, ctrlKey, shiftKey, altKey } = event;
+	parent.dispatchEvent(new parent.KeyboardEvent("keydown", { key, code, metaKey, ctrlKey, shiftKey, altKey, bubbles: true, cancelable: true }));
+});
+
+// While the desk shows a design or option this reader cannot print yet, a print started from inside the frame
+// (right-click Print…) prints nothing. The print page lifts it just before a print it allows (Desk.print).
+window.setPrintBlocked = function (blocked) {
+	let style = document.getElementById("sb-print-blocked");
+	if (blocked && !style) {
+		style = document.createElement("style");
+		style.id = "sb-print-blocked";
+		style.textContent = "@media print { #book { display: none !important; } }";
+		document.head.append(style);
+	} else if (!blocked && style) {
+		style.remove();
+	}
+};
