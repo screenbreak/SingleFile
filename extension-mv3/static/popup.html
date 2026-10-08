@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="ui.css">
+	<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+	<header class="head">
+		<img src="icons/logo.svg" alt="Screenbreak" class="wordmark" width="180" height="20">
+	</header>
+	<div class="notice" hidden>
+		<p class="notice-title">Screenbreak can't run on this page</p>
+		<p class="notice-text">Chrome keeps its own pages, the Web Store and PDFs off limits. Open an article, then try again.</p>
+	</div>
+	<p class="label actions-label" id="actions-label">This page</p>
+	<div class="actions" role="menu" aria-labelledby="actions-label">
+		<button type="button" class="row" role="menuitem" data-action="print">
+			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
+			<span class="row-text"><span class="row-title">Print</span><span class="row-desc">Clean pages in the design that fits</span></span>
+			<span class="keys" data-shortcut="print"></span>
+		</button>
+		<button type="button" class="row" role="menuitem" data-action="save">
+			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.6L6 20V4.5a1 1 0 0 1 1-1z"/></svg>
+			<span class="row-text"><span class="row-title">Save to your library</span><span class="row-desc">Needs a free account</span></span>
+			<span class="keys" data-shortcut="save"></span>
+		</button>
+		<label class="switch also-save" hidden><input type="checkbox" name="saveWhenPrinting" role="switch"><span class="track"></span>Also save what I print</label>
+	</div>
+	<section class="default" aria-labelledby="default-label">
+		<p class="label" id="default-label">When I click the button</p>
+		<div class="segmented" role="radiogroup" aria-labelledby="default-label">
+			<label><input type="radio" name="defaultAction" value="ask"><span>Ask me</span></label>
+			<label><input type="radio" name="defaultAction" value="print"><span>Print</span></label>
+			<label><input type="radio" name="defaultAction" value="save"><span>Save</span></label>
+		</div>
+		<p class="consequence" aria-live="polite"></p>
+	</section>
+	<section class="account" aria-label="Your account">
+		<div class="account-guest">
+			<p class="account-line">Printing never needs an account.</p>
+			<a class="account-link" target="_blank">Get all 11 designs, free →</a>
+		</div>
+		<div class="account-member" hidden>
+			<p class="account-head"><span class="email"></span><span class="plan"></span></p>
+			<p class="account-meta"><span class="count"></span><a class="library" target="_blank">Open my library <span aria-hidden="true">↗</span></a></p>
+		</div>
+	</section>
+	<footer class="foot">
+		<a href="options.html" target="_blank" class="settings">Settings</a>
+	</footer>
+	<script src="popup.js"></script>
+</body>
+</html>

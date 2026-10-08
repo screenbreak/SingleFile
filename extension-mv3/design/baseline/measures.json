@@ -1,0 +1,165 @@
+{
+ "popup": [
+  {
+   "sel": ".logo",
+   "left": 14,
+   "top": 14
+  },
+  {
+   "sel": "button[data-action=save] svg",
+   "left": 27,
+   "top": 61.8
+  },
+  {
+   "sel": "button[data-action=save] strong",
+   "left": 63,
+   "top": 57
+  },
+  {
+   "sel": "button[data-action=save] small",
+   "left": 63,
+   "top": 76.9
+  },
+  {
+   "sel": "button[data-action=print] strong",
+   "left": 63,
+   "top": 120.5
+  },
+  {
+   "sel": ".default",
+   "left": 14,
+   "top": 179
+  },
+  {
+   "sel": ".default select",
+   "left": 132.3,
+   "top": 177
+  },
+  {
+   "sel": ".settings",
+   "left": 14,
+   "top": 205
+  }
+ ],
+ "settings": [
+  {
+   "sel": "main > img",
+   "left": 330,
+   "top": 68
+  },
+  {
+   "sel": "h1",
+   "left": 330,
+   "top": 113.5
+  },
+  {
+   "sel": "section:nth-of-type(1) h2",
+   "left": 330,
+   "top": 172.5
+  },
+  {
+   "sel": "section:nth-of-type(1) label",
+   "left": 351,
+   "top": 203.5
+  },
+  {
+   "sel": "section:nth-of-type(1) .hint",
+   "left": 330,
+   "top": 295
+  },
+  {
+   "sel": "section:nth-of-type(2) h2",
+   "left": 330,
+   "top": 382
+  },
+  {
+   "sel": "section:nth-of-type(2) label",
+   "left": 330,
+   "top": 413
+  },
+  {
+   "sel": "summary",
+   "left": 345.9,
+   "top": 588.5
+  }
+ ],
+ "printToolbar": [
+  {
+   "sel": ".toolbar .logo",
+   "left": 20,
+   "top": 15.5
+  },
+  {
+   "sel": "fieldset:nth-of-type(1) legend",
+   "left": 517.8,
+   "top": 18
+  },
+  {
+   "sel": "fieldset:nth-of-type(1) label",
+   "left": 581.2,
+   "top": 20
+  },
+  {
+   "sel": "fieldset:nth-of-type(2) legend",
+   "left": 701.2,
+   "top": 18
+  },
+  {
+   "sel": "fieldset:nth-of-type(2) label",
+   "left": 762.3,
+   "top": 20
+  },
+  {
+   "sel": ".print-button",
+   "left": 1206.2,
+   "top": 18
+  }
+ ],
+ "printArticle": [
+  {
+   "sel": ".meta",
+   "left": 303.6,
+   "top": 145
+  },
+  {
+   "sel": "h1.title",
+   "left": 303.6,
+   "top": 175.4
+  },
+  {
+   "sel": ".excerpt",
+   "left": 303.6,
+   "top": 232.6
+  },
+  {
+   "sel": "header hr",
+   "left": 303.6,
+   "top": 277.2
+  },
+  {
+   "sel": ".hero img",
+   "left": 0,
+   "top": 0
+  },
+  {
+   "sel": ".content p",
+   "left": 364.1,
+   "top": 374.3
+  },
+  {
+   "sel": ".content h2",
+   "left": 364.1,
+   "top": 901
+  },
+  {
+   "sel": ".content figcaption",
+   "left": 364.1,
+   "top": 864.7
+  }
+ ],
+ "print2col": {
+  "contentTop": 158,
+  "leftColumnFirstLineTop": 158,
+  "rightColumnFirstLineTop": 158
+ }
+}

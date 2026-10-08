@@ -1,0 +1,241 @@
+/* The print page and Settings share one frame: the pages exactly as they print on a desk (most of the width),
+   and one column of controls. Shared tokens and controls are in ui.css. */
+
+html, body { height: 100%; }
+body { display: grid; grid-template-columns: minmax(0, 1fr) 392px; background: var(--desk); }
+
+/* Desk */
+.desk { position: relative; min-width: 0; overflow: auto; background: var(--desk); }
+.desk-top { position: sticky; top: 0; z-index: 3; background: color-mix(in srgb, var(--desk) 88%, transparent); backdrop-filter: blur(8px); }
+.desk-bar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; }
+.source { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; font-size: 13px; color: var(--muted); }
+.source .favicon { width: 16px; height: 16px; border-radius: 3px; flex: none; }
+.source-title { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.source-site { white-space: nowrap; color: var(--ink-2); }
+.view-toggle { margin-left: auto; flex: none; }
+/* Locked preview: a 40 px bar on top of the pages, never over a page. */
+.desk-banner { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 4px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.banner-text { flex: 1; min-width: 0; margin: 0; font-size: 13px; line-height: 18px; color: var(--ink); }
+.banner-text .short { display: none; }
+.desk-banner .button-small { height: 30px; flex: none; }
+.sheets { position: relative; display: grid; justify-items: center; padding-bottom: 40px; }
+.sheet-holder { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden; visibility: hidden; }
+.sheet-holder.shown { position: relative; overflow: visible; visibility: visible; }
+.sheet-frame { position: absolute; left: 0; top: 0; border: 0; background: transparent; transform-origin: 0 0; }
+.desk.swapping .sheets { opacity: .4; transition: opacity .15s; }
+
+/* Wait: the page you were on loses its clutter and becomes paper, with what actually happened beside it. */
+.wait { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; background: var(--desk); transition: opacity .35s; }
+.wait.out { opacity: 0; pointer-events: none; }
+.wait-inner { display: grid; justify-items: center; gap: 24px; padding: 24px; }
+.web { position: relative; width: 300px; height: 380px; border-radius: 10px; background: #fff; box-shadow: var(--shadow); overflow: hidden; transition: width .5s, border-radius .5s; }
+.web .blk { position: absolute; transition: transform .55s cubic-bezier(.5, 0, .75, 0), opacity .45s, left .5s, top .5s, width .5s, height .5s; }
+.web .nav { left: 0; right: 0; top: 0; height: 28px; background: var(--ink); opacity: .85; }
+.web .ad { right: 14px; top: 46px; width: 70px; height: 130px; background: #e6b85c; border-radius: 3px; }
+.web .ad2 { left: 14px; bottom: 16px; width: 120px; height: 34px; background: #e6b85c; border-radius: 3px; }
+.web .cookie { left: 10px; right: 10px; bottom: 60px; height: 54px; background: #253c39; border-radius: 6px; }
+.web .share { left: 14px; top: 196px; width: 150px; height: 14px; background: repeating-linear-gradient(90deg, var(--tint-strong) 0 26px, transparent 26px 34px); }
+.web .title { left: 14px; top: 46px; width: 170px; height: 14px; background: var(--ink); border-radius: 2px; }
+.web .title2 { left: 14px; top: 66px; width: 120px; height: 14px; background: var(--ink); border-radius: 2px; }
+.web .photo { left: 14px; top: 92px; width: 190px; height: 96px; background: linear-gradient(135deg, #6f9f8a, #2f5246); border-radius: 2px; }
+.web .lines { left: 14px; top: 220px; width: 190px; height: 100px; background: repeating-linear-gradient(180deg, #9aa39e 0 3px, transparent 3px 9px); opacity: .7; }
+.web.clean .nav { transform: translateY(-40px); opacity: 0; }
+.web.clean .ad { transform: translateX(120px); opacity: 0; }
+.web.clean .ad2, .web.clean .cookie { transform: translateY(160px); opacity: 0; }
+.web.clean .share { transform: translateX(-200px); opacity: 0; }
+.web.paper { width: 268px; border-radius: 1px; }
+.web.paper .title { left: 22px; top: 30px; width: 200px; }
+.web.paper .title2 { left: 22px; top: 50px; width: 150px; }
+.web.paper .photo { left: 22px; top: 80px; width: 224px; height: 120px; }
+.web.paper .lines { left: 22px; top: 214px; width: 224px; height: 140px;
+	background: repeating-linear-gradient(90deg, transparent 0 107px, #fff 107px 117px), repeating-linear-gradient(180deg, #9aa39e 0 3px, transparent 3px 8px); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 300px; font-size: 13.5px; color: var(--muted); }
+.steps li { display: flex; gap: 8px; align-items: baseline; }
+.steps li::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--progress); transform: translateY(-1px); }
+.steps li.done { color: var(--ink); }
+.steps li.done::before { background: var(--progress); }
+@media (prefers-reduced-motion: reduce) { .web, .web .blk, .wait { transition: none; } }
+
+.message { position: absolute; inset: 0; z-index: 5; display: grid; align-content: center; justify-items: start; gap: 12px; max-width: 520px; margin: 0 auto; padding: 40px 24px; background: var(--desk); }
+.message h1 { margin: 0; font: 600 24px/1.25 var(--sans); }
+.message p { margin: 0; color: var(--ink-2); }
+.message-actions { display: flex; gap: 16px; align-items: center; }
+
+/* Designs as tiles: the strip pinned on top of the desk on the print page, the design grid in Settings. Sample pages
+   stay at full colour until page 1 of this article replaces them; a locked design has a corner lock chip and a --muted
+   name. The strip scrolls sideways; the pages below show the tile you choose. */
+.gallery { display: grid; gap: 6px; padding: 2px 0 10px; border-bottom: 1px solid var(--line); }
+.gallery-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 24px; }
+.gallery-head h2 { margin: 0; font: 400 11px/16px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.gallery-head .button-small { height: 30px; }
+.gallery-grid { display: grid; grid-auto-flow: column; grid-auto-columns: 84px; gap: 16px; overflow-x: auto; padding: 6px 24px 4px; scroll-padding-inline: 24px; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.gallery .tile { gap: 0; }
+.gallery .tile .thumb { margin-bottom: 6px; }
+.gallery .tile .thumb.live { aspect-ratio: auto; overflow: hidden; }
+.gallery .tile-name { font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gallery .tile-line { display: none; }
+.design-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px 10px; }
+.tile { position: relative; display: grid; align-content: start; gap: 4px; cursor: pointer; }
+.tile input { position: absolute; opacity: 0; pointer-events: none; }
+.tile .thumb { position: relative; display: block; margin-bottom: 6px; aspect-ratio: 300 / 424; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); outline: 2px solid transparent; outline-offset: 3px; transition: outline-color .15s; }
+.tile .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tile-name { font: 600 14px/20px var(--sans); color: var(--ink); }
+.tile-line { font-size: 12.5px; line-height: 17px; color: var(--muted); }
+.design-grid .tile-name { font-size: 12px; line-height: 16px; }
+.design-grid .tile-line { display: none; }
+.tile[data-locked] .tile-name { font-weight: 500; color: var(--muted); }
+/* One selection at a time: the pick's --signal edge shows only while the pick is the design on show. */
+.tile[data-picked]:has(input:checked) .thumb { outline-color: var(--signal); }
+.tile:has(input:checked):not([data-picked]) .thumb { outline-color: var(--ink); }
+.tile:has(input:focus-visible) .thumb { outline: 2px solid var(--accent); }
+
+/* Panel: one text edge at x = 24. The picked card and the rows share a second edge for their text. */
+.panel { display: flex; flex-direction: column; min-width: 0; overflow: auto; background: var(--bg); border-left: 1px solid var(--line); }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px 8px; }
+.panel-head .wordmark { flex: none; }
+/* "Settings" and "Log in" (or the name) side by side, the same size; a long name gives way first. */
+.who { display: flex; align-items: center; gap: 16px; min-width: 0; font-size: 13px; }
+.who a { flex: none; font-size: 13px; }
+.who .who-name { flex: 0 1 auto; min-width: 0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-body { flex: 1 0 auto; display: grid; align-content: start; gap: 22px; padding: 6px 24px 28px; }
+.intro h1 { margin: 0; font: 400 26px/32px var(--serif); letter-spacing: -.005em; }
+.intro p { margin: 4px 0 0; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.intro .guest-line { margin-top: 2px; color: var(--ink); }
+.straight-note { margin: -8px 0 0; padding: 8px 12px; font-size: 13px; background: var(--accent-soft); border-radius: 8px; }
+.signed-in-line { margin: -8px 0 0; font-size: 14px; color: var(--ink); }
+.blocks { display: grid; gap: 22px; }
+.sheet-head { display: none; }
+.sec { display: grid; gap: 10px; }
+.sec + .sec { padding-top: 18px; border-top: 1px solid var(--line); }
+.sub { margin: 6px 0 0; font: 600 13px/18px var(--sans); color: var(--ink); }
+.help { margin: 0; font-size: 12.5px; line-height: 18px; color: var(--muted); }
+.lbl { margin: 0; font: 500 14px/20px var(--sans); }
+.opt { display: grid; gap: 6px; }
+.opt-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.segmented.wide { display: flex; }
+.segmented.wide label { flex: 1 1 auto; }
+.segmented.wide label > span { padding: 0 8px; white-space: nowrap; }
+fieldset { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted); }
+.radio { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; cursor: pointer; }
+.radio input { margin: 3px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+.radio small { display: block; font-size: 12px; color: var(--muted); }
+
+/* The pick and the other designs. Every card has a 2 px edge slot: --signal marks the pick while it is on the desk,
+   --ink the design on the desk when it is not the pick (for a guest, a locked preview). One edge at a time. */
+.picks, .others { display: grid; gap: 6px; }
+.pick { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border: 2px solid transparent; border-radius: 14px; cursor: pointer; }
+.pick input { position: absolute; opacity: 0; pointer-events: none; }
+.pick .thumb { position: relative; display: block; justify-self: center; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+.pick .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.picked .thumb { width: 64px; height: 90px; overflow: hidden; }
+.picked .thumb.live { height: auto; }
+.row .thumb { width: 44px; height: 62px; overflow: hidden; }
+.row .thumb.live { height: auto; }
+.pick-text { display: grid; gap: 2px; min-width: 0; }
+.pick .name { font: 600 14px/20px var(--sans); color: var(--ink); }
+.picked .name { font: 400 20px/26px var(--serif); }
+.pick .why { font-size: 12.5px; line-height: 17px; color: var(--ink-2); }
+.pick .pages { font-size: 12.5px; line-height: 17px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pick .pages:empty { display: none; }
+.picked { background: var(--surface); }
+.picked:has(input:checked) { border-color: var(--signal); }
+.row:hover { border-color: var(--line); }
+.row[data-locked] .name { font-weight: 500; color: var(--muted); }
+.row:has(input:checked) { border-color: var(--ink); background: var(--surface); }
+.pick:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.all-toggle { justify-self: start; font-size: 13.5px; }
+
+/* With a free account: the one explanation of the lock in the panel, and the locked row. */
+.locked-group { gap: 8px; }
+.lock-line { margin: 0; font-size: 13px; line-height: 19px; color: var(--ink); }
+.lock-line .link-button { font-size: 13px; line-height: 19px; }
+.locked-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 36px; padding: 0; font: 500 14px/20px var(--sans); color: var(--muted); background: none; border: 0; border-bottom: 1px solid var(--line); cursor: pointer; text-align: left; }
+.locked-value { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 13px; }
+.locked-row:hover .locked-name { color: var(--ink); }
+
+/* Action footer: sticky at the bottom of the panel at every width. */
+.actions { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; padding: 14px 24px 16px; background: var(--bg); border-top: 1px solid var(--line); }
+.act-print { display: grid; gap: 8px; }
+.act-locked { display: grid; gap: 6px; }
+.print-button, .continue-button { width: 100%; height: 48px; font-size: 16px; }
+/* A long design name wraps inside the pill rather than pushing the panel sideways. */
+.continue-button { height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; line-height: 22px; white-space: normal; text-align: center; }
+.locked-links { display: flex; align-items: baseline; gap: 10px; }
+.locked-links .link-button { font-size: 13.5px; }
+.locked-note { font-size: 13px; }
+.sheet-link { display: none; margin-left: auto; }
+/* While the door is open or waiting, its own card holds the next step: the footer does not ask again. */
+.door-open .continue-button, .door-open .continue-google, .door-open .locked-note { display: none; }
+.print-button .icon { width: 20px; height: 20px; }
+.print-button[aria-busy=true] { cursor: progress; }
+.sheet-toggle { display: none; }
+.secondary-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.secondary-row .link-button { font-size: 13.5px; }
+/* Quiet lines in the footer: Two-sided under Print (pages > 1), the PDF step under "Save as PDF" while its window is open. */
+.duplex-hint { margin-top: -2px; }
+.pdf-hint { margin-top: -6px; }
+
+.save-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; line-height: 20px; color: var(--ink-2); }
+.save-icon { display: grid; width: 16px; height: 16px; color: var(--green); }
+.save-icon svg { width: 16px; height: 16px; stroke: currentColor; }
+.save-icon .fill { fill: currentColor; stroke: none; }
+.save-status.error .save-icon { color: var(--danger); }
+.save-status.login .save-icon, .save-status.info .save-icon { color: var(--ink-2); }
+.save-actions { display: flex; gap: 12px; }
+.save-actions .link-button, .save-actions a { font-size: 13px; }
+.save-icon .spinner { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* The door: a card under the Print button, never a modal. */
+.door-slot { max-height: 60vh; overflow: auto; }
+.door { display: grid; gap: 10px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.door-title { margin: 0; font: 400 19px/25px var(--serif); color: var(--ink); }
+.door-title:focus { outline: none; }
+.door-buttons { display: grid; gap: 8px; }
+.door-buttons .button { width: 100%; height: 44px; }
+.door.waiting .door-buttons { display: flex; align-items: center; gap: 16px; }
+.door.waiting .door-buttons .button { width: auto; }
+.door-note { margin: 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+.door-exit { justify-self: start; font-size: 13.5px; }
+.door-legal { margin: 0; font-size: 12px; line-height: 17px; color: var(--muted); }
+.google { flex: none; }
+
+/* Done state (done.js): the panel blocks and the footer step aside while it shows. */
+.is-done .panel-body > :not(.done):not(.door-slot-done), .is-done .actions { display: none; }
+
+.is-loading .panel-body > :not(.intro), .is-loading .actions { visibility: hidden; }
+
+/* Under 860 px: the head and intro above the pages, a sticky bottom bar with Print and "Design & paper", and the
+   blocks in a bottom sheet with the same order (SPEC A2). */
+@media (max-width: 860px) {
+	html, body { height: auto; }
+	body { display: flex; flex-direction: column; padding-bottom: 120px; }
+	.panel, .panel-body { display: contents; }
+	.panel-head { order: -3; padding: 14px 16px 4px; }
+	.intro { order: -2; padding: 0 16px 8px; }
+	.straight-note, .signed-in-line { order: -1; margin: 0 16px 8px; }
+	.desk { order: 0; overflow: visible; min-height: 70vh; }
+	.desk-bar { padding: 10px 16px; }
+	.desk-banner { padding: 4px 16px; }
+	.view-toggle { display: none; }
+	.gallery-head { padding: 0 16px; }
+	.gallery-grid { grid-auto-columns: 64px; gap: 12px; padding-inline: 16px; scroll-padding-inline: 16px; }
+	.blocks { position: fixed; z-index: 8; left: 0; right: 0; bottom: 0; max-height: 85vh; overflow: auto; padding: 0 16px 24px; background: var(--bg); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 40px rgba(22, 26, 24, .18); transform: translateY(105%); visibility: hidden; transition: transform .2s, visibility 0s .2s; }
+	.sheet-open .blocks { transform: none; visibility: visible; transition: transform .2s; }
+	.sheet-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 14px 0 6px; background: var(--bg); }
+	.sheet-head h2 { margin: 0; font: 400 20px/26px var(--serif); }
+	.actions { position: fixed; z-index: 7; left: 0; right: 0; bottom: 0; padding: 12px 16px; background: var(--surface); }
+	.act-print { grid-template-columns: minmax(0, 1fr) auto; }
+	.sheet-toggle { display: inline-flex; height: 48px; }
+	.secondary-row { display: none; }
+	/* The done state is a full-width bottom sheet (done.css pads it 16 px), so its text sits on the page's x = 16. */
+	.done:not([hidden]) { order: -1; margin: 0; }
+	.door-slot-done:not([hidden]), .door-slot-print:not([hidden]) { order: -1; margin: 0 16px 12px; }
+	/* Second text on --desk is --ink-2: --muted there is under 4.5:1. */
+	.intro p, .help { color: var(--ink-2); }
+	.banner-text .long { display: none; }
+	.banner-text .short { display: inline; }
+	.sheet-link { display: inline; }
+}
+@media (max-width: 860px) and (prefers-reduced-motion: reduce) { .blocks { transition: none; } }

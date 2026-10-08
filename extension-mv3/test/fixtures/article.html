@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>The Quiet Return of Paper | Longform Weekly</title>
+<meta property="og:site_name" content="Longform Weekly">
+<meta property="og:image" content="/photo.png">
+<meta property="article:published_time" content="2026-09-28T08:00:00Z">
+<meta name="author" content="Maria Papadopoulou">
+<style>
+ body{font-family:Arial;margin:0} nav,aside,.footer{background:#222;color:#fff;padding:10px}
+ main{display:flex} article{max-width:700px;padding:20px} aside{width:250px}
+ .bar{fill:steelblue} .axis text{font-size:11px;fill:#333}
+</style></head>
+<body>
+<nav><a href="/">Home</a> · <a href="/tech">Tech</a> · <a href="/culture">Culture</a> · <a href="/subscribe">Subscribe</a></nav>
+<main>
+<article>
+<h1>The Quiet Return of Paper</h1>
+<p class="byline">By Maria Papadopoulou</p>
+<p>For a decade, the story of reading was a story of screens. We read on phones in queues, on laptops between meetings, on tablets in bed. Yet something curious has happened in the last few years: a growing number of people are printing long articles and reading them on paper, slowly, with a pen in hand.</p>
+<p>The reasons they give are remarkably consistent. Paper does not ping. It does not offer a related article at the bottom of every page, or a sidebar of things you might also like. When you reach the end of a printed essay, it simply ends, and you are left with your own thoughts.</p>
+<figure><img src="/photo.png" width="600" height="300" alt="A stack of printed articles"><figcaption>Printed essays on a kitchen table. Readers say paper changes how much they remember.</figcaption></figure>
+<h2>What the research says</h2>
+<p>Studies comparing comprehension on screens and paper have produced mixed results, but one finding recurs: for long, complex texts, readers on paper tend to have a better sense of the structure of an argument. They can flip back, see where they are, and annotate in the margins without switching tools.</p>
+<p>The chart below shows how often respondents in a small survey said they printed an article in the past month.</p>
+<svg width="420" height="220" role="img" aria-label="Bar chart of printing frequency">
+ <g class="axis"><text x="30" y="210">Never</text><text x="130" y="210">Once</text><text x="230" y="210">2-4 times</text><text x="340" y="210">5+</text></g>
+ <rect class="bar" x="30" y="40" width="60" height="150"></rect><rect class="bar" x="130" y="90" width="60" height="100"></rect>
+ <rect class="bar" x="240" y="120" width="60" height="70"></rect><rect class="bar" x="340" y="160" width="60" height="30"></rect>
+</svg>
+<p>Another group tracked reading time by month, drawn here on a canvas, the way many charting libraries do it.</p>
+<canvas id="c" width="420" height="200"></canvas>
+<blockquote><p>When I print something, I am making a promise to myself that I will actually read it.</p></blockquote>
+<p>That promise is what tools like Screenbreak were built around: take the article you meant to read, strip away everything that is not the article, and give it back to you in a form that respects your attention.</p>
+<h2>A small table</h2>
+<table><thead><tr><th>Format</th><th>Average minutes</th><th>Recall score</th></tr></thead>
+<tbody><tr><td>Phone</td><td>6</td><td>41%</td></tr><tr><td>Laptop</td><td>9</td><td>52%</td></tr><tr><td>Paper</td><td>14</td><td>68%</td></tr></tbody></table>
+<p>None of this means screens are going away. But it does suggest that the best reading setup might be a hybrid one: discover on the screen, read on paper.</p>
+<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="560" height="315"></iframe>
+<p>In the end, the return of paper is less about nostalgia than about control. A printed page is one of the few places left where nothing is competing for your eyes.</p>
+</article>
+<aside><h3>Most popular</h3><ul><li><a href="/a">Ten gadgets for summer</a></li><li><a href="/b">Why everyone is talking about AI</a></li><li><a href="/c">The best laptops of the year</a></li></ul><div>Advertisement</div></aside>
+</main>
+<div class="footer">© Longform Weekly · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div>
+<script>
+const ctx=document.getElementById('c').getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,420,200);
+ctx.strokeStyle='#c0392b';ctx.lineWidth=3;ctx.beginPath();[20,60,45,90,120,110,150].forEach((v,i)=>{const x=30+i*60,y=180-v;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();
+ctx.fillStyle='#333';ctx.font='12px Arial';['Jan','Feb','Mar','Apr','May','Jun','Jul'].forEach((m,i)=>ctx.fillText(m,20+i*60,195));
+</script>
+</body></html>

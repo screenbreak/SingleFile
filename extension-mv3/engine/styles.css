@@ -1,0 +1,101 @@
+/* Screenbreak visual styles. Independent of the article type (types.css): a type decides structure
+   (recipe boxes, interview questions, code), a style decides the look (fonts, columns, quotes, headings).
+   magazine.css + "classic" is the current look. Every font here is open-licence (OFL), bundled locally. */
+
+.flow .pullquote { display: none; }
+
+/* HOUSE: the old Screenbreak WeasyPrint look (renderer/generic/css/Interior/article.css).
+   Work Sans text, Trirong title and standfirst, 2 columns with a hairline, green quotes under a giant quote mark. */
+.style-house { --serif: "Trirong", Georgia, serif; --sans: "Work Sans", Arial, sans-serif; font: 9pt/1.6 var(--sans); }
+.style-house .masthead h1 { font: 700 26pt/1.15 var(--sans); }
+.style-house .masthead h1::after { content: ""; display: block; width: 30mm; border-top: 1pt solid var(--ink); margin-top: 5mm; }
+.style-house .standfirst { font: 500 13pt/1.25 var(--serif); font-style: normal; color: var(--ink); }
+.style-house .byline { border: 0; font-weight: 700; color: var(--ink); }
+.style-house:not(.type-tutorial):not(.type-essay) .cols { column-gap: 4.2mm; column-rule: .25pt solid var(--ink); }
+.style-house .flow p { text-indent: 0; margin: 0 0 2.6mm; }
+.style-house .flow p.lede::first-letter { all: unset; }
+.style-house .flow h2, .style-house .flow h3 { font: 700 10.8pt/1.2 var(--sans); }
+.style-house .flow blockquote { border: 0; padding: 0; margin: 2mm 0 3mm 3mm; color: var(--accent); font: 12pt/1.45 var(--sans); }
+.style-house .flow blockquote::before { content: "\201C"; display: block; font: 700 40pt/0.8 var(--serif); }
+.style-house .flow pre { border: .5pt solid #dadada; background: #f7f7f7; }
+
+/* CLASSIC: magazine.css as it is (Source Serif + Source Sans, 2 columns). Nothing to override. */
+
+/* BROADSHEET: a newspaper page. Three narrow columns, heavy condensed-feel headline, sans kickers,
+   rules between columns, pull quotes between thick and thin rules. */
+.style-broadsheet { --serif: "Newsreader", Georgia, serif; --sans: "Libre Franklin", Arial, sans-serif; font: 8.9pt/1.36 var(--serif); }
+.style-broadsheet .masthead { border-top: 3pt solid var(--ink); padding-top: 2.5mm; }
+.style-broadsheet .kicker { color: var(--ink); font: 800 7.5pt var(--sans); letter-spacing: .14em; }
+.style-broadsheet .masthead h1 { font: 800 31pt/1.0 var(--serif); letter-spacing: -.02em; }
+.style-broadsheet .standfirst { font: 400 12pt/1.3 var(--serif); font-style: normal; }
+.style-broadsheet .byline { font: 600 7.5pt var(--sans); text-transform: uppercase; letter-spacing: .06em; border-bottom: .5pt solid var(--ink); }
+.style-broadsheet:not(.type-tutorial):not(.type-essay) .cols { columns: 3; column-gap: 5mm; column-rule: .3pt solid var(--rule); }
+.style-broadsheet .flow p.lede::first-letter { font: 800 36pt/0.8 var(--serif); color: var(--ink); }
+.style-broadsheet .flow h2, .style-broadsheet .flow h3 { font: 800 9.5pt/1.2 var(--sans); text-transform: uppercase; letter-spacing: .04em; }
+.style-broadsheet .flow .pullquote { display: block; font: italic 600 13pt/1.2 var(--serif); text-align: left; text-indent: 0; hyphens: manual;
+  border-top: 2pt solid var(--ink); border-bottom: .5pt solid var(--ink); padding: 2mm 0 2.5mm; margin: 3mm 0; break-inside: avoid; }
+.style-broadsheet .flow blockquote { border-left: 0; padding: 0 2mm; font: 400 9.2pt/1.4 var(--serif); }
+.style-broadsheet .flow blockquote::before { content: "\201C"; font: 800 20pt/0 var(--serif); vertical-align: -.35em; margin-right: .5mm; }
+.style-broadsheet figcaption { font: 6.8pt/1.3 var(--sans); }
+
+/* MAGAZINE: a feature spread. Big expressive display serif, generous gutter, oversized drop cap,
+   large pull quotes with a hanging quote mark, accent colour carried through. */
+.style-magazine { --serif: "Literata", Georgia, serif; --sans: "Inter", Arial, sans-serif; --display: "Fraunces", Georgia, serif; --accent: #c2410c; font: 9.1pt/1.48 var(--serif); }
+.style-magazine .masthead { margin-top: 4mm; }
+.style-magazine .kicker { color: var(--accent); }
+.style-magazine .masthead h1 { font: 900 38pt/0.98 var(--display); letter-spacing: -.025em; }
+.style-magazine .standfirst { font: italic 400 13.5pt/1.3 var(--display); color: var(--ink); max-width: 140mm; text-align: left; }
+.style-magazine .byline { border: 0; color: var(--accent); }
+.style-magazine:not(.type-tutorial):not(.type-essay) .cols { column-gap: 8mm; column-rule: none; }
+.style-magazine .flow p.lede::first-letter { font: 900 58pt/0.78 var(--display); color: var(--accent); margin: 1mm 2mm 0 0; }
+.style-magazine .flow h2, .style-magazine .flow h3 { font: 800 13pt/1.15 var(--display); letter-spacing: -.01em; }
+.style-magazine .flow .pullquote { display: block; position: relative; font: italic 600 15pt/1.18 var(--display); color: var(--accent); text-indent: 0; text-align: left;
+  hyphens: manual; padding: 7mm 0 1mm; margin: 4mm 0 5mm; break-inside: avoid; }
+.style-magazine .flow .pullquote::before { content: "\201C"; position: absolute; top: 0; left: -1mm; font: 900 46pt/0.9 var(--display); }
+.style-magazine .flow blockquote { border: 0; padding: 0 0 0 6mm; position: relative; font: italic 400 10pt/1.45 var(--serif); }
+.style-magazine .flow blockquote::before { content: "\201C"; position: absolute; left: 0; top: -1mm; font: 900 22pt/1 var(--display); color: var(--accent); }
+.style-magazine figcaption { font: 7pt/1.35 var(--sans); }
+.style-magazine .endmark::after { color: var(--accent); }
+
+/* BOOK: one quiet column at a novel's measure, Garamond, centred headings, small-caps opening,
+   quotes indented in italic. For long reads you want to sit with. */
+.style-book { --serif: "EB Garamond", Garamond, serif; --sans: "EB Garamond", Garamond, serif; font: 11.4pt/1.42 var(--serif); }
+.style-book .masthead { text-align: center; margin: 14mm 0 10mm; }
+.style-book .kicker { font: 500 8pt var(--serif); letter-spacing: .25em; color: var(--soft); }
+.style-book .masthead h1 { font: 500 30pt/1.1 var(--serif); max-width: 140mm; margin-inline: auto; }
+.style-book .standfirst { font: italic 400 13pt/1.35 var(--serif); margin-inline: auto; max-width: 118mm; }
+.style-book .byline { border: 0; font: 400 9pt var(--serif); text-transform: uppercase; letter-spacing: .15em; }
+.style-book:not(.type-tutorial) .cols { columns: 1; width: 118mm; margin: 0 auto; column-rule: none; }
+.style-book .flow p.lede::first-letter { font: 500 46pt/0.8 var(--serif); color: var(--ink); }
+.style-book .flow p.lede::first-line { font-variant: small-caps; letter-spacing: .05em; }
+.style-book .flow h2, .style-book .flow h3 { font: italic 500 13pt/1.3 var(--serif); text-align: center; margin: 7mm 0 3mm; }
+.style-book .flow blockquote { border: 0; padding: 0 9mm; font-style: italic; }
+.style-book figcaption { font: italic 9pt/1.3 var(--serif); text-align: center; }
+.style-book .endmark::after { content: "\2766"; color: var(--soft); font-size: 11pt; }
+
+/* MODERN: all sans, ragged right, strong hierarchy, quotes as tinted blocks. Clean and screen-like. */
+.style-modern { --serif: "Inter", Arial, sans-serif; --sans: "Inter", Arial, sans-serif; --accent: #2448d8; font: 8.6pt/1.5 var(--sans); }
+.style-modern .masthead h1 { font: 800 30pt/1.02 var(--sans); letter-spacing: -.035em; }
+.style-modern .standfirst { font: 400 12pt/1.35 var(--sans); font-style: normal; color: var(--soft); }
+.style-modern .byline { border-bottom: 2pt solid var(--accent); }
+.style-modern:not(.type-tutorial):not(.type-essay) .cols { column-gap: 6mm; column-rule: none; }
+.style-modern .flow p { text-align: left; text-indent: 0; margin-bottom: 2.2mm; hyphens: manual; }
+.style-modern .flow p.lede { font-size: 10.2pt; font-weight: 500; line-height: 1.42; }
+.style-modern .flow p.lede::first-letter { all: unset; }
+.style-modern .flow h2, .style-modern .flow h3 { font: 700 11pt/1.2 var(--sans); letter-spacing: -.01em; }
+.style-modern .flow .pullquote { display: block; font: 700 13pt/1.25 var(--sans); letter-spacing: -.01em; color: var(--accent); text-indent: 0; hyphens: manual;
+  border-left: 3pt solid var(--accent); padding: .5mm 0 .5mm 3.5mm; margin: 3.5mm 0; break-inside: avoid; }
+.style-modern .flow blockquote { border: 0; background: #eef1fb; padding: 2.5mm 3mm; font-style: normal; }
+
+/* LARGE PRINT: one wide column, 13pt Atkinson Hyperlegible (designed for low vision), no hyphenation, no justification. */
+.style-large { --serif: "Atkinson Hyperlegible", Arial, sans-serif; --sans: "Atkinson Hyperlegible", Arial, sans-serif; font: 13pt/1.5 var(--sans); font-variant-numeric: lining-nums; hyphens: manual; }
+.style-large .masthead h1 { font: 700 30pt/1.1 var(--sans); }
+.style-large .standfirst { font: 400 15pt/1.35 var(--sans); font-style: normal; }
+.style-large .byline { font-size: 11pt; }
+.style-large .cols { columns: 1 !important; width: 150mm !important; margin: 0 auto; column-rule: none; }
+.style-large .flow p { text-align: left; text-indent: 0; margin-bottom: 4mm; }
+.style-large .flow p.lede::first-letter { all: unset; }
+.style-large .flow h2, .style-large .flow h3 { font: 700 15pt/1.25 var(--sans); }
+.style-large figcaption { font: 10.5pt/1.35 var(--sans); }
+.style-large .flow blockquote { font-style: normal; border-left-width: 3pt; }
+.style-large .flow .notes, .style-large .flow .notes p, .style-large .flow .notes li { font-size: 10pt; }

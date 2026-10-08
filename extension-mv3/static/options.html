@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Settings · Screenbreak</title>
+	<link rel="stylesheet" href="ui.css">
+	<link rel="stylesheet" href="flow.css">
+	<link rel="stylesheet" href="done.css">
+	<link rel="stylesheet" href="options.css">
+</head>
+<body>
+	<section class="desk" aria-label="Sample print">
+		<div class="desk-bar">
+			<p class="source"><img class="favicon" src="icons/icon_16.png" alt="" width="16" height="16"><strong class="source-title">How to read on paper again</strong><span class="source-site">· Sample article</span></p>
+			<div class="segmented view-toggle" role="radiogroup" aria-label="View">
+				<label><input type="radio" name="view" value="pages" checked><span>Pages</span></label>
+				<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
+			</div>
+		</div>
+		<div class="sheets"></div>
+	</section>
+
+	<aside class="panel" aria-label="Settings">
+		<div class="panel-head">
+			<img src="icons/logo.svg" alt="Screenbreak" class="wordmark" width="180" height="20">
+			<div class="who"></div>
+		</div>
+		<form class="panel-body">
+			<div class="intro">
+				<h1>Settings</h1>
+				<p>Changes save as you make them. The sample article shows each one.</p>
+			</div>
+
+			<section class="sec" aria-labelledby="button-heading">
+				<div class="sec-h"><h2 id="button-heading">The Screenbreak button</h2><span class="saved" aria-live="polite"></span></div>
+				<div class="opt">
+					<p class="lbl" id="default-label">When I click it</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="default-label" aria-describedby="default-desc">
+						<label><input type="radio" name="defaultAction" value="ask"><span>Ask me</span></label>
+						<label><input type="radio" name="defaultAction" value="save"><span>Save</span></label>
+						<label><input type="radio" name="defaultAction" value="print"><span>Print</span></label>
+					</div>
+					<p class="help" id="default-desc"></p>
+				</div>
+				<div class="opt">
+					<p class="lbl" id="mode-label">When I print</p>
+					<div class="choices" role="radiogroup" aria-labelledby="mode-label">
+						<label class="choice">
+							<input type="radio" name="straightAway" value="page">
+							<svg viewBox="0 0 120 64" aria-hidden="true"><rect x="1" y="1" width="118" height="62" rx="6" fill="none" stroke="currentColor" stroke-opacity=".25"/><rect x="10" y="9" width="34" height="47" fill="#fff" stroke="currentColor" stroke-opacity=".3"/><rect x="15" y="15" width="22" height="4" fill="currentColor" fill-opacity=".7"/><rect x="15" y="23" width="24" height="10" fill="#4c9b6e"/><rect x="15" y="37" width="24" height="2" fill="currentColor" fill-opacity=".35"/><rect x="15" y="42" width="24" height="2" fill="currentColor" fill-opacity=".35"/><rect x="15" y="47" width="18" height="2" fill="currentColor" fill-opacity=".35"/><rect x="56" y="12" width="52" height="8" rx="2" fill="currentColor" fill-opacity=".12"/><rect x="56" y="24" width="52" height="8" rx="2" fill="currentColor" fill-opacity=".12"/><rect x="56" y="42" width="52" height="11" rx="3" fill="#005d4c"/></svg>
+							<strong>Show me the print page</strong>
+							<span>See the pages, pick a design, then print.</span>
+						</label>
+						<label class="choice">
+							<input type="radio" name="straightAway" value="straight">
+							<svg viewBox="0 0 120 64" aria-hidden="true"><rect x="1" y="1" width="118" height="62" rx="6" fill="none" stroke="currentColor" stroke-opacity=".25"/><path d="M40 20h40v10H40z" fill="currentColor" fill-opacity=".55"/><path d="M34 31h52a4 4 0 0 1 4 4v14h-9v8H39v-8h-9V35a4 4 0 0 1 4-4z" fill="currentColor" fill-opacity=".8"/><rect x="45" y="44" width="30" height="13" fill="#fff" stroke="currentColor" stroke-opacity=".3"/><rect x="49" y="48" width="22" height="2" fill="#4c9b6e"/><rect x="49" y="52" width="16" height="2" fill="currentColor" fill-opacity=".35"/></svg>
+							<strong>Print straight away</strong>
+							<span>The print dialog opens with these settings.</span>
+						</label>
+					</div>
+					<p class="help mode-help"></p>
+				</div>
+				<label class="switch save-when-printing" hidden><input type="checkbox" name="saveWhenPrinting" role="switch"><span class="track"></span>Also save what I print to my library</label>
+			</section>
+
+			<section class="sec" aria-labelledby="design-heading">
+				<div class="sec-h"><h2 id="design-heading">Design</h2><span class="saved" aria-live="polite"></span></div>
+				<label class="radio"><input type="radio" name="designMode" value="best"><span><strong>The best match for each article</strong><small>Picked from what the article holds: photos, footnotes, recipes, code. You can change it on the print page.</small></span></label>
+				<label class="radio design-fixed"><input type="radio" name="designMode" value="fixed"><span><strong>The same design every time</strong><small>Pick it below.</small></span></label>
+				<div class="design-grid" role="radiogroup" aria-label="Designs"></div>
+				<p class="help design-help" aria-live="polite"></p>
+			</section>
+
+			<section class="sec" aria-labelledby="paper-heading">
+				<div class="sec-h"><h2 id="paper-heading">Paper and ink</h2><span class="saved" aria-live="polite"></span></div>
+				<div class="opt">
+					<p class="lbl" id="paper-label">Paper</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="paper-label" data-name="paper"></div>
+				</div>
+				<div class="opt">
+					<p class="lbl" id="pictures-label">Pictures</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
+					<p class="help pictures-help" aria-live="polite"></p>
+				</div>
+				<div class="opt">
+					<p class="lbl" id="references-label">Long reference lists</p>
+					<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
+					<p class="help references-help" aria-live="polite">Some pages end with hundreds of references. A Wikipedia biography can run to 40 pages of them.</p>
+				</div>
+				<p class="help lock-line" id="lock-line" hidden>All 11 designs and every option. Free, just an email. <button type="button" class="link-button lock-continue">Continue with email</button></p>
+			</section>
+
+			<section class="sec" aria-labelledby="keys-heading">
+				<div class="sec-h"><h2 id="keys-heading">Shortcuts</h2></div>
+				<div class="key-row"><span>Print</span><span class="keycaps" data-shortcut="print"></span></div>
+				<div class="key-row"><span>Save</span><span class="keycaps" data-shortcut="save"></span></div>
+				<p class="help">Print is also in the right-click menu on any page; both are in the button's menu. <button type="button" class="link-button shortcuts">Change shortcuts</button></p>
+			</section>
+
+
+			<section class="sec" aria-labelledby="account-heading">
+				<div class="sec-h"><h2 id="account-heading">Account</h2></div>
+				<div class="account"></div>
+				<div class="door-slot account-door" hidden></div>
+			</section>
+
+			<section class="sec" aria-labelledby="share-heading">
+				<div class="sec-h"><h2 id="share-heading">Share</h2></div>
+				<p class="share-row"><a class="rate-link" target="_blank" rel="noopener">Rate Screenbreak on the Chrome Web Store ↗</a></p>
+				<div class="share-row friend">
+					<p class="lbl">Tell a friend</p>
+					<p class="help">Know someone who prints articles? Send them myscreenbreak.com.</p>
+					<p class="friend-actions"><button type="button" class="button button-outline button-small copy-link">Copy link</button><span class="copied help" role="status"></span></p>
+				</div>
+			</section>
+
+			<details>
+				<summary><span>Advanced</span><svg class="icon chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 6.5l3 3 3-3"/></svg></summary>
+				<div class="field">
+					<label class="lbl" for="server-url">Server address</label>
+					<p class="help">Only change this if Screenbreak support asks you to.</p>
+					<input type="url" id="server-url" name="serverUrl" required spellcheck="false">
+				</div>
+			</details>
+
+			<footer class="foot">
+				<p><span class="version"></span> · <a href="welcome.html">Welcome page</a></p>
+				<p class="reset-area"><button type="button" class="link-button reset">Reset to defaults</button></p>
+			</footer>
+		</form>
+	</aside>
+	<script src="options.js"></script>
+</body>
+</html>

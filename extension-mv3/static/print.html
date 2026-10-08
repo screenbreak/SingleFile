@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Print · Screenbreak</title>
+	<link rel="stylesheet" href="ui.css">
+	<link rel="stylesheet" href="flow.css">
+	<link rel="stylesheet" href="done.css">
+</head>
+<body class="is-loading">
+	<section class="desk" aria-label="Print preview">
+		<div class="desk-top">
+			<div class="desk-bar">
+				<p class="source"><img class="favicon" alt="" width="16" height="16" hidden><strong class="source-title"></strong><span class="source-site"></span></p>
+				<div class="segmented view-toggle" role="radiogroup" aria-label="View">
+					<label><input type="radio" name="view" value="pages" checked><span>Pages</span></label>
+					<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
+				</div>
+			</div>
+			<section class="gallery" id="gallery" aria-labelledby="gallery-title" hidden>
+				<div class="gallery-head">
+					<h2 id="gallery-title">All 11 designs</h2>
+					<button type="button" class="button button-outline button-small gallery-close">Close</button>
+				</div>
+				<div class="gallery-grid" role="radiogroup" aria-labelledby="gallery-title"></div>
+			</section>
+			<div class="desk-banner" role="status" hidden>
+				<p class="banner-text"><span class="long"></span><span class="short"></span></p>
+				<button type="button" class="button button-outline button-small banner-back">Close preview</button>
+			</div>
+		</div>
+		<div class="sheets"></div>
+		<div class="wait" aria-live="polite">
+			<div class="wait-inner">
+				<div class="web" aria-hidden="true">
+					<span class="blk nav"></span><span class="blk title"></span><span class="blk title2"></span><span class="blk photo"></span>
+					<span class="blk ad"></span><span class="blk share"></span><span class="blk lines"></span><span class="blk cookie"></span><span class="blk ad2"></span>
+				</div>
+				<ol class="steps"></ol>
+			</div>
+		</div>
+		<section class="message" hidden aria-live="polite">
+			<h1 class="message-title"></h1>
+			<p class="message-text"></p>
+			<p class="message-actions">
+				<a class="button message-primary" target="_self" hidden></a>
+				<button type="button" class="link-button close-tab">Close this tab</button>
+			</p>
+		</section>
+	</section>
+
+	<aside class="panel" aria-label="Print settings">
+		<div class="panel-head">
+			<img src="icons/logo.svg" alt="Screenbreak" class="wordmark" width="180" height="20">
+			<div class="who"></div>
+		</div>
+		<div class="panel-body">
+			<div class="intro">
+				<h1>Ready to print</h1>
+				<p class="summary"></p>
+				<p class="guest-line" hidden>No sign-up needed. Print right away.</p>
+			</div>
+			<p class="straight-note" hidden>The button prints straight away. <button type="button" class="link-button show-page-next">Show this page next time</button></p>
+			<p class="signed-in-line" role="status" hidden></p>
+
+			<div class="done" hidden></div>
+			<div class="door-slot door-slot-done" hidden></div>
+
+			<div class="blocks" id="design-and-paper">
+				<div class="sheet-head">
+					<h2>Design &amp; paper</h2>
+					<button type="button" class="button button-outline button-small sheet-close">Done</button>
+				</div>
+
+				<section class="sec" aria-labelledby="picked-heading">
+					<p class="eyebrow" id="picked-heading">Picked for this article</p>
+					<div class="picks" role="radiogroup" aria-labelledby="picked-heading"></div>
+					<p class="sub" id="others-heading">Other designs</p>
+					<div class="others" role="radiogroup" aria-labelledby="others-heading"></div>
+					<button type="button" class="link-button all-toggle" aria-expanded="false" aria-controls="gallery">See all 11 designs</button>
+				</section>
+
+				<section class="sec" aria-label="Paper and pictures">
+					<div class="opt">
+						<p class="lbl" id="pictures-label">Pictures</p>
+						<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
+						<p class="help pictures-help" aria-live="polite"></p>
+					</div>
+					<div class="opt">
+						<p class="lbl" id="paper-label">Paper</p>
+						<div class="segmented wide" role="radiogroup" aria-labelledby="paper-label" data-name="paper"></div>
+					</div>
+					<div class="opt references-opt" hidden>
+						<p class="lbl" id="references-label">Reference list</p>
+						<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
+						<p class="help references-help"></p>
+					</div>
+				</section>
+
+				<section class="sec locked-group" aria-labelledby="locked-heading" hidden>
+					<p class="eyebrow" id="locked-heading">With a free account</p>
+					<p class="lock-line" id="lock-line">All 11 designs and every option. Free, just an email. <button type="button" class="link-button lock-continue">Continue with email</button></p>
+					<button type="button" class="locked-row references-locked" hidden aria-describedby="lock-line" aria-expanded="false" aria-controls="door-slot-print">
+						<span class="locked-name">Reference list</span>
+						<span class="locked-value">Small type</span>
+					</button>
+				</section>
+			</div>
+
+			<div class="door-slot door-slot-print" id="door-slot-print" hidden></div>
+		</div>
+
+		<div class="actions">
+			<div class="act-print">
+				<button type="button" class="button print-button">
+					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
+					<span class="print-label">Print</span>
+				</button>
+				<button type="button" class="button button-outline sheet-toggle" aria-expanded="false" aria-controls="design-and-paper">Design &amp; paper</button>
+			</div>
+			<p class="help duplex-hint" hidden>To print on both sides, turn on Two-sided in the print window.</p>
+			<div class="act-locked" hidden>
+				<button type="button" class="button button-ink continue-button"></button>
+				<div class="locked-links">
+					<button type="button" class="link-button continue-google">Continue with Google</button>
+					<p class="help locked-note">Free. No card.</p>
+					<button type="button" class="link-button sheet-link" aria-expanded="false" aria-controls="design-and-paper">Design &amp; paper</button>
+				</div>
+			</div>
+			<div class="secondary-row">
+				<button type="button" class="link-button pdf-button">Save as PDF</button>
+			</div>
+			<p class="help pdf-hint" role="status" hidden>In the print window, set Destination to Save as PDF.</p>
+			<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
+		</div>
+	</aside>
+	<script src="print.js"></script>
+</body>
+</html>
