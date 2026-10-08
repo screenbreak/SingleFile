@@ -7,6 +7,14 @@ import { drawReceipt, drawYearCard, openReceiptSheet, receiptText } from "./rece
 
 const TICK = `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M4.9 8.2l2.1 2.1 4.1-4.4"/></svg>`;
 
+// The title takes focus by script so screen readers start there. Chrome can match :focus-visible on a script
+// focus (after a keyboard press in the print dialog), so the ring is turned off until the title loses focus.
+function quietFocus(node) {
+	node.dataset.quietFocus = "";
+	node.addEventListener("blur", () => delete node.dataset.quietFocus, { once: true });
+	node.focus();
+}
+
 const plural = (n, word) => `${n.toLocaleString("en")} ${word}${n == 1 ? "" : "s"}`;
 
 function tick() {
@@ -22,6 +30,7 @@ export function savingLine(screens, pages) {
 const reviewURL = () => `https://chromewebstore.google.com/detail/${globalThis.chrome?.runtime?.id || ""}/reviews`;
 
 // kind: "print" | "pdf"; design: { id, name }; reason: one sentence; screens: int | null.
+// No two-sided hint here: it sits under the Print button, before the print (FIX-2).
 // Optional: lockedClicked (a locked design or option was tapped on this page), keptPick (printed the engine's
 // pick), thumb (page 1 of this article: an image URL or an element, shown at 52 x 74 in the narrow sheet),
 // boxes (per-page layout boxes for the receipt).
@@ -60,8 +69,8 @@ export function showDone(container, { kind = "print", design = {}, pages = 1, re
 					? el("p", { class: "done-reason", text: "If you saved it, the PDF is in the folder you picked." })
 					: reason ? el("p", { class: "done-reason", text: reason }) : null,
 				!pdf && saving && el("p", { class: "done-saving" },
-					`${screens} screens of scrolling became `, el("mark", { text: String(pages) }), ` page${pages > 1 ? "s" : ""}`),
-				!pdf && pages > 1 && el("p", { class: "done-hint", text: "To print on both sides, turn on Two-sided in the print dialog." })),
+					`${screens} screens of scrolling became `,
+					el("span", { class: "done-saving-n" }, el("mark", { text: String(pages) }), ` page${pages > 1 ? "s" : ""}`))),
 			thumbNode),
 		el("div", { class: "done-actions" },
 			el("button", { type: "button", class: "pill pill-ink done-back", text: "Back to the article", onclick: () => onBack?.() }),
@@ -84,9 +93,13 @@ export function showDone(container, { kind = "print", design = {}, pages = 1, re
 		}
 	};
 	addEventListener("keydown", onKey);
-	title.focus();
+	quietFocus(title);
 
 	const api = {
+		// For the page to put focus back on the title (after a door closes) without a ring.
+		focus() {
+			if (!closed) quietFocus(title);
+		},
 		close() {
 			if (closed) return;
 			closed = true;
@@ -116,7 +129,7 @@ export function showDone(container, { kind = "print", design = {}, pages = 1, re
 					dismissOffer(offer.type);
 					offerSlot.hidden = true;
 					offerSlot.replaceChildren();
-					title.focus();
+					quietFocus(title);
 				}
 			});
 			if (!closed) offerSlot.hidden = false;
