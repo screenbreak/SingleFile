@@ -13,20 +13,21 @@ rewrite for Manifest V3 that keeps **Save** working exactly as before and adds *
   Pictures print in colour, as ink-saving halftone dots, in greys, or not at all; long reference lists can be
   left out or kept. Charts drawn on a `<canvas>` or as inline SVG are turned into images first, so they print.
   Embeds (videos, tweets) become a link. Nothing is uploaded.
-- **Print straight away**: with this on (Settings, the print page's "Remember these choices", or the button's
-  right-click menu) the button works as a printer: the print dialog opens with the reader's settings, and the
+- **Print straight away**: with this on (Settings or the button's right-click menu) the button works as a printer: the print dialog opens with the reader's settings, and the
   reader is back on the article afterwards, where a card says what printed ("Broadsheet, 5 pages", 6 seconds,
   "Print again"). The print page sends `{ method: "screenbreak.printed", id, tabId, design, pages }` before it
   closes; `background.js` shows the card on that tab. "Choose a design, then print…" in the right-click menu
   always shows the print page.
 - **Free tier** (SPEC in screenbreak-notes `free-tier/`): printing is unlimited for everyone, with no print
   counter anywhere. Without an account the reader prints the engine's pick; a free account opens all 11 designs
-  and every option and adds a library (up to a placeholder 50 articles, `LIBRARY_LIMIT_PLACEHOLDER` in
-  `status-copy.js`); Plus keeps everything. The meter is on saves only, as text.
-- **Account data**: `GET /api/v1/me/` (webapp#103, not built yet). `plans.js` `getAccount` reads `plan` and
-  `email` for the tier; the popup and welcome page also read `saves_used`, `saves_limit` (free) and `articles`
-  (Plus) through `api.js` `getMe`, and hide each number the server doesn't send. Until the call exists, everyone
-  is a guest.
+  and every option and adds a library; Plus keeps everything. The meter is on saves only, as text. The library
+  size shows nowhere until the server sends `saves_limit` (no placeholder number in the copy).
+- **Not in the UI**: the gift line ("Printed for X, from Y") stays in the engine only (`compose`'s optional
+  `gift`); no surface passes it. Print codes are out (SPEC D6): no code on paper, no code page.
+- **Account data**: `GET /api/v1/me/` (webapp#103, not built yet), read once per surface by `plans.js`
+  `getAccount`: `plan` and `email` for the tier, and `saves_used`, `saves_limit` (free) and `articles` (Plus)
+  for the popup's account row, which hides each number the server doesn't send. Until the call exists, everyone
+  is a guest. The door and library addresses also live in `plans.js` only.
 - **Default action**: clicking the toolbar button either asks (a small menu with Print and Save), prints, or saves.
   The choice can be changed in the menu itself, in Settings, or by right-clicking the button
   ("When I click the button"). Both actions are always available from the right-click menu on the button and on
@@ -35,7 +36,7 @@ rewrite for Manifest V3 that keeps **Save** working exactly as before and adds *
   will print.
 - **Print and save**: with "Also save what I print" on (popup, Settings or welcome page), every print opens the
   print version straight away and saves the article in the background. The print page's toolbar shows the save:
-  "Saving…", then "Saved · Open · Undo", or "Not saved yet · Log in".
+  "Saving…", then "Saved · Open · Undo", or "Not saved yet · Continue with email".
 - **Save when signed out** (popup, shortcut, right-click): the status card asks first ("Save this article to your
   library" · "Continue with email" or "Print instead"), opens the sign-up page
   (`/signup/?from=extension&next=/extension/signed-in/`) only on a click, stores the pending save in
@@ -44,7 +45,8 @@ rewrite for Manifest V3 that keeps **Save** working exactly as before and adds *
 - **Saved**: "Saved to your library" names the article and offers Open and Undo for 8 seconds (paused while the
   pointer is on it); a meter line ("18 of 20 saves this month") shows only from 80% and only when the upload's
   answer carries `saves_used` and `saves_limit`. Undo uses the articles page's remove link until the API has a
-  call for it. A full library (429) says "Your library is full" with "See Plus" and "Print instead".
+  call for it. A full library (429) is a neutral notice, not an error: "Your library is full" with "See Plus ↗"
+  and "Print instead".
 - **Uninstall**: Chrome opens `https://myscreenbreak.com/bye?v=<version>` (the version only; set in `onInstalled`).
   The survey page itself is website work.
 
@@ -61,12 +63,21 @@ Then open `chrome://extensions`, turn on Developer mode, click **Load unpacked**
 `npm test` loads `dist/` into a headless Chromium and checks Print and Save end to end against a stand-in
 for the Screenbreak API (`test/server.mjs`): print, the login prompt, the upload, and Undo. It uses Playwright's
 full Chromium (`channel: "chromium"`), because the default headless shell can't load extensions; run
-`npx playwright install chromium` once. Set `CHROMIUM_PATH` to use a specific Chromium.
+`npx playwright install chromium` once. Set `CHROMIUM_PATH` to use a specific Chromium, and `SB_TEST_PORT` for
+another stand-in port (default 8765; `test/paper.mjs` reads it too).
+
+```sh
+npm run build && npm test     # print and save end to end (Playwright)
+node test/done.mjs            # the print log and the offer scheduler (no browser)
+node test/paper.mjs           # the printed page: page counts, end-block modes, QR, one-page prints
+```
 
 `node design/capture.mjs design/after` screenshots every surface and state, and checks that text in each column
 starts on the same x. `node design/capture-small.mjs` does the same for the popup (guest, unsupported, free,
-nearly full, full, already saved, Plus), the welcome page, "What's new" and the status cards, with a stand-in
-`/api/v1/me/`, and runs the guest Save door and the straight-away card for real (`design/after/small/`).
+nearly full, full, already saved, Plus; 320 px wide, full height), the welcome page, "What's new" and the status
+cards, with a stand-in `/api/v1/me/`, and runs the guest Save door and the straight-away card for real
+(`design/after/small/`). Both take `SB_CAPTURE_PORT` for the stand-in port (capture.mjs default 8766;
+capture-small.mjs a free port).
 Design notes are in `design/` (`REFERENCES.md` is the reference lock behind the UI).
 
 ## How it fits together
@@ -74,13 +85,13 @@ Design notes are in `design/` (`REFERENCES.md` is the reference lock behind the 
 | File | Role |
 |---|---|
 | `src/background.js` | Service worker. Toolbar button, right-click menus, shortcuts, default action; runs Save/Print in the tab; fetches cross-origin resources for SingleFile; uploads. |
-| `src/api.js` | Screenbreak API client (`/api/v1/csrf/`, `/api/v1/article/`, `/api/v1/article/<ref_id>/`), unchanged protocol; `/api/v1/me/` numbers; the door's sign-up addresses. |
+| `src/api.js` | Screenbreak API client (`/api/v1/csrf/`, `/api/v1/article/`, `/api/v1/article/<ref_id>/`), unchanged protocol; the remove link for Undo; the key of a saved page. |
 | `src/content-save.js` | Injected on Save: SingleFile capture (`single-file-core`), gzip. `content-frames.js` goes into every iframe so embeds are captured too. |
 | `src/content-print.js` | Injected on Print: turns canvas/SVG graphics into images, then runs Readability on a copy of the page. |
 | `static/print.html`, `src/print.js`, `static/flow.css` | The print page: the desk of pages and the panel of choices. `flow.css` is shared with Settings. |
 | `src/engine/`, `engine/` | The print engine, from screenbreak/webapp `printlab/` (branch `claude/project-thread-2c6roz`, 6346675): `layout.js` (article clean-up, image placement, sidenotes, pull quotes, halftones), `recommend.js` (the design picker), the design CSS and `paginate.js` (unchanged). Fonts are copied from `@fontsource` at build time. It runs in the extension until rendering moves to the Screenbreak server; the pages only call `prepare()` and `compose()`. |
 | `static/sheet.html`, `src/sheet.js`, `src/desk.js` | One document per design, built by `paginate.js`, shown scaled on the desk and printed as it is. |
-| `src/designs.js`, `src/plans.js`, `src/panel.js` | The designs offered and their copy; the tiers (what a guest can print) and the account lookup; panel pieces shared by the print page and Settings. |
+| `src/designs.js`, `src/plans.js`, `src/panel.js` | The designs offered and their copy; the tiers (what a guest can print), the account lookup and every door/library address; panel pieces shared by the print page and Settings. |
 | `static/popup.html`, `src/popup.js` | The Print/Save menu shown when the default action is "ask", with the click action, shortcuts and the account row. Explains itself on pages Chrome keeps extensions out of. |
 | `static/options.html`, `src/options.js` | Settings. `src/settings.js` holds the defaults. |
 | `static/welcome.html`, `src/welcome.js` | Opens after install: print the sample, the click action, shortcuts, the free account (step two), setup checks. After an update from a 1.x version only, `#updated` shows "What's new" instead. |
@@ -91,7 +102,7 @@ Design notes are in `design/` (`REFERENCES.md` is the reference lock behind the 
 
 - Needs the webapp: `GET /api/v1/me/` with `email`, `plan`, `saves_used`, `saves_limit`, `articles` (webapp#103);
   `saves_used`/`saves_limit` in the answer to an upload, for the "Saved" meter; the sign-up page that also signs
-  existing readers in, and `/extension/signed-in/` after it (the addresses in `api.js` are best guesses); a Plus
+  existing readers in, and `/extension/signed-in/` after it (the addresses in `plans.js` are best guesses); a Plus
   page (`/plus/`); an API call to remove an article (Undo uses `/articles/delete/<ref_id>/` today); and a
   different answer for "profile incomplete" than for "logged out" (both are 403).
 - Needs the website: `myscreenbreak.com/bye` (the uninstall survey, SPEC C6).
