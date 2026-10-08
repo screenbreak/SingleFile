@@ -164,7 +164,7 @@ function renderPanel() {
 	state.thumbKey = "";
 	renderOthers();
 	gallery.querySelector(".gallery-grid").replaceChildren(...Object.keys(DESIGNS).map(style =>
-		designTile({ style, checked: style == choice.style, picked: style == picked.style, locked: !isOpen("design", style), describedBy: "lock-line" })));
+		designTile({ style, name: "gallery-design", checked: style == choice.style, picked: style == picked.style, locked: !isOpen("design", style), describedBy: "lock-line" })));
 	fillSegmented(panel.querySelector("[data-name=pictures]"), PICTURES, choice.pictures, { locked: Object.keys(PICTURES).filter(value => !isOpen("pictures", value)), describedBy: "lock-line" });
 	fillSegmented(panel.querySelector("[data-name=paper]"), PAPER, choice.paper);
 	const longReferences = hasLongReferences(prepared);
@@ -282,18 +282,24 @@ function syncControls() {
 	updatePageCounts();
 }
 
-// One change handler for the panel and the gallery. A locked value, by mouse or keyboard, only previews: printing
-// it goes through the door (printNow refuses it).
+// A design from the panel or the gallery. A locked one, by mouse or keyboard, only previews: printing it goes
+// through the door (printNow refuses it).
+async function chooseDesign(style, { fromGallery = false } = {}) {
+	if (!isOpen("design", style)) state.lockedClicked = true;
+	state.choice.style = style;
+	closeGallery({ focusRow: fromGallery ? style : null });
+	syncControls();
+	await showChoice();
+	// A door for another design would now be wrong; a sign-in already under way carries on.
+	if (state.door && !state.door.waiting) closeDoor();
+}
+
+// One change handler for the panel. The gallery's tiles have their own radio name: arrow keys move inside it, and
+// only a click or Enter/Space chooses (below).
 document.addEventListener("change", async event => {
 	const target = event.target;
 	if (target.name == "design") {
-		if (!isOpen("design", target.value)) state.lockedClicked = true;
-		state.choice.style = target.value;
-		closeGallery({ focusRow: target.closest(".gallery") ? target.value : null });
-		syncControls();
-		await showChoice();
-		// A door for another design would now be wrong; a sign-in already under way carries on.
-		if (state.door && !state.door.waiting) closeDoor();
+		await chooseDesign(target.value);
 	} else if (target.name == "pictures" || target.name == "references" || target.name == "paper") {
 		state.choice[target.name] = target.value;
 		if (!isOpen(target.name, target.value)) state.lockedClicked = true;
@@ -334,6 +340,7 @@ document.querySelectorAll("input[name=view]").forEach(input => input.addEventLis
 
 const galleryToggle = document.querySelector(".all-toggle");
 function openGallery() {
+	gallery.querySelectorAll("input[name=gallery-design]").forEach(input => input.checked = input.value == state.choice.style);
 	gallery.hidden = false;
 	galleryToggle.setAttribute("aria-expanded", "true");
 	(gallery.querySelector("input:checked") || gallery.querySelector("input")).focus();
@@ -349,6 +356,17 @@ function closeGallery({ focusRow } = {}) {
 }
 galleryToggle.addEventListener("click", () => gallery.hidden ? openGallery() : closeGallery());
 document.querySelector(".gallery-close").addEventListener("click", () => closeGallery());
+// A click on a tile chooses it. The click Chrome sends to the radio itself (also for arrow keys) is left alone.
+gallery.querySelector(".gallery-grid").addEventListener("click", event => {
+	const tile = event.target.closest(".tile");
+	if (tile && !event.target.matches("input")) chooseDesign(tile.dataset.style, { fromGallery: true });
+});
+gallery.querySelector(".gallery-grid").addEventListener("keydown", event => {
+	if ((event.key == "Enter" || event.key == " ") && event.target.matches("input[name=gallery-design]")) {
+		event.preventDefault();
+		chooseDesign(event.target.value, { fromGallery: true });
+	}
+});
 
 // Under 860 px: a sticky bar with Print and "Design & paper", which opens the same blocks as a bottom sheet.
 
