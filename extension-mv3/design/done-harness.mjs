@@ -267,6 +267,28 @@ try {
 				report.files.push(`${name}.png`);
 			}
 		}
+		// "Didn't print? Print again" calls onPrintAgain and blocks every offer for this session.
+		// Last on this page: the block also lives in the page's module, so nothing after it could get an offer.
+		const again = await page.evaluate(async () => {
+			const { offers, done } = window.SB;
+			window.current?.close();
+			await chrome.storage.local.clear();
+			await chrome.storage.session.clear();
+			let time = new Date(2026, 9, 1, 9).getTime();
+			offers.clock.now = () => time;
+			for (let i = 0; i < 2; i++) await offers.recordPrint({ url: `https://example.com/story/${i}`, pages: 5, screens: 14 });
+			await chrome.storage.local.set({ reviewAsk: { at: 1 } });   // two articles in a day would bring the review
+			const log = [];
+			window.current = done.showDone(document.querySelector(".panel-body .done"), { kind: "print", design: { id: "broadsheet", name: "Broadsheet" }, pages: 5, account: { state: "guest" }, onPrintAgain: () => log.push("again") });
+			await new Promise(resolve => setTimeout(resolve, 200));
+			const before = document.querySelector(".done-offer").hidden;
+			document.querySelector(".done-again").click();
+			await new Promise(resolve => setTimeout(resolve, 100));
+			await offers.recordPrint({ url: "https://example.com/story/9", pages: 5, screens: 14 });
+			return { log, before, offer: await offers.nextOffer({ account: { state: "guest" }, lockedClicked: true }) };
+		});
+		report.checks.push({ state: "print again blocks offers", width, ok: again.before && again.log.join() == "again" && again.offer == null });
+
 		report.checks.push({ state: "page errors", width, ok: errors.length == 0, errors });
 		await context.close();
 	}
