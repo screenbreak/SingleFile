@@ -8,9 +8,8 @@ export const thumbURL = style => `designs/${style}.webp`;
 // The done state and the offers (done.js, offers.js) come from a parallel branch. A template import lets esbuild
 // bundle each file when it is there and throw "Module not found" at run time when it is not, so these pages build
 // and run either way. The prefixes keep each pattern to one file.
-const NE = "ne", FERS = "fers";
-export const loadDone = () => import(`./do${NE}.js`);
-export const loadOffers = () => import(`./of${FERS}.js`);
+export const loadDone = () => import("./done.js");
+export const loadOffers = () => import("./offers.js");
 
 export function el(tag, attributes = {}, ...children) {
 	const element = document.createElement(tag);

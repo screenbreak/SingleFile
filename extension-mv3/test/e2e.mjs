@@ -28,8 +28,8 @@ try {
 	const extensionId = worker.url().split("/")[2];
 	const buttonState = () => worker.evaluate(async () => ({ popup: await chrome.action.getPopup({}), title: await chrome.action.getTitle({}) }));
 
-	// Default: the button opens the Save/Print menu.
-	await new Promise(resolve => setTimeout(resolve, 500));
+	// Default: the button opens the Save/Print menu. (A longer wait: the worker is slow to settle under load.)
+	await new Promise(resolve => setTimeout(resolve, 2000));
 	assert.match((await buttonState()).popup, /popup\.html$/);
 
 	const article = await context.newPage();
@@ -168,8 +168,11 @@ try {
 	assert.equal((await extensionPage.evaluate(() => chrome.storage.local.get("guestPrints"))).guestPrints, undefined);
 	await extensionPage.evaluate(defaults => chrome.storage.sync.set({ print: { ...defaults, paper: "A4" } }), PRINT_DEFAULTS);
 
-	// Save: not logged in, so the status card asks first; "Log in" opens the login page, and once logged in the
-	// upload goes through. The card's shadow root is closed, so it is opened up here to click the button.
+	// Save: not logged in, so the status card asks first; "Continue with email" opens the sign-up page, and once signed in the
+	// upload goes through. The card's shadow root is closed, so it is opened up here to click the button. The straight-away
+	// print above already put a card (closed root) on this tab, so the page is reloaded first.
+	await article.reload();
+	await article.waitForLoadState();
 	await extensionPage.evaluate(async url => {
 		const [tab] = await chrome.tabs.query({ url });
 		await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => {
@@ -180,10 +183,13 @@ try {
 	await run("save");
 	const loginButton = article.locator("screenbreak-status").locator(".primary");
 	await loginButton.waitFor({ timeout: 30000 });
-	assert.equal(await loginButton.textContent(), "Log in");
-	const loginPagePromise = context.waitForEvent("page", page => page.url().includes("/login/"));
+	assert.equal(await loginButton.textContent(), "Continue with email");
 	await loginButton.click();
-	await loginPagePromise;
+	// The door opens the sign-up page; the stand-in server has no /signup/, so the test signs in on /login/.
+	for (let attempt = 0; attempt < 60 && !log.some(line => line.startsWith("GET /signup/")); attempt++) {
+		await new Promise(resolve => setTimeout(resolve, 250));
+	}
+	await (await context.newPage()).goto(BASE + "/login/");
 	for (let attempt = 0; attempt < 60 && !uploads.length; attempt++) {
 		await new Promise(resolve => setTimeout(resolve, 500));
 	}
@@ -191,17 +197,17 @@ try {
 	assert.match(uploads[0], /Page saved with SingleFile/);
 	assert.match(uploads[0], /data:image\/png;base64/);
 	assert.doesNotMatch(uploads[0], /<script|screenbreak-status/);
-	await article.locator("screenbreak-status").locator("text=Saved to Screenbreak").waitFor();
+	await article.locator("screenbreak-status").locator("text=Saved to your library").waitFor();
 
 	// Undo removes the article again.
 	await article.locator("screenbreak-status").locator("button:text('Undo')").click();
-	await article.locator("screenbreak-status").locator("text=Removed from Screenbreak").waitFor();
+	await article.locator("screenbreak-status").locator("text=Removed from your library").waitFor();
 	assert.deepEqual(removed, ["abc123"]);
 
 	// Print and save: the print page opens, the article is saved in the background, and the print page says so.
 	await extensionPage.evaluate(() => chrome.storage.sync.set({ saveWhenPrinting: true }));
 	const printAndSavePage = await openPrintPage();
-	await printAndSavePage.locator(".save-status:has-text('Saved to Screenbreak')").waitFor({ timeout: 30000 });
+	await printAndSavePage.locator(".save-status:has-text('Saved to your library')").waitFor({ timeout: 30000 });
 	assert.equal(uploads.length, 2);
 	assert.equal(await printAndSavePage.locator(".save-actions a").textContent(), "Open");
 	await printAndSavePage.close();

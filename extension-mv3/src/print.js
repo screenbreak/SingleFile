@@ -573,10 +573,13 @@ async function applySignIn(account, intent = {}) {
 	renderPanel();
 	await showChoice();
 	renderPicksInBackground();
-	if (intent.kind == "save" || intent.kind == "keep") {
+	if (intent.kind == "keep") {
 		const tab = await chrome.tabs.getCurrent();
 		const opener = tab && tab.openerTabId && await chrome.tabs.get(tab.openerTabId).catch(() => null);
 		if (opener) chrome.runtime.sendMessage({ method: "screenbreak.run", action: "save", tab: opener }).catch(() => {});
+		showSignedInLine("You're in. This article is going to your library.");
+	} else if (intent.kind == "save") {
+		// The background worker finishes a Save door itself (C-6); this page only says so.
 		showSignedInLine("You're in. This article is going to your library.");
 	} else {
 		const ready = intent.kind == "option" && intent.option ? (intent.option.name == "pictures" ? PICTURES[intent.option.value].label : "Reference list") : DESIGNS[state.choice.style].name;
