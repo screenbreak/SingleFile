@@ -1,37 +1,51 @@
 // The paper surface (research 05 §7), in a real Chromium with the built extension: the print address, the
-// page-1 imprint, the gift line and the end block, for every design and every fixture article.
+// page-1 imprint, the end block and its margin line, for every design, both papers and every fixture article.
+// The gift line has no UI (2026-10-08); the engine keeps it, so its escaping (T6) is still checked here.
 // Run `npm run build && node test/paper.mjs`. Prints a table; writes one PDF per end-block mode to
 // design/after/paper/ (pdftotext/pdffonts check them when installed). Set CHROMIUM_PATH to use another Chromium;
-// PAPER_FIXTURE=<name> runs one fixture and no PDFs (for tuning a fixture).
+// SB_TEST_PORT for the test server's port; PAPER_FIXTURE=<name> runs one fixture and no PDFs (for tuning a fixture).
+// Page counts are compared with test/paper-baseline.json (the engine without the end block); after a change to
+// the engine that is meant to move pages, regenerate it with SB_PAPER_BASELINE=write node test/paper.mjs.
 import { chromium } from "playwright";
 import * as esbuild from "esbuild";
 import QRCode from "qrcode";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { printURL, cleanURL } from "../src/engine/print-url.js";
-import { giftLine, cssString } from "../src/engine/layout.js";
+import { giftLine, cssString, endLines } from "../src/engine/layout.js";
 import { DESIGNS } from "../src/designs.js";
 import { start } from "./server.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const EXTENSION_PATH = ROOT + "dist";
 const PDF_DIR = ROOT + "design/after/paper";
-const PORT = 8775;
+const BASELINE = new URL("paper-baseline.json", import.meta.url);
+const PORT = Number(process.env.SB_TEST_PORT) || 8775;
 const BASE = `http://localhost:${PORT}`;
+const LONG_PATH = "/environment/2026/oct/07/the-library-that-lends-seeds-how-a-small-town-library-in-the-hills-started-lending-tomato-bean-and-squash-seeds-and-what-came-back-in-the-autumn?section=environment&series=local-heroes";
 const FIXTURES = {
 	article: { url: BASE + "/article.html", printURL: BASE + "/article.html" },
 	"one-page": { url: BASE + "/pages/one-page.html", printURL: BASE + "/pages/one-page.html" },
 	"full-last": { url: BASE + "/pages/full-last-page.html", printURL: BASE + "/pages/full-last-page.html" },
 	tracking: { url: BASE + "/pages/tracking.html?ref=home&utm_source=newsletter&fbclid=AbC123&gift=9f8e7d#comments", printURL: BASE + "/culture/2026/oct/07/paper-maps?id=42" },
-	"long-url": { url: BASE + "/pages/long-url.html?utm_medium=email", printURL: BASE + "/environment/2026/oct/07/the-library-that-lends-seeds-how-a-small-town-library-in-the-hills-started-lending-tomato-bean-and-squash-seeds-and-what-came-back-in-the-autumn?section=environment&series=local-heroes" }
+	"long-url": { url: BASE + "/pages/long-url.html?utm_medium=email", printURL: BASE + LONG_PATH },
+	// Swiss with 8 to 20mm free on the last page: mode B (one line), not A, not C.
+	"swiss-b": { url: BASE + "/pages/swiss-b.html", printURL: BASE + "/pages/swiss-b.html" },
+	// Full last pages with the long address (?sb-long below): the mode C margin line is cut to one line of the box,
+	// two lines with the imprint on a one-page print.
+	"full-last-long": { url: BASE + "/pages/full-last-page.html?sb-long=1", printURL: BASE + LONG_PATH },
+	"tracking-long": { url: BASE + "/pages/tracking.html?sb-long=1", printURL: BASE + LONG_PATH }
 };
 // T6: a gift line that tries to close the CSS string and add its own page rule.
 const GIFT = { for: "\"; } @page { margin: 0 } x {", from: "Yorgos\\" };
 const STYLES = Object.keys(DESIGNS);
+const PAPERS = ["A4", "Letter"];
+const IMPRINT = "Printed with myscreenbreak.com";
 const ONLY = process.env.PAPER_FIXTURE;
+const WRITE_BASELINE = process.env.SB_PAPER_BASELINE == "write";
 
 // 1. The print address, without a browser (T8).
 const CASES = [
@@ -83,6 +97,16 @@ assert.equal(giftLine({ for: "مريم", from: "Γιώργος" }), "Printed for
 assert.equal(cssString("a\"b\\c</style>"), "\"a\\\"b\\\\c\\3c /style>\"");
 assert.equal(cssString(giftLine(GIFT)), "\"Printed for \\\"; } @page { margin: 0 } x {, from Yorgos\\\\\"");
 
+// The margin line of a full last page (mode C): one line of the 150mm box, 95 characters (80 in Large print);
+// a short address stays whole, a long one keeps its start and its end.
+for (const [style, chars] of [["classic", 95], ["book", 95], ["large", 80]]) {
+	const long = endLines(style, BASE + LONG_PATH), short = endLines(style, "https://www.example.com/a/b");
+	assert.equal(Array.from(long.end).length, chars, `${style}: long end line ${long.end}`);
+	assert.equal(Array.from(long.first).length, chars, `${style}: long first end line ${long.first}`);
+	assert.ok(long.end.endsWith(" · " + IMPRINT) && long.first.startsWith("Original: localhost:") && long.first.endsWith("series=local-heroes"), `${style}: the cut keeps both ends`);
+	assert.deepEqual(short, { end: "Original: example.com/a/b · " + IMPRINT, first: "Original: example.com/a/b" }, `${style}: short address stays whole`);
+}
+
 // 3. In Chromium: capture each fixture with the extension, then compose and paginate every design twice, with
 // and without the end block.
 const engine = (await esbuild.build({
@@ -96,16 +120,28 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
 	headless: true,
 	args: [`--disable-extensions-except=${EXTENSION_PATH}`, `--load-extension=${EXTENSION_PATH}`]
 });
-// The new fixtures live in test/pages/ (server.mjs serves test/fixtures/ only).
+// The new fixtures live in test/pages/ (server.mjs serves test/fixtures/ only). ?sb-long serves the page with the
+// long canonical address instead of its own.
 await context.route(`${BASE}/pages/**`, route => {
-	const file = new URL("pages/" + new URL(route.request().url()).pathname.split("/").pop(), import.meta.url);
-	return existsSync(file) ? route.fulfill({ contentType: "text/html", body: readFileSync(file) }) : route.fulfill({ status: 404 });
+	const address = new URL(route.request().url());
+	const file = new URL("pages/" + address.pathname.split("/").pop(), import.meta.url);
+	if (!existsSync(file)) {
+		return route.fulfill({ status: 404 });
+	}
+	let body = readFileSync(file, "utf8");
+	if (address.searchParams.has("sb-long")) {
+		body = body.replace(/<link rel="canonical"[^>]*>/, "").replace("<meta charset=\"utf-8\">", `<meta charset="utf-8"><link rel="canonical" href="${LONG_PATH.replace(/&/g, "&amp;")}">`);
+	}
+	return route.fulfill({ contentType: "text/html", body });
 });
 const rows = [];
 const articles = {};
-// The PDFs: [file label, fixture, design, the end mode the table must show for it].
-const PDFS = [["A", "tracking", "classic", "A"], ["B", "long-url", "classic", "B"], ["C", "full-last", "classic", "C"],
-	["C-one-page", "article", "riso", "C"], ["A-book", "full-last", "book", "A"]];
+const baseline = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8")) : {};
+const moved = [];
+// The PDFs: [file label, fixture, design, the end mode the table must show for it] (A4).
+const PDFS = [["A", "tracking", "classic", "A"], ["A-one-page", "one-page", "classic", "A"], ["B", "long-url", "classic", "B"],
+	["B-swiss", "swiss-b", "swiss", "B"], ["C", "full-last", "classic", "C"], ["C-long", "full-last-long", "classic", "C"],
+	["C-one-page", "article", "riso", "C"], ["C-one-page-long", "tracking-long", "large", "C"], ["A-book", "full-last", "book", "A"]];
 try {
 	const worker = context.serviceWorkers()[0] || await context.waitForEvent("serviceworker");
 	const extensionId = worker.url().split("/")[2];
@@ -138,8 +174,15 @@ try {
 		const modules = svg => (/stroke="#000000" d="([^"]+)"/.exec(svg || "") || [])[1];
 		const expectedQR = modules(await QRCode.toString(fixture.printURL, { type: "svg", margin: 0, errorCorrectionLevel: "M" }));
 
-		for (const style of STYLES) {
-			const paper = name == "article" && style == "classic" ? "Letter" : "A4";
+		const qrModules = (() => {
+			try {
+				return QRCode.create(fixture.printURL, { errorCorrectionLevel: "M" }).modules.size;
+			} catch {
+				return 0;
+			}
+		})();
+
+		for (const [paper, style] of PAPERS.flatMap(paper => STYLES.map(style => [paper, style]))) {
 			const result = await host.evaluate(async ({ style, paper, gift }) => {
 				const doc = await window.__engine.compose(window.__prepared, { style, pictures: "colour", references: "small", paper, gift });
 				const render = async doc => {
@@ -155,8 +198,23 @@ try {
 					const clipped = block ? block.getBoundingClientRect().bottom > last.getBoundingClientRect().bottom + 1 : false;
 					const qr = block && block.classList.contains("mode-a") ? block.querySelector(".qr svg").outerHTML : null;
 					const margins = [...sheet.querySelectorAll(".sb-margin")].map(box => box.textContent);
+					const mm = px => +(px / (96 / 25.4)).toFixed(2);
+					// The bottom margin lines as the preview draws them (sheet.css: the same face, size and 150mm box).
+					const lines = box => {
+						const range = sheet.createRange();
+						range.selectNodeContents(box);
+						return new Set([...range.getClientRects()].filter(rect => rect.width).map(rect => Math.round(rect.top))).size;
+					};
+					const sheets = [...sheet.querySelectorAll(".paper")];
+					const bottomLines = sheets.map(paper => paper.querySelector(".sb-margin.bottom")).map(box => box ? lines(box) : 0);
+					// The block's own imprint, as printed (innerText leaves out what is hidden), and the QR's quiet zone:
+					// the padding under the rule, and in Swiss the gap down to the progress bar.
+					const blockText = block && block.isConnected ? block.innerText : "";
+					const quietMM = block && block.isConnected ? mm(parseFloat(getComputedStyle(block).paddingTop)) : null;
+					const bar = last.querySelector(".progress"), code = block && block.isConnected && block.querySelector(".mode-a .qr, .qr");
+					const barGapMM = bar && code && getComputedStyle(bar).display != "none" && block.classList.contains("mode-a") ? mm(bar.getBoundingClientRect().top - code.getBoundingClientRect().bottom) : null;
 					frame.remove();
-					return { pages: out.pages, end: out.end, clipped, qr, margins, lastPage: last.style.page || "" };
+					return { pages: out.pages, end: out.end, clipped, qr, margins, bottomLines, blockText, quietMM, barGapMM, lastPage: last.style.page || "" };
 				};
 				const withBlock = await render(doc);
 				const without = await render({ ...doc, bodyHTML: doc.bodyHTML.replace(/<footer class="endblock"[\s\S]*?<\/footer>/, "") });
@@ -167,8 +225,14 @@ try {
 				return { withBlock, without, css: doc.css, pageRules: pageRules.map(rule => ({ selector: rule.selectorText, margin: rule.style.margin, text: rule.cssText })) };
 			}, { style, paper, gift: GIFT });
 			const { withBlock, without, css, pageRules } = result;
-			const label = `${name} / ${style}`;
+			const label = `${name} / ${style} / ${paper}`, key = `${name}/${style}/${paper}`;
 			assert.equal(withBlock.pages, without.pages, `${label}: the end block changed the page count`);
+			// The page count against the committed baseline (the engine without the end block).
+			if (WRITE_BASELINE) {
+				baseline[key] = without.pages;
+			} else if (baseline[key] !== withBlock.pages) {
+				moved.push(`${label}: ${withBlock.pages} page(s), baseline ${baseline[key] ?? "missing"}`);
+			}
 			assert.ok(withBlock.end && /^[ABC]$/.test(withBlock.end.mode), `${label}: end mode reported`);
 			assert.equal(withBlock.clipped, false, `${label}: end block cut off by the page edge`);
 			assert.equal(withBlock.lastPage, withBlock.end.mode == "C" ? "sb-end" : "", `${label}: named page only in mode C`);
@@ -178,6 +242,21 @@ try {
 			if (withBlock.end.mode == "A") {
 				assert.equal(modules(withBlock.qr), expectedQR, `${label}: the QR is printURL`);
 				assert.ok(withBlock.end.qrMM >= (style == "large" ? 18 : 16) && withBlock.end.qrMM <= 20, `${label}: QR size ${withBlock.end.qrMM}mm`);
+				const quiet = Math.max(2, 4 * withBlock.end.qrMM / qrModules);
+				assert.ok(withBlock.quietMM >= quiet - 0.05, `${label}: ${withBlock.quietMM}mm over the QR, 4 modules are ${quiet.toFixed(2)}mm`);
+				if (withBlock.barGapMM !== null) {
+					assert.ok(withBlock.barGapMM >= 1.7, `${label}: ${withBlock.barGapMM}mm between the QR and the progress bar`);
+				}
+			}
+			// The imprint prints once on a one-page print (page 1's margin), twice on longer prints (page 1's margin
+			// and the end block or the last page's margin).
+			if (withBlock.end.mode != "C") {
+				assert.equal(withBlock.blockText.includes(IMPRINT), withBlock.pages > 1, `${label}: imprint in the end block of a ${withBlock.pages}-page print`);
+				assert.match(withBlock.blockText, /Original/, `${label}: the end block keeps the original address`);
+			} else {
+				// Mode C: one margin line on the last page, or the imprint and the address (two lines) on a one-page print.
+				const expected = withBlock.pages > 1 ? [1, ...Array(withBlock.pages - 2).fill(0), 1] : [2];
+				assert.deepEqual(withBlock.bottomLines, expected, `${label}: lines in the bottom margins`);
 			}
 			const imprintBox = style == "book" ? "bottom-center" : "bottom-left", giftBox = style == "book" ? "top-center" : "top-left";
 			assert.ok(css.includes(`@page :first { @${imprintBox} { content: "Printed with myscreenbreak.com";`), `${label}: imprint on page 1`);
@@ -190,17 +269,29 @@ try {
 		}
 	}
 
-	// What the fixtures are for: a one-page print, and a last page too full for the end block (under 8mm free).
-	const row = (fixture, design) => rows.find(r => r.fixture == fixture && r.design == design);
+	if (WRITE_BASELINE) {
+		const sorted = Object.fromEntries(Object.entries(baseline).sort(([a], [b]) => a.localeCompare(b)));
+		writeFileSync(BASELINE, JSON.stringify(sorted, null, "\t") + "\n");
+		console.log(`Wrote ${Object.keys(sorted).length} page counts to test/paper-baseline.json`); // eslint-disable-line no-console
+	}
+	assert.equal(moved.length, 0, `Page counts moved from test/paper-baseline.json:\n  ${moved.join("\n  ")}\n` +
+		"If the engine change is meant to move pages, regenerate the baseline: SB_PAPER_BASELINE=write node test/paper.mjs");
+
+	// What the fixtures are for: a one-page print, a last page too full for the end block (under 8mm free), Swiss
+	// with 8 to 20mm free, and full last pages with the long address.
+	const row = (fixture, design, paper = "A4") => rows.find(r => r.fixture == fixture && r.design == design && r.paper == paper);
 	if (!ONLY) {
 		assert.equal(row("one-page", "classic").pages, 1, "one-page fixture: one page in Classic");
 		assert.ok(row("full-last", "classic").pages > 1 && row("full-last", "classic").roomMM < 8, "full-last fixture: a full last page in Classic");
+		assert.ok(row("swiss-b", "swiss").roomMM >= 8 && row("swiss-b", "swiss").roomMM <= 20 && row("swiss-b", "swiss").end == "B", "swiss-b fixture: 8 to 20mm free in Swiss, mode B");
+		assert.ok(row("full-last-long", "classic").pages > 1 && row("full-last-long", "classic").end == "C", "full-last-long fixture: mode C on a print of several pages");
+		assert.ok(row("tracking-long", "large").pages == 1 && row("tracking-long", "large").end == "C", "tracking-long fixture: mode C on a one-page print");
 		for (const mode of ["A", "B", "C"]) {
 			assert.ok(rows.some(r => r.end == mode), `no fixture printed in mode ${mode}`);
 		}
 	}
 
-	// 4. PDFs as Chrome prints them, one per mode, with the gift line: the words on paper (T4, T5).
+	// 4. PDFs as Chrome prints them, one per mode: the words on paper (T4, T5).
 	mkdirSync(PDF_DIR, { recursive: true });
 	const hasPoppler = (() => { try { execFileSync("pdftotext", ["-v"], { stdio: "ignore" }); return true; } catch { return false; } })();
 	for (const [mode, name, style, expected] of ONLY ? [] : PDFS) {
@@ -212,9 +303,10 @@ try {
 		const pages = await page.evaluate(async ({ article, style, paper }) => {
 			const { prepare, compose, sanitize } = window.__engine;
 			const prepared = await prepare({ ...article, content: sanitize(article.content, article.url) });
-			const out = await window.renderSheet(await compose(prepared, { style, paper, gift: { for: "Maria", from: "Yorgos" } }));
+			const out = await window.renderSheet(await compose(prepared, { style, paper }));
 			return out.pages;
 		}, example);
+		const lines = endLines(style, FIXTURES[name].printURL);
 		const file = `${PDF_DIR}/mode-${mode}-${name}-${style}.pdf`;
 		await page.pdf({ path: file, preferCSSPageSize: true, printBackground: true });
 		await page.close();
@@ -223,9 +315,21 @@ try {
 			const count = +/Pages:\s+(\d+)/.exec(execFileSync("pdfinfo", [file]).toString())[1];
 			assert.equal(count, pages, `${file}: the PDF has the pages the sheet built`);
 			assert.match(text(1), /Printed with myscreenbreak\.com/, `${file}: imprint on page 1`);
-			assert.match(text(1), /Printed for Maria, from Yorgos/, `${file}: gift line on page 1`);
+			assert.doesNotMatch(text(1), /Printed for/, `${file}: no gift line`);
 			assert.match(text(count), /Original/, `${file}: the original address on the last page`);
 			const all = execFileSync("pdftotext", [file, "-"]).toString();
+			assert.equal(all.split(IMPRINT).length - 1, count > 1 ? 2 : 1, `${file}: the imprint prints once on one page, twice on more`);
+			if (expected == "C") {
+				// The margin line on one line of the box: with the imprint after it, or under the imprint on one page.
+				// (pdftotext -layout puts the page number at the end of the same line, or on a line of its own.)
+				const last = text(count).split("\n").map(line => line.trim().replace(/\s{2,}\d+$/, "")).filter(line => line && !/^\d+$/.test(line)), at = last.findIndex(line => line.startsWith("Original:"));
+				const line = count > 1 ? lines.end : lines.first;
+				assert.equal(last[at], line, `${file}: the margin line, on one line`);
+				assert.equal(last.length - 1 - at, 0, `${file}: nothing under the margin line`);
+				if (count == 1) {
+					assert.equal(last[at - 1], IMPRINT, `${file}: the imprint over the margin line`);
+				}
+			}
 			assert.doesNotMatch(all, /utm_|fbclid|gift=|#comments/, `${file}: no tracking on paper`);
 			assert.match(execFileSync("pdffonts", [file]).toString(), /IBMPlexMono/, `${file}: the imprint face is embedded`);
 		}
