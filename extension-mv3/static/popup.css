@@ -20,7 +20,7 @@ body { width: 320px; }
 .also-save { margin: 0 0 4px 40px; font-size: 12.5px; font-weight: 400; color: var(--ink-2); }
 .row[aria-disabled=true] { opacity: .45; cursor: default; pointer-events: none; }
 .notice { margin: 4px 16px 8px; }
-.notice-title { margin: 0; font: 500 16px/22px var(--serif); }
+.notice-title { margin: 0; font: 400 16px/22px var(--serif); }
 .notice-text { margin: 4px 0 0; font: 400 12.5px/17px var(--sans); color: var(--ink-2); }
 .default { padding: 12px 0 14px; border-top: 1px solid var(--line); }
 .default .segmented { display: flex; margin: 8px 16px 0; }

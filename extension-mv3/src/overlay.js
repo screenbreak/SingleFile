@@ -5,7 +5,7 @@
 const HOST_TAG = "screenbreak-status";
 const STILL_WORKING_DELAY = 12000;
 const FONT_FAMILY = "Screenbreak Work Sans";
-const SERIF_FAMILY = "Screenbreak Trirong";
+const SERIF_FAMILY = "Screenbreak Source Serif";
 const ICONS = {
 	working: `<svg viewBox="0 0 16 16" class="spinner"><circle cx="8" cy="8" r="6.25" fill="none" stroke-width="1.75" opacity=".2"/><path d="M8 1.75a6.25 6.25 0 0 1 6.25 6.25" fill="none" stroke-width="1.75" stroke-linecap="round"/></svg>`,
 	done: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" class="fill"/><path d="M4.9 8.2l2.1 2.1 4.1-4.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
@@ -157,7 +157,7 @@ function ensureCard() {
 			.detail { margin-top: 2px; color: rgba(29, 29, 27, .72); text-wrap: pretty; }
 			.quote { margin-top: 6px; }
 			.quote-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-				font: 500 15px/20px "${SERIF_FAMILY}", Georgia, serif; color: #1d1d1b; }
+				font: 400 15px/20px "${SERIF_FAMILY}", Georgia, serif; color: #161a18; }
 			.quote-site { margin-top: 2px; font-size: 12px; line-height: 16px; color: #6b7370; }
 			.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; }
 			.actions a, .actions button { font-family: inherit; font-size: 13px; font-weight: 600; line-height: 20px; color: #005d4c; text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; }
@@ -209,7 +209,7 @@ function loadFont() {
 		return;
 	}
 	ui.fontRequested = true;
-	for (const [family, file, weight] of [[FONT_FAMILY, "fonts/WorkSans-latin.woff2", "100 900"], [SERIF_FAMILY, "fonts/Trirong-Medium.ttf", "500"]]) {
+	for (const [family, file, weight] of [[FONT_FAMILY, "fonts/WorkSans-latin.woff2", "100 900"], [SERIF_FAMILY, "engine/fonts/source-serif-4-latin-400-normal.woff2", "400"]]) {
 		try {
 			const font = new FontFace(family, `url(${chrome.runtime.getURL(file)})`, { weight });
 			document.fonts.add(font);

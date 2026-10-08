@@ -1,10 +1,10 @@
 /* Welcome: one scrolling page, one 640 px column, one left edge (research/03-onboarding.md). */
 .page { max-width: 640px; margin: 0 auto; padding: 64px 24px 96px; }
 .intro { margin-top: 40px; }
-.intro-title { margin: 0; font: 500 40px/48px var(--serif); text-wrap: balance; }
+.intro-title { margin: 0; font: 400 40px/48px var(--serif); text-wrap: balance; }
 .intro-text { margin: 12px 0 0; font-size: 18px; line-height: 27px; color: var(--ink-2); }
 section { margin-top: 72px; }
-h2 { margin: 0; font: 500 26px/32px var(--serif); }
+h2 { margin: 0; font: 400 26px/32px var(--serif); }
 .section-text { margin: 8px 0 20px; font-size: 16px; line-height: 24px; color: var(--ink-2); }
 .muted { margin: 12px 0 0; color: var(--muted); }
 .saved { color: var(--green); font-size: 14px; }
@@ -60,7 +60,7 @@ h2 { margin: 0; font: 500 26px/32px var(--serif); }
 	border-left: 1px solid var(--line); border-top: 1px solid var(--line); transform: rotate(45deg);
 }
 .eyebrow { margin: 0 0 4px; font: 600 12px/16px var(--sans); color: var(--muted); }
-.pin-callout h2 { font: 500 20px/26px var(--serif); }
+.pin-callout h2 { font: 400 20px/26px var(--serif); }
 .pin-steps { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .pin-steps li { display: flex; gap: 10px; align-items: baseline; }
 .badge { display: inline-grid; place-items: center; flex: none; width: 18px; height: 18px; font: 600 11px/1 var(--sans); color: #fff; background: var(--green); border-radius: 50%; }

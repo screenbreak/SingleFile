@@ -6,7 +6,6 @@
 	"icons": {
 		"16": "icons/icon_16.png",
 		"48": "icons/icon_48.png",
-		"64": "icons/icon_64.png",
 		"128": "icons/icon_128.png"
 	},
 	"background": {
@@ -16,8 +15,7 @@
 		"default_icon": {
 			"16": "icons/icon_16.png",
 			"48": "icons/icon_48.png",
-			"64": "icons/icon_64.png",
-			"128": "icons/icon_128.png"
+				"128": "icons/icon_128.png"
 		},
 		"default_title": "Screenbreak"
 	},
@@ -36,7 +34,7 @@
 		}
 	},
 	"web_accessible_resources": [{
-		"resources": ["fonts/WorkSans-latin.woff2", "fonts/Trirong-Medium.ttf"],
+		"resources": ["fonts/WorkSans-latin.woff2", "engine/fonts/source-serif-4-latin-400-normal.woff2"],
 		"matches": ["<all_urls>"],
 		"use_dynamic_url": true
 	}],
