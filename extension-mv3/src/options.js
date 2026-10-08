@@ -12,9 +12,10 @@ import { el, fillSegmented, designTile, lockIcon, renderWho, renderDoor, loadDon
 
 const DEFAULT_DESCRIPTIONS = {
 	ask: "Shows a small menu with Save and Print.",
-	save: "Saves the page to your Screenbreak account straight away.",
+	save: "Saves the article to your library straight away.",
 	print: "Prints the article straight away."
 };
+const GUEST_SAVE_DESCRIPTION = "Save needs a free account.";
 const SAVED_DELAY = 1500;
 const UNDO_DELAY = 6000;
 const FRIEND_LINK = "https://myscreenbreak.com/?from=friend";
@@ -57,6 +58,8 @@ function fill(settings) {
 	const guest = isGuest();
 	form.elements.defaultAction.value = settings.defaultAction;
 	form.elements.saveWhenPrinting.checked = settings.saveWhenPrinting;
+	// Saving needs an account, so a guest does not see the switch.
+	form.querySelector(".save-when-printing").hidden = guest;
 	form.elements.serverUrl.value = settings.serverUrl;
 	form.querySelector(`input[name=straightAway][value=${print.straightAway ? "straight" : "page"}]`).checked = true;
 	const design = guest ? "best" : print.design;
@@ -65,7 +68,7 @@ function fill(settings) {
 	fixed.toggleAttribute("data-locked", guest);
 	fixed.querySelector("strong").replaceChildren("The same design every time", guest ? lockIcon(12) : "");
 	fixed.querySelector("input").setAttribute("aria-describedby", guest ? "lock-line" : "");
-	document.querySelector("#default-desc").textContent = DEFAULT_DESCRIPTIONS[settings.defaultAction];
+	document.querySelector("#default-desc").textContent = guest && settings.defaultAction == "save" ? GUEST_SAVE_DESCRIPTION : DEFAULT_DESCRIPTIONS[settings.defaultAction];
 	document.querySelector(".mode-help").textContent = print.straightAway
 		? "To pick a design for one article, right-click the button and choose “Choose a design, then print”."
 		: "You can switch to printing straight away from the print page too.";
@@ -284,6 +287,24 @@ form.addEventListener("change", async event => {
 });
 
 document.querySelector(".lock-continue").addEventListener("click", async () => openDoor(await getSettings(), { focus: true }));
+
+// A guest's preview on the sample can be undone: "The best match for each article" (already checked, so a click,
+// not a change) or Escape puts the sample back and the door back to the account entry.
+async function clearPreview() {
+	if (!isGuest() || !(preview.design || preview.pictures || preview.references)) {
+		return false;
+	}
+	preview = {};
+	const settings = await getSettings();
+	fill(settings);
+	await showSample(settings);
+	openDoor(settings);
+	return true;
+}
+form.querySelector("input[name=designMode][value=best]").addEventListener("click", () => clearPreview());
+addEventListener("keydown", event => {
+	if (event.key == "Escape" && !event.defaultPrevented) clearPreview();
+});
 document.querySelectorAll("input[name=view]").forEach(input => input.addEventListener("change", () => desk.setSpread(input.value == "spread" && input.checked)));
 document.querySelector(".shortcuts").addEventListener("click", openShortcutSettings);
 
