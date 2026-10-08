@@ -48,9 +48,20 @@ function check(surface, measures, name, selectors, expected) {
 }
 
 // The panel's text edges at 1280: section text at x = 24, card and row text at x = 112 (2 px edge + 10 px padding + 64 px thumbnail column + 12 px).
-const PANEL_EDGE = [".panel-head .wordmark", ".intro h1", ".summary", "#picked-heading", "#others-heading", ".all-toggle", "#pictures-label", "[data-name=pictures]", "#paper-label", ".gift-toggle", ".print-button", ".pdf-button"];
+const PANEL_EDGE = [".panel-head .wordmark", ".intro h1", ".summary", "#picked-heading", "#others-heading", ".all-toggle", "#pictures-label", "[data-name=pictures]", "#paper-label", ".print-button", ".pdf-button"];
 const GUEST_EDGE = [".guest-line", "#locked-heading", ".lock-line"];
 const CARD_EDGE = [".pick.picked .name", ".pick.picked .why", ".pick.picked .pages", ".others .pick .name", ".others .pick .why"];
+
+// Nothing in the panel may push it sideways (a long pill label): its content is never wider than its box. Under
+// 860 px the panel has no box of its own (display: contents), so the page is measured instead.
+async function noSideScroll(page, surface) {
+	const values = await page.evaluate(() => {
+		const panel = document.querySelector(".panel");
+		const box = getComputedStyle(panel).display == "contents" ? document.documentElement : panel;
+		return { scrollWidth: box.scrollWidth, clientWidth: box.clientWidth };
+	});
+	report.checks.push({ surface, name: "panel scrollWidth == clientWidth", ok: values.scrollWidth == values.clientWidth, values });
+}
 
 const server = await start(PORT);
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), "sb-capture-")), {
@@ -105,20 +116,29 @@ try {
 	await shoot(guest, "03-guest-locked-preview.png");
 	report.alignment.banner = await guest.evaluate(() => ({ height: Math.round(document.querySelector(".desk-banner").getBoundingClientRect().height) }));
 	report.checks.push({ surface: "guest locked preview", name: "desk banner 40 px", ok: Math.abs(report.alignment.banner.height - 40) <= 1, values: report.alignment.banner });
-	// The door, under the footer pills
-	await guest.click(".continue-button");
+	await noSideScroll(guest, "guest locked design 1280");
+	// The door card in the panel body (Cmd/Ctrl+P in a locked preview); the footer's email pill steps aside.
+	await guest.keyboard.press("Control+p");
 	await guest.locator(".door-slot-print .door").waitFor();
 	await sleep(300);
 	await shoot(guest, "04-guest-door.png");
 	await shoot(guest, "04b-guest-door-panel.png", { clip: { x: 1280 - 392, y: 0, width: 392, height: 900 } });
-	// Wait state (the sign-in tab opens next to this one)
+	report.checks.push({ surface: "guest door", name: "footer email pill hidden while the card is open", ok: await guest.locator(".continue-button").isHidden(), values: "" });
+	await guest.keyboard.press("Escape");
+	await guest.locator(".desk-banner").waitFor({ state: "hidden" });
+	// Wait state: the footer's ink pill is the email step (the sign-in tab opens next to this one, no second card)
+	await guest.locator(".others .pick[data-locked]").first().click();
+	await guest.locator(".desk-banner:not([hidden])").waitFor();
 	const signIn = context.waitForEvent("page");
-	await guest.locator(".door-slot-print .door .button-ink").click();
+	await guest.click(".continue-button");
 	const signInPage = await signIn;
 	await guest.bringToFront();
 	await guest.locator(".door.waiting").waitFor();
-	await sleep(300);
-	await shoot(guest, "05-guest-wait.png", { clip: { x: 1280 - 392, y: 500, width: 392, height: 400 } });
+	await sleep(800);
+	await shoot(guest, "05-guest-wait.png", { clip: { x: 1280 - 392, y: 0, width: 392, height: 900 } });
+	// The wait card must sit clear of the sticky footer, not under it.
+	const waitBox = await guest.evaluate(() => ({ card: Math.round(document.querySelector(".door.waiting").getBoundingClientRect().bottom), footer: Math.round(document.querySelector(".actions").getBoundingClientRect().top) }));
+	report.checks.push({ surface: "guest wait", name: "wait card above the footer", ok: waitBox.card <= waitBox.footer, values: waitBox });
 	await guest.locator(".door.waiting .link-button").click();
 	await signInPage.close().catch(() => {});
 	await guest.locator(".desk-banner").waitFor({ state: "hidden" });
@@ -127,6 +147,8 @@ try {
 	await guest.locator(".desk-banner:not([hidden])").waitFor();
 	await sleep(500);
 	await shoot(guest, "06-guest-ink-preview.png");
+	await shoot(guest, "06b-guest-ink-footer.png", { clip: { x: 1280 - 392, y: 600, width: 392, height: 300 } });
+	await noSideScroll(guest, "guest locked option 1280");
 	await guest.click(".banner-back");
 	await guest.locator(".desk-banner").waitFor({ state: "hidden" });
 	// Gallery over the desk
@@ -134,12 +156,6 @@ try {
 	await sleep(500);
 	await shoot(guest, "07-guest-gallery.png");
 	await guest.keyboard.press("Escape");
-	// Gift line
-	await guest.click(".gift-toggle");
-	await guest.fill("#gift-for", "Maria");
-	await guest.fill("#gift-from", "Yorgos");
-	await sleep(1200);
-	await shoot(guest, "08-guest-gift.png", { clip: { x: 1280 - 392, y: 0, width: 392, height: 900 } });
 	// Done state (only when done.js is in this build)
 	await guest.click(".print-button");
 	await sleep(1200);
@@ -159,14 +175,17 @@ try {
 	await narrow.click(".sheet-toggle");
 	await sleep(400);
 	await shoot(narrow, "11-guest-390-sheet.png");
-	const sheetMeasures = await narrow.evaluate(MEASURE, { container: "body", selectors: [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", ".gift-toggle", "#locked-heading", ".lock-line"] });
+	const sheetMeasures = await narrow.evaluate(MEASURE, { container: "body", selectors: [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", "#locked-heading", ".lock-line"] });
 	report.alignment.sheet = sheetMeasures;
-	check("guest 390 sheet", sheetMeasures, "sheet text edge x16", [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", ".gift-toggle", "#locked-heading", ".lock-line"], 16);
+	check("guest 390 sheet", sheetMeasures, "sheet text edge x16", [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", "#locked-heading", ".lock-line"], 16);
 	await narrow.locator(".blocks .others .pick[data-locked]").first().click();
 	await narrow.locator(".desk-banner:not([hidden])").waitFor();
 	await narrow.click(".sheet-close");
 	await sleep(400);
 	await shoot(narrow, "12-guest-390-locked.png");
+	report.checks.push({ surface: "guest 390 locked", name: "Design & paper reachable", ok: await narrow.locator(".act-locked .sheet-link").isVisible(), values: "" });
+	report.checks.push({ surface: "guest 390 locked", name: "short banner", ok: /^Previewing .+ · needs a free account$/.test(await narrow.locator(".banner-text .short").textContent()) && await narrow.locator(".banner-text .short").isVisible(), values: await narrow.locator(".banner-text .short").textContent() });
+	await noSideScroll(narrow, "guest 390 locked design");
 	await narrow.close();
 
 	// Free account and Plus, 1280
@@ -186,16 +205,25 @@ try {
 		await page.goto(ext("options.html"));
 		await sleep(1500);
 		await shoot(page, file, { fullPage: true });
+		const selectors = [".panel-head .wordmark", ".intro h1", "#button-heading", "#design-heading", "#paper-heading", "#keys-heading", "#account-heading", "#share-heading", "summary span", ".foot p"];
 		if (width == 1280) {
-			const selectors = [".panel-head .wordmark", ".intro h1", "#button-heading", "#design-heading", "#paper-heading", "#keys-heading", "#account-heading", "#share-heading", "summary span", ".foot p"];
 			const measures = await page.evaluate(MEASURE, { container: ".panel", selectors });
 			report.alignment["settings " + name] = measures;
 			check("settings " + name, measures, "panel text edge x24", selectors, 24);
+		} else {
+			const measures = await page.evaluate(MEASURE, { container: "body", selectors });
+			report.alignment[`settings ${name} ${width}`] = measures;
+			check(`settings ${name} ${width}`, measures, "page text edge x16", selectors, 16);
 		}
 		if (name == "guest" && width == 1280) {
 			await page.locator(".design-grid .tile", { hasText: "Riso zine" }).click();
 			await sleep(1500);
 			await shoot(page, "18-settings-guest-locked-preview.png");
+			// The preview can be undone: a click on "The best match for each article" puts the sample back.
+			await page.locator("input[name=designMode][value=best]").click({ force: true });
+			await sleep(1500);
+			const help = await page.locator(".design-help").textContent();
+			report.checks.push({ surface: "settings guest", name: "best match clears the locked preview", ok: /^Best match for this sample/.test(help), values: help });
 		}
 		await page.close();
 	}

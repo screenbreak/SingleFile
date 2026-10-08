@@ -4,12 +4,20 @@ const MM = 96 / 25.4;
 const PAGE_WIDTH = 216 * MM;
 const PAD = 24;
 
+function blockPrint(entry, blocked) {
+	const win = entry && entry.iframe.contentWindow;
+	if (win && win.setPrintBlocked) {
+		win.setPrintBlocked(!!blocked);
+	}
+}
+
 export class Desk {
 	constructor(element) {
 		this.element = element;
 		this.frames = new Map();
 		this.current = null;
 		this.spread = false;
+		this.printBlocked = false;
 		new ResizeObserver(() => this.fit()).observe(element);
 	}
 
@@ -51,11 +59,19 @@ export class Desk {
 		const entry = await this.render(key, doc);
 		if (this.current && this.current != entry) {
 			this.current.holder.classList.remove("shown");
+			blockPrint(this.current, false);
 		}
 		this.current = entry;
 		entry.holder.classList.add("shown");
+		blockPrint(entry, this.printBlocked);
 		this.fit();
 		return entry;
+	}
+
+	// A locked preview: a print started from inside the shown sheet (not through print()) prints nothing.
+	setPrintBlocked(blocked) {
+		this.printBlocked = blocked;
+		blockPrint(this.current, blocked);
 	}
 
 	setSpread(spread) {
@@ -117,6 +133,8 @@ export class Desk {
 	// The browser's print dialog for the design on show. Resolves after the dialog closes.
 	print() {
 		const win = this.current.iframe.contentWindow;
+		// Only reached for a print the page allows: lift the locked-preview block first.
+		this.setPrintBlocked(false);
 		return new Promise(resolve => {
 			win.addEventListener("afterprint", () => resolve(), { once: true });
 			win.focus();

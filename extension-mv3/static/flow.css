@@ -11,11 +11,12 @@ body { display: grid; grid-template-columns: minmax(0, 1fr) 392px; background: v
 .source { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; font-size: 13px; color: var(--muted); }
 .source .favicon { width: 16px; height: 16px; border-radius: 3px; flex: none; }
 .source-title { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.source-site { white-space: nowrap; }
+.source-site { white-space: nowrap; color: var(--ink-2); }
 .view-toggle { margin-left: auto; flex: none; }
 /* Locked preview: a 40 px bar on top of the pages, never over a page. */
 .desk-banner { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 4px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .banner-text { flex: 1; min-width: 0; margin: 0; font-size: 13px; line-height: 18px; color: var(--ink); }
+.banner-text .short { display: none; }
 .desk-banner .button-small { height: 30px; flex: none; }
 .sheets { position: relative; display: grid; justify-items: center; padding-bottom: 40px; }
 .sheet-holder { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden; visibility: hidden; }
@@ -119,8 +120,8 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 .pick .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .picked .thumb { width: 64px; height: 90px; overflow: hidden; }
 .picked .thumb.live { height: auto; }
-.row .thumb { width: 44px; height: 62px; }
-.row .lock-chip { right: -6px; bottom: -6px; }
+.row .thumb { width: 44px; height: 62px; overflow: hidden; }
+.row .thumb.live { height: auto; }
 .pick-text { display: grid; gap: 2px; min-width: 0; }
 .pick .name { font: 600 14px/20px var(--sans); color: var(--ink); }
 .picked .name { font: 400 20px/26px var(--serif); }
@@ -142,18 +143,17 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 .locked-value { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 13px; }
 .locked-row:hover .locked-name { color: var(--ink); }
 
-/* Gift line */
-.gift { display: grid; gap: 10px; }
-.gift-toggle { justify-self: start; font-size: 13.5px; }
-.gift-fields { display: grid; gap: 8px; }
-.gift-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 8px; }
-.gift-row input { width: 100%; height: 34px; padding: 0 10px; font: 400 14px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-.gift-row input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
-
 /* Action footer: sticky at the bottom of the panel at every width. */
 .actions { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; padding: 14px 24px 16px; background: var(--bg); border-top: 1px solid var(--line); }
 .act-print, .act-locked { display: grid; gap: 8px; }
 .print-button, .continue-button, .print-pick-button { width: 100%; height: 48px; font-size: 16px; }
+/* A long design name wraps inside the pill rather than pushing the panel sideways. */
+.continue-button { height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; line-height: 22px; white-space: normal; text-align: center; }
+.locked-links { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.locked-links .link-button { font-size: 13.5px; }
+.sheet-link { display: none; }
+/* While the door is open or waiting, its own card holds the next step: the footer does not ask again. */
+.door-open .continue-button, .door-open .continue-google { display: none; }
 .print-pick-button { height: 44px; font-size: 15px; }
 .print-button .icon, .print-pick-button .icon { width: 20px; height: 20px; }
 .print-button[aria-busy=true] { cursor: progress; }
@@ -214,6 +214,13 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 	.act-print { grid-template-columns: minmax(0, 1fr) auto; }
 	.sheet-toggle { display: inline-flex; height: 48px; }
 	.secondary-row { display: none; }
-	.done:not([hidden]), .door-slot-done:not([hidden]) { order: -1; margin: 0 16px 12px; }
+	/* The done state is a full-width bottom sheet (done.css pads it 16 px), so its text sits on the page's x = 16. */
+	.done:not([hidden]) { order: -1; margin: 0; }
+	.door-slot-done:not([hidden]), .door-slot-print:not([hidden]) { order: -1; margin: 0 16px 12px; }
+	/* Second text on --desk is --ink-2: --muted there is under 4.5:1. */
+	.intro p, .help { color: var(--ink-2); }
+	.banner-text .long { display: none; }
+	.banner-text .short { display: inline; }
+	.sheet-link { display: inline; }
 }
 @media (max-width: 860px) and (prefers-reduced-motion: reduce) { .blocks { transition: none; } }

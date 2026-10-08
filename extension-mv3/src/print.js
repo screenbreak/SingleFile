@@ -14,7 +14,7 @@ import { fillSegmented, setRadio, pickedCard, pickRow, designTile, setThumbnail,
 
 const MIN_ARTICLE_TEXT = 140;
 const THUMB_WIDTH = 64;
-const GIFT_FROM_KEY = "sbGiftFrom";
+const ROW_THUMB_WIDTH = 44;
 const INK_LOCKED_HELP = "Ink saver prints photos as light dots. It comes with a free account.";
 const REFERENCES_LOCKED_HELP = "Reference list comes with a free account.";
 
@@ -29,7 +29,9 @@ const doneElement = document.querySelector(".done");
 // choice: what the desk shows. freeChoice: the last choice this reader can print, which a locked preview goes back to.
 const state = {
 	id: "", prepared: null, settings: null, account: { state: "guest" }, choice: null, freeChoice: null, picks: [],
-	previewOnly: false, article: null, busy: true, door: null, done: null, thumbKey: ""
+	previewOnly: false, article: null, busy: true, door: null, done: null, thumbKey: "",
+	// True once the guest tapped any locked design or option on this page: the done state's unlock offer follows it.
+	lockedClicked: false
 };
 
 init();
@@ -120,9 +122,9 @@ function intentFor(locked) {
 		: { kind: "option", option: { name: locked.name, value: locked.value }, ...base };
 }
 
-// Documents are kept per design and per picture, reference, paper and gift setting.
-function keyFor({ style, pictures, references, paper, gift }) {
-	return [style, pictures, references, paper, gift ? gift.for + "\u0001" + gift.from : ""].join("|");
+// Documents are kept per design and per picture, reference and paper setting.
+function keyFor({ style, pictures, references, paper }) {
+	return [style, pictures, references, paper].join("|");
 }
 
 function renderDesign(style) {
@@ -148,8 +150,13 @@ async function showChoice() {
 		printButton.removeAttribute("aria-busy");
 	}
 	updatePageCounts();
-	updateSummary();
 	updateLocks();
+	updateSummary();
+	// In a locked preview "Ready to print" counts what Print does: the printable choice, built if it is not yet.
+	if (lockedPart()) {
+		const free = { ...state.freeChoice };
+		desk.render(keyFor(free), compose(state.prepared, free)).then(() => updateSummary()).catch(() => {});
+	}
 }
 
 // Panel
@@ -163,7 +170,7 @@ function renderPanel() {
 	state.thumbKey = "";
 	renderOthers();
 	gallery.querySelector(".gallery-grid").replaceChildren(...Object.keys(DESIGNS).map(style =>
-		designTile({ style, checked: style == choice.style, picked: style == picked.style, locked: !isOpen("design", style), describedBy: "lock-line" })));
+		designTile({ style, name: "gallery-design", checked: style == choice.style, picked: style == picked.style, locked: !isOpen("design", style), describedBy: "lock-line" })));
 	fillSegmented(panel.querySelector("[data-name=pictures]"), PICTURES, choice.pictures, { locked: Object.keys(PICTURES).filter(value => !isOpen("pictures", value)), describedBy: "lock-line" });
 	fillSegmented(panel.querySelector("[data-name=paper]"), PAPER, choice.paper);
 	const longReferences = hasLongReferences(prepared);
@@ -205,6 +212,15 @@ function updatePageCounts() {
 		const frame = desk.frames.get(keyFor({ ...state.choice, style: pick.dataset.style }));
 		const pages = frame && frame.pages ? `${frame.pages} page${frame.pages > 1 ? "s" : ""}` : "";
 		pick.querySelector(".pages").textContent = pages && pick.classList.contains("picked") ? `${pages} · ${paper}` : pages;
+		// "Other designs" rows show page 1 of this article once their document is built; the sample page until then.
+		const key = frame && frame.pages && keyFor({ ...state.choice, style: pick.dataset.style });
+		if (key && pick.classList.contains("row") && pick.dataset.thumbKey != key) {
+			const thumb = desk.thumbnail(frame, ROW_THUMB_WIDTH);
+			if (thumb) {
+				pick.dataset.thumbKey = key;
+				setThumbnail(pick, thumb);
+			}
+		}
 	}
 	updatePickedThumbnail();
 }
@@ -225,7 +241,8 @@ function updatePickedThumbnail() {
 }
 
 function updateSummary() {
-	const pages = desk.current.pages;
+	const free = lockedPart() && desk.frames.get(keyFor(state.freeChoice));
+	const pages = free && free.pages ? free.pages : desk.current.pages;
 	const minutes = state.prepared.facts.minutes;
 	document.querySelector(".summary").textContent = `${pages} ${PAPER[state.choice.paper].label} page${pages > 1 ? "s" : ""} · about ${minutes} minute${minutes > 1 ? "s" : ""} to read`;
 	document.querySelector(".print-label").textContent = `Print ${pages} page${pages > 1 ? "s" : ""}`;
@@ -241,14 +258,18 @@ function updateLocks() {
 	if (locked) {
 		const selector = locked.kind == "design" ? `.pick[data-style="${locked.value}"], .tile[data-style="${locked.value}"]` : `[data-name=${locked.name}] label[data-value="${locked.value}"]`;
 		document.querySelectorAll(selector).forEach(element => element.setAttribute("data-previewing", ""));
-		banner.querySelector(".banner-text").textContent = `Previewing ${locked.label}. It needs a free account.`;
+		// The banner carries the preview's page count; "Ready to print" keeps the printable one (updateSummary).
+		const pages = desk.current.pages;
+		banner.querySelector(".banner-text .long").textContent = `Previewing ${locked.label}, ${pages} page${pages > 1 ? "s" : ""}. It needs a free account.`;
+		banner.querySelector(".banner-text .short").textContent = `Previewing ${locked.label} · needs a free account`;
 		banner.querySelector(".banner-back").textContent = `Back to ${back}`;
-		document.querySelector(".continue-button").textContent = locked.kind == "design" ? `Continue with email to print ${locked.label}` : `Continue with email to print with ${locked.label}`;
+		document.querySelector(".continue-button").textContent = locked.kind == "design" ? `Continue with email to print ${locked.label}` : "Continue with email to print it";
 		document.querySelector(".print-pick-label").textContent = `Print ${DESIGNS[state.freeChoice.style].name} now`;
 		document.querySelector(".locked-note").textContent = locked.kind == "design" ? "Free. No card. We keep this design for you." : "Free. No card. We keep this choice for you.";
 	} else {
 		state.freeChoice = { ...state.choice };
 	}
+	desk.setPrintBlocked(!!locked);
 	banner.hidden = !locked;
 	document.querySelector(".act-print").hidden = !!locked;
 	document.querySelector(".act-locked").hidden = !locked;
@@ -265,7 +286,7 @@ function backTarget() {
 
 async function backToFree() {
 	closeDoor();
-	state.choice = { ...state.freeChoice, gift: state.choice.gift };
+	state.choice = { ...state.freeChoice };
 	syncControls();
 	await showChoice();
 }
@@ -280,19 +301,27 @@ function syncControls() {
 	updatePageCounts();
 }
 
-// One change handler for the panel and the gallery. A locked value, by mouse or keyboard, only previews: printing
-// it goes through the door (printNow refuses it).
+// A design from the panel or the gallery. A locked one, by mouse or keyboard, only previews: printing it goes
+// through the door (printNow refuses it).
+async function chooseDesign(style, { fromGallery = false } = {}) {
+	if (!isOpen("design", style)) state.lockedClicked = true;
+	state.choice.style = style;
+	closeGallery({ focusRow: fromGallery ? style : null });
+	syncControls();
+	await showChoice();
+	// A door for another design would now be wrong; a sign-in already under way carries on.
+	if (state.door && !state.door.waiting) closeDoor();
+}
+
+// One change handler for the panel. The gallery's tiles have their own radio name: arrow keys move inside it, and
+// only a click or Enter/Space chooses (below).
 document.addEventListener("change", async event => {
 	const target = event.target;
 	if (target.name == "design") {
-		state.choice.style = target.value;
-		closeGallery({ focusRow: target.closest(".gallery") ? target.value : null });
-		syncControls();
-		await showChoice();
-		// A door for another design would now be wrong; a sign-in already under way carries on.
-		if (state.door && !state.door.waiting) closeDoor();
+		await chooseDesign(target.value);
 	} else if (target.name == "pictures" || target.name == "references" || target.name == "paper") {
 		state.choice[target.name] = target.value;
+		if (!isOpen(target.name, target.value)) state.lockedClicked = true;
 		// An open value also changes what "Back to …" returns to.
 		if (isOpen(target.name, target.value)) state.freeChoice[target.name] = target.value;
 		await showChoice();
@@ -305,14 +334,20 @@ document.addEventListener("change", async event => {
 	}
 });
 
-document.querySelector(".banner-back").addEventListener("click", () => backToFree());
-document.querySelector(".continue-button").addEventListener("click", () => openDoorForLocked());
+document.querySelector(".banner-back").addEventListener("click", async () => {
+	await backToFree();
+	printButton.focus();
+});
+// The locked footer's ink pill is the door's email step: no second card asks again.
+document.querySelector(".continue-button").addEventListener("click", () => openDoorForLocked({ start: "email" }));
+document.querySelector(".continue-google").addEventListener("click", () => openDoorForLocked({ start: "google" }));
 document.querySelector(".print-pick-button").addEventListener("click", async () => {
 	await backToFree();
 	printNow();
 });
 document.querySelector(".lock-continue").addEventListener("click", () => openDoor({ kind: "design", design: state.choice.style }, "account"));
 document.querySelector(".references-locked").addEventListener("click", () => {
+	state.lockedClicked = true;
 	panel.querySelector(".references-locked").setAttribute("aria-expanded", "true");
 	openDoor(intentFor({ kind: "option", name: "references", value: "keep" }), "option");
 });
@@ -329,6 +364,7 @@ document.querySelectorAll("input[name=view]").forEach(input => input.addEventLis
 
 const galleryToggle = document.querySelector(".all-toggle");
 function openGallery() {
+	gallery.querySelectorAll("input[name=gallery-design]").forEach(input => input.checked = input.value == state.choice.style);
 	gallery.hidden = false;
 	galleryToggle.setAttribute("aria-expanded", "true");
 	(gallery.querySelector("input:checked") || gallery.querySelector("input")).focus();
@@ -344,63 +380,30 @@ function closeGallery({ focusRow } = {}) {
 }
 galleryToggle.addEventListener("click", () => gallery.hidden ? openGallery() : closeGallery());
 document.querySelector(".gallery-close").addEventListener("click", () => closeGallery());
+// A click on a tile chooses it. The click Chrome sends to the radio itself (also for arrow keys) is left alone.
+gallery.querySelector(".gallery-grid").addEventListener("click", event => {
+	const tile = event.target.closest(".tile");
+	if (tile && !event.target.matches("input")) chooseDesign(tile.dataset.style, { fromGallery: true });
+});
+gallery.querySelector(".gallery-grid").addEventListener("keydown", event => {
+	if ((event.key == "Enter" || event.key == " ") && event.target.matches("input[name=gallery-design]")) {
+		event.preventDefault();
+		chooseDesign(event.target.value, { fromGallery: true });
+	}
+});
 
 // Under 860 px: a sticky bar with Print and "Design & paper", which opens the same blocks as a bottom sheet.
 
-const sheetToggle = document.querySelector(".sheet-toggle");
+// In a locked preview the footer keeps "Design & paper" as a link (.sheet-link), so the other choices stay reachable.
+const sheetToggles = document.querySelectorAll(".sheet-toggle, .sheet-link");
 function setSheet(open) {
 	document.body.classList.toggle("sheet-open", open);
-	sheetToggle.setAttribute("aria-expanded", String(open));
+	sheetToggles.forEach(toggle => toggle.setAttribute("aria-expanded", String(open)));
 	if (open) document.querySelector(".blocks .sheet-close").focus();
-	else if (document.activeElement && document.activeElement.closest(".blocks")) sheetToggle.focus();
+	else if (document.activeElement && document.activeElement.closest(".blocks")) Array.from(sheetToggles).find(toggle => toggle.getClientRects().length)?.focus();
 }
-sheetToggle.addEventListener("click", () => setSheet(!document.body.classList.contains("sheet-open")));
+sheetToggles.forEach(toggle => toggle.addEventListener("click", () => setSheet(!document.body.classList.contains("sheet-open"))));
 document.querySelector(".sheet-close").addEventListener("click", () => setSheet(false));
-
-// Gift line (D4): "Printed for Maria, from Yorgos" in the page-1 top margin. The names never leave this computer.
-
-const giftToggle = document.querySelector(".gift-toggle");
-const giftFields = document.querySelector(".gift-fields");
-const giftFor = document.querySelector("#gift-for");
-const giftFrom = document.querySelector("#gift-from");
-const giftRemember = document.querySelector("input[name=giftRemember]");
-let giftTimer;
-chrome.storage.local.get(GIFT_FROM_KEY).then(({ [GIFT_FROM_KEY]: from }) => {
-	if (from) {
-		giftFrom.value = from;
-		giftRemember.checked = true;
-	}
-}).catch(() => {});
-giftToggle.addEventListener("click", () => {
-	const open = giftFields.hidden;
-	giftFields.hidden = !open;
-	giftToggle.setAttribute("aria-expanded", String(open));
-	if (open) giftFor.focus();
-	updateGift();
-});
-for (const input of [giftFor, giftFrom]) {
-	input.addEventListener("input", () => {
-		clearTimeout(giftTimer);
-		giftTimer = setTimeout(updateGift, 450);
-		rememberFrom();
-	});
-}
-giftRemember.addEventListener("change", rememberFrom);
-function rememberFrom() {
-	const from = giftFrom.value.trim();
-	if (giftRemember.checked && from) chrome.storage.local.set({ [GIFT_FROM_KEY]: from }).catch(() => {});
-	else chrome.storage.local.remove(GIFT_FROM_KEY).catch(() => {});
-}
-async function updateGift() {
-	if (!state.choice) return;
-	const names = { for: giftFor.value.trim().slice(0, 30), from: giftFrom.value.trim().slice(0, 30) };
-	const gift = !giftFields.hidden && (names.for || names.from) ? names : undefined;
-	if (keyFor({ ...state.choice, gift }) == keyFor(state.choice)) return;
-	state.choice.gift = gift;
-	state.freeChoice.gift = gift;
-	await showChoice();
-	renderPicksInBackground();
-}
 
 // Printing
 
@@ -425,7 +428,9 @@ async function printNow({ straightAway = false, kind = "print" } = {}) {
 		return;
 	}
 	if (lockedPart()) {
-		openDoorForLocked();
+		// A door already open (or a sign-in under way) stays as it is.
+		if (state.door) state.door.focus();
+		else openDoorForLocked();
 		return;
 	}
 	state.busy = true;
@@ -494,6 +499,9 @@ async function showDone(kind, { style, pages, screens }) {
 			printNow({ kind });
 		},
 		onChange: () => leaveDone(),
+		lockedClicked: state.lockedClicked,
+		keptPick: style == state.picks[0].style,
+		thumb: desk.thumbnail(desk.current, 52),
 		openDoor: intent => openDoor({ printJobId: state.id, sourceUrl: state.article.url, title: state.article.title, ...intent }, (intent && intent.kind) || "keep", { slot: ".door-slot-done" })
 	});
 }
@@ -521,34 +529,57 @@ async function backToArticle() {
 
 // The door (C-6): one card under the Print button, never a modal.
 
-function openDoorForLocked() {
+function openDoorForLocked({ start = null } = {}) {
 	const locked = lockedPart();
 	if (!locked) return;
-	openDoor(intentFor(locked), locked.kind == "design" ? "design" : "option");
+	openDoor(intentFor(locked), locked.kind == "design" ? "design" : "option", { start });
 }
 
-function openDoor(intent, entry, { slot = ".door-slot-print" } = {}) {
+// start: "email" | "google" goes straight to the sign-in tab and the wait card (the locked footer); resume: an
+// intent whose sign-in is still under way after a reload.
+function openDoor(intent, entry, { slot = ".door-slot-print", start = null, resume = null } = {}) {
 	closeDoor();
+	const opener = document.activeElement;
 	const container = document.querySelector(slot);
 	const design = intent.design && DESIGNS[intent.design] ? DESIGNS[intent.design].name : DESIGNS[state.choice.style].name;
-	state.door = renderDoor(container, {
+	setDoor(renderDoor(container, {
 		entry,
 		design,
 		serverUrl: state.settings.serverUrl,
 		intent: { printJobId: state.id, sourceUrl: state.article.url, title: state.article.title, ...intent },
-		onCancel: ({ timedOut }) => {
-			state.door = null;
+		start,
+		resume,
+		onCancel: async ({ timedOut }) => {
+			setDoor(null);
 			if (timedOut) showSignedInLine("We stopped waiting for the sign-in. The pick is ready to print.");
-			if (lockedPart()) backToFree();
+			if (lockedPart()) await backToFree();
+			focusAfterDoor(opener);
 		},
 		onSignedIn: (account, signedIntent) => {
-			state.door = null;
+			setDoor(null);
 			applySignIn(account, signedIntent);
 		}
-	});
+	}));
 	if (document.body.classList.contains("sheet-open")) setSheet(false);
+	// The card sits just above the sticky footer: scroll it clear of the footer, not under it.
+	panel.style.scrollPaddingBottom = document.querySelector(".actions").offsetHeight + 16 + "px";
 	container.scrollIntoView({ block: "nearest", behavior: "smooth" });
 	state.door.focus();
+}
+
+// While a door is open, the locked footer's email and Google steps step aside: one ask at a time.
+function setDoor(door) {
+	state.door = door;
+	document.body.classList.toggle("door-open", !!door);
+}
+
+// After "Keep printing without an account" or Cancel: back to the control that opened the door when it is still
+// on screen, else Print.
+function focusAfterDoor(opener) {
+	const shown = opener && opener != document.body && opener.isConnected && opener.getClientRects().length;
+	if (shown) opener.focus();
+	else if (document.body.classList.contains("is-done")) doneElement.querySelector(".done-title")?.focus();
+	else printButton.focus();
 }
 
 // Closing the door, by Escape, Back or another step, drops the intent: nothing applies later by surprise.
@@ -557,8 +588,8 @@ function closeDoor() {
 		state.door.close();
 		chrome.storage.session.remove(INTENT_KEY).catch(() => {});
 	}
-	state.door = null;
-	panel.querySelector(".references-locked").removeAttribute("aria-expanded");
+	setDoor(null);
+	panel.querySelector(".references-locked").setAttribute("aria-expanded", "false");
 }
 
 // After sign-in: apply the intent once (it is already deleted), keep paper and pictures, focus Print.
@@ -595,13 +626,15 @@ function showSignedInLine(text) {
 	line.hidden = false;
 }
 
-// A sign-in that finished while this page was closed or reloaded: apply it now, once.
+// A sign-in that finished while this page was closed or reloaded: apply it now, once. One still under way (a guest,
+// under 5 minutes) brings the door back in its waiting state.
 async function resumeIntent() {
 	const { [INTENT_KEY]: intent } = await chrome.storage.session.get(INTENT_KEY).catch(() => ({}));
 	if (!intent || intent.printJobId != state.id) {
 		return;
 	}
 	if (isGuest() && Date.now() - (intent.created || 0) < 5 * 60 * 1000) {
+		openDoor(intent, intent.kind, { resume: intent });
 		return;
 	}
 	await chrome.storage.session.remove(INTENT_KEY).catch(() => {});

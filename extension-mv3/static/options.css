@@ -35,3 +35,8 @@ details > * + * { margin-top: 10px; }
 .share-row { display: grid; gap: 4px; margin: 0; }
 .share-row p { margin: 0; }
 .friend-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px !important; }
+
+/* Under 860 px the panel's box goes (flow.css), so every section keeps the page's 16 px gutter itself. */
+@media (max-width: 860px) {
+	.panel-body > .sec, .panel-body > details, .panel-body > .foot { margin: 0 16px; }
+}

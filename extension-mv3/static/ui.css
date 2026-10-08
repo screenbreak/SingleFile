@@ -124,7 +124,7 @@ button:disabled, .button[aria-disabled=true] { opacity: .45; cursor: default; po
 .keys { display: inline-flex; gap: 3px; }
 .keys kbd {
 	display: inline-flex; align-items: center; justify-content: center; height: 20px; min-width: 20px; padding: 0 5px;
-	font: 500 11px/1 var(--sans); color: var(--muted); background: var(--tint); border-radius: 4px;
+	font: 500 11px/1 var(--sans); color: var(--ink-2); background: var(--tint); border-radius: 4px;
 }
 .keycaps { display: inline-flex; gap: 4px; }
 .keycaps kbd {
