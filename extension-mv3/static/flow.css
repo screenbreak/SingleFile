@@ -156,15 +156,17 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 
 /* Action footer: sticky at the bottom of the panel at every width. */
 .actions { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; padding: 14px 24px 16px; background: var(--bg); border-top: 1px solid var(--line); }
-.act-print, .act-locked { display: grid; gap: 8px; }
+.act-print { display: grid; gap: 8px; }
+.act-locked { display: grid; gap: 6px; }
 .print-button, .continue-button { width: 100%; height: 48px; font-size: 16px; }
 /* A long design name wraps inside the pill rather than pushing the panel sideways. */
 .continue-button { height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; line-height: 22px; white-space: normal; text-align: center; }
-.locked-links { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.locked-links { display: flex; align-items: baseline; gap: 10px; }
 .locked-links .link-button { font-size: 13.5px; }
-.sheet-link { display: none; }
+.locked-note { font-size: 13px; }
+.sheet-link { display: none; margin-left: auto; }
 /* While the door is open or waiting, its own card holds the next step: the footer does not ask again. */
-.door-open .continue-button, .door-open .continue-google { display: none; }
+.door-open .continue-button, .door-open .continue-google, .door-open .locked-note { display: none; }
 .print-button .icon { width: 20px; height: 20px; }
 .print-button[aria-busy=true] { cursor: progress; }
 .sheet-toggle { display: none; }

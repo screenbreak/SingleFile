@@ -13,11 +13,11 @@ rewrite for Manifest V3 that keeps **Save** working exactly as before and adds *
   Pictures print in colour, as ink-saving halftone dots, in greys, or not at all; long reference lists can be
   left out or kept. Charts drawn on a `<canvas>` or as inline SVG are turned into images first, so they print.
   Embeds (videos, tweets) become a link. Nothing is uploaded.
-- **Print straight away**: with this on (Settings or the button's right-click menu) the button works as a printer: the print dialog opens with the reader's settings, and the
+- **Print straight away**: with this on (Settings) the button works as a printer: the print dialog opens with the reader's settings, and the
   reader is back on the article afterwards, where a card says what printed ("Broadsheet, 5 pages", 6 seconds,
   "Print again"). The print page sends `{ method: "screenbreak.printed", id, tabId, design, pages }` before it
-  closes; `background.js` shows the card on that tab. "Choose a design, then print…" in the right-click menu
-  always shows the print page.
+  closes; `background.js` shows the card on that tab. With this on, the button's right-click menu gains
+  "Choose a design, then print…", which always shows the print page.
 - **Free tier** (SPEC in screenbreak-notes `free-tier/`): printing is unlimited for everyone, with no print
   counter anywhere. Without an account the reader prints the engine's pick; a free account opens all 11 designs
   and every option and adds a library; Plus keeps everything. The meter is on saves only, as text. The library
@@ -30,8 +30,8 @@ rewrite for Manifest V3 that keeps **Save** working exactly as before and adds *
   is a guest. The door and library addresses also live in `plans.js` only.
 - **Default action**: clicking the toolbar button either asks (a small menu with Print and Save), prints, or saves.
   The choice can be changed in the menu itself, in Settings, or by right-clicking the button
-  ("When I click the button"). Both actions are always available from the right-click menu on the button and on
-  the page, and by keyboard: Ctrl+Shift+Y saves, Alt+Shift+P prints.
+  ("When I click the button"). Print is always in the right-click menu on any page (one item, so Chrome shows it at
+  the top level); both actions are in the button's menu, and by keyboard: Ctrl+Shift+Y saves, Alt+Shift+P prints.
 - **Settings** use the print page's frame, with a sample article on the desk that shows every change as it
   will print.
 - **Print and save**: with "Also save what I print" on (popup, Settings or welcome page), every print opens the

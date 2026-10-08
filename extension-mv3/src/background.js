@@ -9,7 +9,6 @@ import * as STATUS from "./status-copy.js";
 const MENU_SAVE = "save";
 const MENU_PRINT = "print";
 const MENU_PRINT_PREVIEW = "print-preview";
-const MENU_STRAIGHT_AWAY = "print-straight-away";
 const MENU_DEFAULT_PARENT = "default-action";
 const MENU_DEFAULT_PREFIX = "default-action:";
 const BUTTON_TITLES = {
@@ -71,8 +70,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 		runAction(info.menuItemId, tab);
 	} else if (info.menuItemId == MENU_PRINT_PREVIEW) {
 		runAction("print", tab, { preview: true });
-	} else if (info.menuItemId == MENU_STRAIGHT_AWAY) {
-		setStraightAway(info.checked);
 	} else if (String(info.menuItemId).startsWith(MENU_DEFAULT_PREFIX)) {
 		updateSettings({ defaultAction: info.menuItemId.substring(MENU_DEFAULT_PREFIX.length) });
 	}
@@ -148,7 +145,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function applyDefaultAction() {
-	const { defaultAction, saveWhenPrinting } = await getSettings();
+	const { defaultAction, saveWhenPrinting, print } = await getSettings();
+	if (menusStraightAway !== null && print.straightAway !== menusStraightAway) {
+		await createMenus();
+	}
 	chrome.contextMenus.update(MENU_PRINT, { title: PRINT_MENU_TITLES[saveWhenPrinting ? "printAndSave" : "print"] }).catch(() => {});
 	await chrome.action.setPopup({ popup: defaultAction == "ask" ? "popup.html" : "" });
 	// Tab-level popups outrank the global one, so tabs that had the "can't run here" popup follow too.
@@ -161,24 +161,23 @@ async function applyDefaultAction() {
 	for (const action of Object.keys(DEFAULT_ACTION_LABELS)) {
 		chrome.contextMenus.update(MENU_DEFAULT_PREFIX + action, { checked: action == defaultAction }).catch(() => {});
 	}
-	chrome.contextMenus.update(MENU_STRAIGHT_AWAY, { checked: (await getSettings()).print.straightAway }).catch(() => {});
 }
 
-// "Print straight away": the button prints with the reader's settings and comes back to the article.
-// The right-click menu turns it on and off, and "Choose a design, then print" always shows the print page.
-async function setStraightAway(straightAway) {
-	const { print } = await getSettings();
-	await updateSettings({ print: { ...print, straightAway } });
-}
+// Which straight-away state the menus were built for: with "Print straight away" on, the button's menu gets
+// "Choose a design, then print…", the one way to the print page for a single article.
+let menusStraightAway = null;
 
 async function createMenus() {
-	const { defaultAction, saveWhenPrinting } = await getSettings();
+	const { defaultAction, saveWhenPrinting, print } = await getSettings();
 	await chrome.contextMenus.removeAll();
-	// Print first: printing is the core, saving is the account's extra (SPEC A4).
+	menusStraightAway = print.straightAway;
+	// On a page, one item only, so Chrome shows "Print this article" at the top level instead of a Screenbreak submenu.
+	// The button's own menu adds Save and the click setting. Printing is the core, saving is the account's extra (SPEC A4).
 	chrome.contextMenus.create({ id: MENU_PRINT, title: PRINT_MENU_TITLES[saveWhenPrinting ? "printAndSave" : "print"], contexts: ["action", "page"] });
-	chrome.contextMenus.create({ id: MENU_PRINT_PREVIEW, title: "Choose a design, then print…", contexts: ["action", "page"] });
-	chrome.contextMenus.create({ id: MENU_SAVE, title: "Save to your library", contexts: ["action", "page"] });
-	chrome.contextMenus.create({ id: MENU_STRAIGHT_AWAY, type: "checkbox", title: "Print straight away", checked: (await getSettings()).print.straightAway, contexts: ["action"] });
+	if (print.straightAway) {
+		chrome.contextMenus.create({ id: MENU_PRINT_PREVIEW, title: "Choose a design, then print…", contexts: ["action"] });
+	}
+	chrome.contextMenus.create({ id: MENU_SAVE, title: "Save to your library", contexts: ["action"] });
 	chrome.contextMenus.create({ id: MENU_DEFAULT_PARENT, title: "When I click the button", contexts: ["action"] });
 	for (const [action, label] of Object.entries(DEFAULT_ACTION_LABELS)) {
 		chrome.contextMenus.create({

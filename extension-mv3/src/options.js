@@ -8,7 +8,7 @@ import { sanitize } from "./engine/sanitize.js";
 import { DESIGNS, PICTURES, REFERENCES, PAPER, sentence, topPicks } from "./designs.js";
 import { getAccount, canUse, libraryURL } from "./plans.js";
 import { Desk } from "./desk.js";
-import { el, fillSegmented, designTile, lockIcon, renderWho, renderDoor, loadDone } from "./panel.js";
+import { el, fillSegmented, designTile, lockIcon, renderWho, renderDoor } from "./panel.js";
 
 const DEFAULT_DESCRIPTIONS = {
 	ask: "Shows a small menu with Save and Print.",
@@ -39,7 +39,6 @@ async function init() {
 	document.querySelector(".version").textContent = "Screenbreak " + chrome.runtime.getManifest().version;
 	renderAccountSection(settings);
 	renderShare();
-	renderPrints();
 	showSample(settings);
 }
 
@@ -185,17 +184,6 @@ function renderShare() {
 	});
 }
 
-// "Your prints": the milestone ladder (done.js, from a parallel branch; the section stays hidden without it).
-async function renderPrints() {
-	const section = document.querySelector(".your-prints");
-	try {
-		const { renderYourPrints } = await loadDone();
-		await renderYourPrints(section.querySelector(".your-prints-body"));
-		section.hidden = false;
-	} catch (error) {
-		section.hidden = true;
-	}
-}
 
 // Chrome owns the shortcuts: read them again whenever the user comes back from chrome://extensions/shortcuts.
 async function renderShortcuts() {

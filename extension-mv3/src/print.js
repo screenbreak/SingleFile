@@ -284,7 +284,6 @@ function updateLocks() {
 		banner.querySelector(".banner-text .long").textContent = `Previewing ${locked.label}, ${pages} page${pages > 1 ? "s" : ""}. It needs a free account.`;
 		banner.querySelector(".banner-text .short").textContent = `Previewing ${locked.label} · needs a free account`;
 		document.querySelector(".continue-button").textContent = locked.kind == "design" ? `Continue with email to print ${locked.label}` : "Continue with email to print it";
-		document.querySelector(".locked-note").textContent = locked.kind == "design" ? "Free. No card. We keep this design for you." : "Free. No card. We keep this choice for you.";
 	} else {
 		state.freeChoice = { ...state.choice };
 	}

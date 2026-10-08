@@ -143,7 +143,7 @@ try {
 	// The locked footer is one step: the ink pill, the Google link and the line under it. No second print pill.
 	assert.equal(await printPage.locator(".print-pick-button").count(), 0);
 	assert.deepEqual(await printPage.locator(".actions").evaluate(actions => Array.from(actions.querySelectorAll("button, a, p")).filter(element => element.checkVisibility()).map(element => element.textContent.trim())),
-		[await printPage.locator(".continue-button").textContent(), "Continue with Google", "Free. No card. We keep this design for you."]);
+		[await printPage.locator(".continue-button").textContent(), "Continue with Google", "Free. No card."]);
 	assert.ok(await lockedRow.evaluate(row => row.hasAttribute("data-previewing")));
 	// Cmd/Ctrl+P follows the main pill: the door card, never a print of the locked design.
 	await printPage.keyboard.press("Control+p");
