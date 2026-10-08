@@ -27,92 +27,90 @@
 	<main class="page">
 		<img src="icons/logo.svg" alt="Screenbreak" class="wordmark" width="180" height="20">
 		<header class="intro">
-			<h1 class="intro-title">Screenbreak is installed</h1>
-			<p class="intro-text">Save articles to your Screenbreak account, or print them cleanly at home.</p>
+			<h1 class="intro-title">No sign-up needed. Print right away.</h1>
+			<p class="intro-text">Open any article, click Screenbreak, and get clean pages in the design that fits it. Fewer pages, nothing but the story.</p>
+			<p class="signed-in" hidden></p>
 		</header>
 
 		<section class="whats-new" aria-labelledby="new-heading" hidden>
-			<h2 id="new-heading">What's new</h2>
+			<h2 class="eyebrow" id="new-heading">What's new</h2>
 			<ul class="list">
-				<li><span class="tag">New</span><span><strong>Print.</strong> A clean, print-ready version of any article, or a PDF. No account needed.</span></li>
-				<li><span class="tag">New</span><span><strong>Choose what the button does:</strong> ask, save, or print.</span></li>
-				<li><span class="tag">New</span><span><strong>Right-click any page</strong> to save or print it.</span></li>
-				<li><span class="tag">New</span><span><strong>Keyboard shortcuts</strong> for both.</span></li>
+				<li><span class="tag">New</span><span>Print any article as clean pages, or a PDF.</span></li>
+				<li><span class="tag">New</span><span>Screenbreak picks the design that fits each article.</span></li>
+				<li><span class="tag">New</span><span>11 designs, open to you with your account.</span></li>
+				<li><span class="tag">New</span><span>Choose what the button does: ask, print, or save.</span></li>
 			</ul>
 		</section>
 
-		<section aria-labelledby="what-heading">
-			<h2 id="what-heading">Two things it does</h2>
-			<div class="pair">
-				<div class="cell">
-					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.6L6 20V4.5a1 1 0 0 1 1-1z"/></svg>
-					<p class="cell-title">Save</p>
-					<p class="cell-text">Adds the article to your Screenbreak account, ready for your next booklet.</p>
+		<section class="try" aria-labelledby="try-heading">
+			<h2 class="eyebrow" id="try-heading">Try it now</h2>
+			<div class="sample-card">
+				<div class="sample">
+					<span class="sample-page" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+					<span class="sample-text"><span class="sample-title">History of paper</span><span class="sample-site">en.wikipedia.org</span></span>
 				</div>
-				<div class="cell">
-					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
-					<p class="cell-title">Print</p>
-					<p class="cell-text">Opens a clean version to print at home, or to keep as a PDF. No account needed.</p>
-				</div>
+				<button type="button" class="pill pill-print open-sample">Open the sample and print it</button>
 			</div>
+			<p class="section-text after-card">On any other article, click Screenbreak in your toolbar, then Print.</p>
 		</section>
 
-		<section aria-labelledby="click-heading">
-			<h2 id="click-heading">When you click the button</h2>
+		<section class="click" aria-labelledby="click-heading">
+			<h2 class="eyebrow" id="click-heading">When you click the button</h2>
 			<p class="section-text">You can change this any time in Settings, or by right-clicking the button. <span class="saved" aria-live="polite"></span></p>
 			<div class="choices" role="radiogroup" aria-labelledby="click-heading">
-				<label class="choice"><input type="radio" name="defaultAction" value="ask"><span class="choice-body"><span class="choice-title">Ask me each time <span class="hint">Recommended</span></span><span class="choice-text">A small menu with Save and Print.</span></span></label>
-				<label class="choice"><input type="radio" name="defaultAction" value="save"><span class="choice-body"><span class="choice-title">Save to Screenbreak</span><span class="choice-text">Saves straight to your account. Needs a Screenbreak login.</span></span></label>
+				<label class="choice"><input type="radio" name="defaultAction" value="ask"><span class="choice-body"><span class="choice-title">Ask me each time <span class="hint">Recommended</span></span><span class="choice-text">A small menu with Print and Save.</span></span></label>
 				<label class="choice"><input type="radio" name="defaultAction" value="print"><span class="choice-body"><span class="choice-title">Print right away</span><span class="choice-text">Opens the article as print-ready pages.</span></span></label>
+				<label class="choice"><input type="radio" name="defaultAction" value="save"><span class="choice-body"><span class="choice-title">Save to your library</span><span class="choice-text">Needs a free account.</span></span></label>
 			</div>
-			<div class="also-save">
+			<div class="also-save" hidden>
 				<label class="switch"><input type="checkbox" name="saveWhenPrinting" role="switch" aria-describedby="also-save-text"><span class="track"></span>Also save what I print</label>
-				<p class="choice-text" id="also-save-text">Every article you print also goes to your Screenbreak account. Needs a login.</p>
+				<p class="choice-text" id="also-save-text">Every article you print also goes to your library.</p>
 			</div>
 		</section>
 
-		<section aria-labelledby="keys-heading">
-			<h2 id="keys-heading">Without the button</h2>
+		<section class="without" aria-labelledby="keys-heading">
+			<h2 class="eyebrow" id="keys-heading">Without the button</h2>
 			<p class="section-text">Use a shortcut, or right-click anywhere on the page.</p>
 			<div class="ways">
 				<div class="shortcut-box">
-					<div class="shortcut"><span class="shortcut-name">Save</span><span class="keycaps keycaps-large" data-shortcut="save"></span></div>
 					<div class="shortcut"><span class="shortcut-name">Print</span><span class="keycaps keycaps-large" data-shortcut="print"></span></div>
+					<div class="shortcut"><span class="shortcut-name">Save</span><span class="keycaps keycaps-large" data-shortcut="save"></span></div>
 					<button type="button" class="link-button shortcuts">Change shortcuts</button>
 				</div>
 				<div class="context-drawing" aria-hidden="true">
 					<span class="ctx-item muted-item">Back</span>
 					<span class="ctx-item muted-item">Reload</span>
 					<span class="ctx-sep"></span>
-					<span class="ctx-item"><img src="icons/icon_16.png" alt="" width="16" height="16">Save to Screenbreak</span>
 					<span class="ctx-item"><img src="icons/icon_16.png" alt="" width="16" height="16">Print this article</span>
+					<span class="ctx-item"><img src="icons/icon_16.png" alt="" width="16" height="16">Save to your library</span>
 					<span class="ctx-sep"></span>
 					<span class="ctx-item muted-item">Inspect</span>
 				</div>
 			</div>
 		</section>
 
-		<section aria-labelledby="try-heading">
-			<h2 id="try-heading">Try it</h2>
-			<p class="section-text">Open an article, click the Screenbreak button and choose Print. You don't need an account for that.</p>
-			<a class="button" href="https://en.wikipedia.org/wiki/History_of_paper" target="_blank">Open a sample article</a>
+		<section class="door" aria-labelledby="door-heading">
+			<p class="eyebrow">Step two, when you want it</p>
+			<h2 class="door-title" id="door-heading">Your free Screenbreak account</h2>
+			<p class="section-text">All 11 designs, every paper option, and a library for what you print. Printing never needs it.</p>
+			<div class="door-actions">
+				<a class="pill pill-ink door-email" target="_blank">Continue with email</a>
+				<a class="pill pill-secondary door-google" target="_blank"><svg class="google" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285f4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92a8.78 8.78 0 0 0 2.68-6.62z"/><path fill="#34a853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#fbbc05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1z"/><path fill="#ea4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>Continue with Google</a>
+			</div>
+			<p class="door-note">New here? Same button. We make your free account as you go.</p>
 		</section>
 
-		<section aria-labelledby="login-heading">
-			<h2 id="login-heading">Saving needs an account</h2>
-			<p class="section-text">Log in to Screenbreak in this browser and Save puts articles straight into your account.</p>
-			<a class="button button-outline login" target="_blank">Log in to Screenbreak</a>
-		</section>
-
-		<section class="done" aria-labelledby="done-heading">
-			<h2 id="done-heading">Your setup</h2>
+		<section class="setup" aria-labelledby="done-heading">
+			<h2 class="eyebrow" id="done-heading">Your setup</h2>
 			<ul class="status-list">
-				<li data-check="pinned"><span class="check" aria-hidden="true"></span>Pinned to the toolbar</li>
-				<li data-check="chosen"><span class="check" aria-hidden="true"></span>Chose what the button does</li>
-				<li data-check="tried"><span class="check" aria-hidden="true"></span>Saved or printed an article</li>
+				<li data-check="pinned"><span class="check" aria-hidden="true"></span><span class="check-text">Pinned to the toolbar</span></li>
+				<li data-check="printed"><span class="check" aria-hidden="true"></span><span class="check-text">Printed your first article</span></li>
+				<li data-check="account"><span class="check" aria-hidden="true"></span><span class="check-text">Free account <span class="optional">(optional)</span></span></li>
 			</ul>
-			<button type="button" class="button button-outline close-tab">Close this tab</button>
+			<button type="button" class="pill pill-secondary close-tab">Close this tab</button>
 		</section>
+
+		<p class="friend">Know someone who prints articles? Send them myscreenbreak.com.</p>
 	</main>
 	<script src="welcome.js"></script>
 </body>

@@ -19,7 +19,7 @@ const BUTTON_TITLES = {
 	ask: "Screenbreak: save or print this article"
 };
 const PRINT_MENU_TITLES = { print: "Print this article", printAndSave: "Print and save this article" };
-const DEFAULT_ACTION_LABELS = { ask: "Ask me each time", save: "Save to Screenbreak", print: "Print" };
+const DEFAULT_ACTION_LABELS = { ask: "Ask me each time", print: "Print", save: "Save to your library" };
 const MAX_STORED_PRINT_JOBS = 5;
 const MAX_PRINT_JOB_SOURCES = 20;
 const LOGIN_POLL_DELAY = 3000;
@@ -174,9 +174,10 @@ async function setStraightAway(straightAway) {
 async function createMenus() {
 	const { defaultAction, saveWhenPrinting } = await getSettings();
 	await chrome.contextMenus.removeAll();
-	chrome.contextMenus.create({ id: MENU_SAVE, title: "Save to Screenbreak", contexts: ["action", "page"] });
+	// Print first: printing is the core, saving is the account's extra (SPEC A4).
 	chrome.contextMenus.create({ id: MENU_PRINT, title: PRINT_MENU_TITLES[saveWhenPrinting ? "printAndSave" : "print"], contexts: ["action", "page"] });
 	chrome.contextMenus.create({ id: MENU_PRINT_PREVIEW, title: "Choose a design, then print…", contexts: ["action", "page"] });
+	chrome.contextMenus.create({ id: MENU_SAVE, title: "Save to your library", contexts: ["action", "page"] });
 	chrome.contextMenus.create({ id: MENU_STRAIGHT_AWAY, type: "checkbox", title: "Print straight away", checked: (await getSettings()).print.straightAway, contexts: ["action"] });
 	chrome.contextMenus.create({ id: MENU_DEFAULT_PARENT, title: "When I click the button", contexts: ["action"] });
 	for (const [action, label] of Object.entries(DEFAULT_ACTION_LABELS)) {
