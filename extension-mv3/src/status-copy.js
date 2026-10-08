@@ -3,19 +3,17 @@
 
 export const TIP = "Tip: right-click any page to save or print it.";
 
-// PLACEHOLDER until the free library size is decided (SPEC section 0: "library up to N articles").
-export const LIBRARY_LIMIT_PLACEHOLDER = 50;
-
 // The meter on saves shows only when the library is nearly full (SPEC B2 row 4), never at low use.
 const METER_FROM = 0.8;
 
 export const uploading = () => ({ state: "working", title: "Saving to your library", detail: "Uploading…", step: 3 });
 
 // The one door for a guest's Save (SPEC A3). The sign-up page signs existing readers in too.
+// No library size here: a number reaches readers only once /api/v1/me/ sends `saves_limit` (ruling 2026-10-08).
 export const loginRequired = () => ({
 	state: "login",
 	title: "Save this article to your library",
-	detail: `Your library keeps what you print and save, on any computer. Free for up to ${LIBRARY_LIMIT_PLACEHOLDER} articles.`,
+	detail: "Your library keeps what you print and save, on any computer. Free.",
 	actions: [{ label: "Continue with email", action: "login", primary: true }, { label: "Print instead", action: "print-instead" }]
 });
 
