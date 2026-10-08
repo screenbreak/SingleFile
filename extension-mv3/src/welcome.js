@@ -1,27 +1,37 @@
-// The page Chrome opens after install (and after an update from 1.x, with "What's new" on top).
+// The page Chrome opens after install (SPEC A5), and "What's new" (#updated) after an update from 1.x.
 import { getSettings, updateSettings } from "./settings.js";
 import { getShortcuts, renderKeys, openShortcutSettings } from "./shortcuts.js";
+import { getAccount } from "./plans.js";
+import { emailDoorURL, googleDoorURL, loginURL } from "./api.js";
 
 const PIN_CHECK_INTERVAL = 1500;
 const SAVED_DELAY = 1500;
+// The sample stays on Wikipedia until the site has a sample article of its own.
+const SAMPLE_URL = "https://en.wikipedia.org/wiki/History_of_paper";
+const updated = location.hash == "#updated";
 const callout = document.querySelector(".pin-callout");
 
 init();
 
 async function init() {
 	const settings = await getSettings();
-	if (location.hash == "#updated") {
-		document.querySelector(".intro-title").textContent = "Screenbreak 2 is here";
-		document.querySelector(".intro-text").textContent = "Save works as before. Here's what's new.";
+	if (updated) {
+		// 1.x readers have accounts and saved articles: say those are safe, then what's new. No setup steps.
+		document.querySelector(".intro-title").textContent = "Screenbreak now prints.";
+		document.querySelector(".intro-text").textContent = "Your account and your saved articles are where you left them.";
 		document.querySelector(".whats-new").hidden = false;
+		for (const selector of [".click", ".without", ".setup"]) {
+			document.querySelector(selector).hidden = true;
+		}
 	}
-	document.querySelector(".login").href = settings.serverUrl + "/login/";
+	document.querySelector(".door-email").href = emailDoorURL(settings.serverUrl);
+	document.querySelector(".door-google").href = googleDoorURL(settings.serverUrl);
+	document.querySelector(".open-sample").addEventListener("click", openSample);
 	const radios = document.querySelectorAll("input[name=defaultAction]");
 	radios.forEach(radio => {
 		radio.checked = radio.value == settings.defaultAction;
 		radio.addEventListener("change", async () => {
 			await updateSettings({ defaultAction: radio.value });
-			setDone("chosen");
 			const saved = document.querySelector(".saved");
 			saved.textContent = "Saved";
 			setTimeout(() => saved.textContent = "", SAVED_DELAY);
@@ -37,10 +47,45 @@ async function init() {
 	});
 	document.querySelector(".shortcuts").addEventListener("click", openShortcutSettings);
 	document.querySelector(".close-tab").addEventListener("click", async () => chrome.tabs.remove((await chrome.tabs.getCurrent()).id));
-	const { tipShown } = await chrome.storage.local.get("tipShown");
-	setDone("tried", Boolean(tipShown));
-	chrome.storage.onChanged.addListener((changes, area) => area == "local" && changes.tipShown && setDone("tried"));
+	const { printedOnce } = await chrome.storage.local.get("printedOnce");
+	setDone("printed", Boolean(printedOnce));
+	chrome.storage.onChanged.addListener((changes, area) => area == "local" && changes.printedOnce && setDone("printed"));
 	watchPinned();
+	await showAccount(settings);
+	// Back from the sign-in tab: the account check and the door follow without a reload.
+	addEventListener("focus", () => showAccount(settings));
+}
+
+// One door, only for a reader who is signed out. "What's new" says who is signed in instead.
+async function showAccount(settings) {
+	const account = await getAccount(settings.serverUrl);
+	const guest = account.state == "guest";
+	setDone("account", !guest);
+	document.querySelector(".door").hidden = !guest;
+	document.querySelector(".also-save").hidden = guest;
+	if (updated) {
+		const line = document.querySelector(".signed-in");
+		if (guest) {
+			line.replaceChildren(Object.assign(document.createElement("a"), { href: loginURL(settings.serverUrl), target: "_blank", textContent: "Sign in to see your library" }));
+		} else {
+			line.textContent = account.email ? `Signed in as ${account.email}` : "You're signed in.";
+		}
+		line.hidden = false;
+	}
+	// Says the account parts are final (design/capture-small.mjs waits for it).
+	document.body.dataset.account = account.state;
+}
+
+// Opens the sample and runs Print on it once it has loaded, as the button would.
+async function openSample() {
+	const tab = await chrome.tabs.create({ url: SAMPLE_URL });
+	const onUpdated = (tabId, change, updatedTab) => {
+		if (tabId == tab.id && change.status == "complete") {
+			chrome.tabs.onUpdated.removeListener(onUpdated);
+			chrome.runtime.sendMessage({ method: "screenbreak.run", action: "print", tab: updatedTab });
+		}
+	};
+	chrome.tabs.onUpdated.addListener(onUpdated);
 }
 
 // Chrome tells whether the button is on the toolbar; check until it is, then put the callout away.
@@ -62,5 +107,10 @@ async function isPinned() {
 }
 
 function setDone(name, done = true) {
-	document.querySelector(`[data-check=${name}]`).classList.toggle("is-done", Boolean(done));
+	const item = document.querySelector(`[data-check=${name}]`);
+	item.classList.toggle("is-done", Boolean(done));
+	const check = item.querySelector(".check");
+	check.removeAttribute("aria-hidden");
+	check.setAttribute("role", "img");
+	check.setAttribute("aria-label", done ? "Done:" : "Not yet:");
 }

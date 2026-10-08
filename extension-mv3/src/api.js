@@ -53,8 +53,35 @@ export async function uploadArticle({ serverUrl, refId, gzippedHTML, version }) 
 	return {
 		refId,
 		articleURL: `${serverUrl}/articles/${refId}/`,
-		libraryURL: `${serverUrl}/articles/`
+		libraryURL: libraryURL(serverUrl),
+		saves: await savesFrom(response)
 	};
+}
+
+// The webapp answers an upload with an empty 201 today. When it adds `saves_used` and `saves_limit`,
+// the "Saved" card can show the meter; until then this is null and the card shows none.
+async function savesFrom(response) {
+	try {
+		const body = JSON.parse(await response.text());
+		return Number.isFinite(body.saves_used) && Number.isFinite(body.saves_limit) ? { used: body.saves_used, limit: body.saves_limit } : null;
+	} catch (error) {
+		return null;
+	}
+}
+
+// Who is signed in: the raw `/api/v1/me/` answer ({ email, plan, saves_used, saves_limit, articles }; every field
+// optional), or null for a guest or when the server has no such call yet (webapp#103).
+// The tier itself comes from plans.js `getAccount`; this adds the numbers the popup and welcome page show.
+export async function getMe(serverUrl) {
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 2500);
+		const response = await fetch(`${serverUrl}/api/v1/me/`, { credentials: "include", signal: controller.signal });
+		clearTimeout(timeout);
+		return response.ok ? await response.json() : null;
+	} catch (error) {
+		return null;
+	}
 }
 
 // Undo for a save. The webapp has no API call for this yet, so this uses the "remove" link of the
@@ -70,6 +97,35 @@ export function loginURL(serverUrl) {
 	return `${serverUrl}/login/`;
 }
 
+// The one door (SPEC A3): "Continue with email" signs new and existing readers in, then `next` brings them
+// to a page that says they can go back. Same addresses as the print panel's door; best guesses until webapp#103.
+const DOOR_QUERY = "from=extension&next=/extension/signed-in/";
+
+export function emailDoorURL(serverUrl) {
+	return `${serverUrl}/signup/?${DOOR_QUERY}`;
+}
+
+export function googleDoorURL(serverUrl) {
+	return `${serverUrl}/accounts/google/login/?${DOOR_QUERY}`;
+}
+
+// The sign-up page without a pending action, for "Get all 11 designs, free →".
+export function accountPageURL(serverUrl) {
+	return `${serverUrl}/signup/?from=extension`;
+}
+
+export function libraryURL(serverUrl) {
+	return `${serverUrl}/articles/`;
+}
+
+// A short, non-reversible key for a page address (fragment dropped): the list of pages saved from this
+// browser stores these, never the addresses.
+export async function savedPageKey(url) {
+	const address = String(url || "").split("#")[0];
+	const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(address));
+	return Array.from(new Uint8Array(digest).slice(0, 8), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function request(url, options) {
 	try {
 		return await fetch(url, options);
@@ -80,7 +136,7 @@ async function request(url, options) {
 }
 
 async function toAPIError(response) {
-	// A 429 is the free plan's monthly limit; the server sends a title, message and an upgrade link.
+	// A 429 is a full free library; the server sends a title, a message and a link (the card uses its own words).
 	let details = {};
 	try {
 		details = await response.json();
