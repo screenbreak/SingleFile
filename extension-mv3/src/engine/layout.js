@@ -364,13 +364,13 @@ ${standfirst && type !== "thread" && !out.dropStandfirst ? `<p class="standfirst
 <p class="byline">${[man.byline, dateStr].filter(Boolean).map(esc).join(" · ")}</p></header>
 ${out.hero}
 <main class="flow">${readcard}${out.html}</main>
-<footer class="source">Saved from <span>${esc(man.url)}</span> · printed with Screenbreak</footer>
-<div class="sb-margins" hidden data-imprint="${esc(IMPRINT)}" data-gift="${esc(giftLine(gift))}"></div>`;
+${await endBlock(address, style)}
+<div class="sb-margins" hidden data-imprint="${esc(IMPRINT)}" data-gift="${esc(giftLine(gift))}" data-end="${esc(endLine(address) + " · " + IMPRINT)}" data-end-first="${esc(IMPRINT + "\n" + endLine(address))}"></div>`;
 	return { css, bodyClass, bodyHTML, lang: man.lang, title, greys: pictures === "bw", paper: { ...P, side: (P.width - MEASURE) / 2 } };
 }
 
 // The paper surface (research 05 §4). Screenbreak signs a print twice and never takes text space for it: the
-// imprint in page 1's bottom margin box (and, to come, the end block on the last page). The gift line sits in page 1's top
+// imprint in page 1's bottom margin box, and the end block on the last page. The gift line sits in page 1's top
 // margin box. Margin boxes need Chrome 131 (manifest minimum_chrome_version).
 const IMPRINT = "Printed with myscreenbreak.com";
 const GIFT_NAME_MAX = 32;
@@ -378,6 +378,11 @@ const GIFT_NAME_MAX = 32;
 // design's body class, so the face is named here.
 const GIFT_FACE = { classic: "Source Serif 4", magazine: "Literata", cover: "Literata", notes: "Literata", broadsheet: "Newsreader", book: "EB Garamond",
 	large: "Atkinson Hyperlegible", riso: "Space Grotesk", swiss: "Inter", modern: "Inter", ecoprint: "Literata" };
+// QR size by module count (0.43mm a module, 16 to 20mm); above version 7 a QR this small stops scanning, so the
+// end block is text only. Large print: 18mm at least.
+const QR_MODULE = 0.43, QR_MIN = { large: 18 }, QR_MAX = 20, QR_MAX_VERSION = 7;
+// Room kept free at the foot of the last page, in mm, where the design prints its reading-progress bar.
+const END_RESERVE = { notes: 7, swiss: 7 };
 
 // A CSS string: line breaks and control characters gone, quotes and backslashes escaped, and "<" escaped too, so
 // the CSS can also sit in a <style> element.
@@ -395,18 +400,48 @@ export function giftLine(gift) {
 	return to && from ? `Printed for ${to}, from ${from}` : to ? `Printed for ${to}` : from ? `From ${from}` : "";
 }
 
-// @page rules for the imprint and the gift line (page 1). Book centres them, as it centres its title and column.
+// The end line when it moves into the last page's margin (mode C): the only place the address is shortened.
+function endLine(address) {
+	const shown = shownURL(address);
+	return "Original: " + (shown.length > 110 ? shown.slice(0, 64) + "…" + shown.slice(-45) : shown);
+}
+
+// @page rules for the imprint (page 1), the gift line (page 1) and the end line of a full last page (sb-end;
+// paginate.js names that page). Book centres them, as it centres its title and column.
 function paperCSS(style, gift, address) {
 	const book = style == "book", bottom = book ? "bottom-center" : "bottom-left", top = book ? "top-center" : "top-left";
 	const leftClear = book ? " @bottom-left { content: \"\"; }" : "";
 	const mono = `width: 150mm; font: 400 ${style == "large" ? 8 : 6.8}pt "IBM Plex Mono", monospace; letter-spacing: .02em; color: #6b6f72;${book ? " text-align: center;" : ""}`;
 	const line = giftLine(gift);
 	return [
-		"/* Paper surface: imprint, gift line (layout.js paperCSS). */",
+		"/* Paper surface: imprint, gift line, end line (layout.js paperCSS). */",
 		`@page :first { @${bottom} { content: ${cssString(IMPRINT)}; ${mono} }${leftClear} }`,
 		line ? `@page :first { @${top} { content: ${cssString(line)}; width: 150mm; font: italic 400 ${style == "large" ? 10 : 8.5}pt "${GIFT_FACE[style] || GIFT_FACE.classic}", serif; ` +
-			`color: ${style == "riso" ? "#1d4ed8" : "var(--ink)"};${book ? " text-align: center;" : ""} } }` : ""
+			`color: ${style == "riso" ? "#1d4ed8" : "var(--ink)"};${book ? " text-align: center;" : ""} } }` : "",
+		`@page sb-end { @${bottom} { content: ${cssString(endLine(address) + " · " + IMPRINT)}; ${mono} }${leftClear} }`,
+		`@page sb-end:first { @${bottom} { content: ${cssString(IMPRINT)} "\\A" ${cssString(endLine(address))}; white-space: pre-wrap; ${mono} }${leftClear} }`
 	].filter(Boolean).join("\n");
+}
+
+// The end block, last on the last page: the QR straight to the article with three lines (mode A), or one line
+// (mode B). paginate.js appends it, measures, and steps down A → B → C (the margin line above) until it fits, so
+// it never adds a page. Notes margin has its QR on page 1 already: one QR a print, so mode B at most there.
+async function endBlock(address, style) {
+	const shown = esc(shownURL(address));
+	let qr = null;
+	try {
+		qr = QRCode.create(address, { errorCorrectionLevel: "M" });
+	} catch {
+		// Too long for any QR: text only.
+	}
+	const withQR = !!qr && qr.version <= QR_MAX_VERSION && style != "notes";
+	const size = withQR ? Math.min(QR_MAX, Math.max(QR_MIN[style] || 16, qr.modules.size * QR_MODULE)) : 0;
+	const full = withQR ? `<div class="end-full"><div class="qr" style="width:${size.toFixed(1)}mm;height:${size.toFixed(1)}mm">` +
+		`${await QRCode.toString(address, { type: "svg", margin: 0, errorCorrectionLevel: "M" })}</div><div class="end-lines">` +
+		`<p><b>Original</b>&ensp;<span class="url">${shown}</span></p><p>Scan the code for the original, with video and links.</p>` +
+		`<p class="imprint">${IMPRINT}</p></div></div>` : "";
+	return `<footer class="endblock" data-max="${withQR ? "A" : "B"}" data-qr="${size.toFixed(1)}" data-reserve="${END_RESERVE[style] || 0}">${full}` +
+		`<p class="end-line"><b>Original:</b> <span class="url">${shown}</span> · <span class="imprint">${IMPRINT}</span></p></footer>`;
 }
 
 // printlab layout.js, second page.evaluate: figures in, notes, sidenotes, pull quotes, transcript turns.

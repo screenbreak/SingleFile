@@ -36,10 +36,11 @@ window.renderSheet = async function ({ css, bodyClass, bodyHTML, lang, title, gr
 		paper.append(page);
 	});
 	drawMargins();
-	return { pages: window.__paged.pages, paperWidth: paper.width };
+	// end: how the end block printed ({ mode: "A" | "B" | "C", qrMM, roomMM }; paginate.js).
+	return { pages: window.__paged.pages, paperWidth: paper.width, end: window.__paged.report.end };
 };
 
-// On paper Chrome prints the imprint and the gift line from compose()'s @page rules;
+// On paper Chrome prints the imprint, the gift line and a full last page's end line from compose()'s @page rules;
 // a screen has no page margins, so the preview draws the same lines on the sheets (screen only, sheet.css).
 function drawMargins() {
 	const data = document.querySelector(".sb-margins");
@@ -56,8 +57,13 @@ function drawMargins() {
 			sheet.append(box);
 		}
 	};
+	const last = sheets[sheets.length - 1];
+	const endInMargin = last.querySelector(".page").style.page == "sb-end";
 	add(sheets[0], "top", data.dataset.gift);
-	add(sheets[0], "bottom", data.dataset.imprint);
+	add(sheets[0], "bottom", endInMargin && sheets.length == 1 ? data.dataset.endFirst : data.dataset.imprint);
+	if (endInMargin && sheets.length > 1) {
+		add(last, "bottom", data.dataset.end);
+	}
 }
 
 window.setSpread = function (spread) {
