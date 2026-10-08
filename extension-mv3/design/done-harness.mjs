@@ -119,7 +119,7 @@ try {
 			await page.screenshot({ path: join(OUT, file) });
 			report.files.push(file);
 
-			// Text left edges: eyebrow, title, reason, saving, hint, pill, links, offer.
+			// Text left edges: eyebrow, title, reason, saving, pill, links, offer.
 			const edges = await page.evaluate(() => {
 				const textLeft = element => {
 					const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, { acceptNode: node => node.textContent.trim() ? 1 : 3 });
@@ -131,7 +131,7 @@ try {
 				};
 				const out = {};
 				for (const [name, selector, box] of [
-					["eyebrow", ".done-eyebrow-text"], ["title", ".done-title"], ["reason", ".done-reason"], ["saving", ".done-saving"], ["hint", ".done-hint"],
+					["eyebrow", ".done-eyebrow-text"], ["title", ".done-title"], ["reason", ".done-reason"], ["saving", ".done-saving"],
 					["back pill", ".done-back", true], ["print again", ".done-again"], ["offer text", ".done-offer p"], ["offer action", ".done-offer .pill, .done-offer .done-link, .done-preview", true],
 					["change", ".done-change .link-button"]
 				]) {
@@ -145,6 +145,33 @@ try {
 			const ok = Math.max(...values) - Math.min(...values) <= 0.5 && (width > 860 || Math.abs(values[0] - 16) <= 0.5);
 			report.checks.push({ state: state.name, width, ok, edges, offer: result.offer && result.offer.slice(0, 60), eyebrow: result.eyebrow, focused: result.focused });
 
+			// The top block's rhythm (FIX-2 D2-1), box to box: eyebrow 12 title 16 reason 16 saving 24 pill 14
+			// "Print again" 20 hairline. No two-sided hint here (it sits under Print now), and no ring on the title
+			// after its script focus.
+			const rhythm = await page.evaluate(() => {
+				const box = selector => { const node = document.querySelector(selector); return node && node.getClientRects().length ? node.getBoundingClientRect() : null; };
+				const chain = [".done-eyebrow", ".done-title", ".done-reason", ".done-saving", ".done-back", ".done-again"].map(box).filter(Boolean);
+				const gaps = chain.slice(1).map((next, i) => Math.round((next.top - chain[i].bottom) * 10) / 10);
+				const offer = box(".done-offer"), change = box(".done-change"), again = box(".done-again");
+				const hairline = offer || change;
+				const title = document.querySelector(".done-title");
+				return {
+					gaps, names: [".done-eyebrow", ".done-title", ".done-reason", ".done-saving", ".done-back", ".done-again"].filter(box),
+					hairline: Math.round((hairline.top - again.bottom) * 10) / 10,
+					afterOffer: offer ? Math.round((change.top - offer.bottom) * 10) / 10 : null,
+					hint: !!document.querySelector(".done-hint") || /Two-sided/.test(document.querySelector(".done").textContent),
+					ring: document.activeElement == title ? getComputedStyle(title).outlineStyle : "not focused"
+				};
+			});
+			const want = { ".done-title": 12, ".done-reason": 16, ".done-saving": 16, ".done-back": 24, ".done-again": 14 };
+			// A missing reason or saving line leaves the next one at its own gap from the line above.
+			const wantGaps = rhythm.names.slice(1).map(name => want[name]);
+			report.checks.push({
+				state: `${state.name} rhythm`, width, rhythm: { gaps: rhythm.gaps, hairline: rhythm.hairline, afterOffer: rhythm.afterOffer, ring: rhythm.ring },
+				ok: rhythm.gaps.every((gap, i) => Math.abs(gap - wantGaps[i]) <= 0.5) && Math.abs(rhythm.hairline - 20) <= 0.5
+					&& (rhythm.afterOffer == null || Math.abs(rhythm.afterOffer - 20) <= 0.5) && !rhythm.hint && rhythm.ring == "none"
+			});
+
 			// The tick hangs in the gutter: on screen, and clear of the text edge. Page 1 shows at 52 x 74 in the
 			// narrow sheet when a thumb is passed, never in the wide panel, and is absent when thumb is null.
 			const marks = await page.evaluate(() => {
@@ -155,7 +182,8 @@ try {
 				return {
 					tick: [Math.round(tick.left * 10) / 10, Math.round(tick.right * 10) / 10],
 					thumb: !thumb ? "none" : box.width ? [Math.round(box.width), Math.round(box.height)] : "hidden",
-					thumbClear: !box?.width || box.left >= title.right
+					// Beside the title, and above the full-width reason (or saving line, or pill) below it.
+					thumbClear: !box?.width || box.left >= title.right && box.bottom <= document.querySelector(".done-fact > :nth-child(3), .done-back").getBoundingClientRect().top
 				};
 			});
 			const wantThumb = state.thumb == "none" ? "none" : width > 860 ? "hidden" : [52, 74];
@@ -298,7 +326,7 @@ try {
 }
 writeFileSync(join(OUT, "measures.json"), JSON.stringify(report, null, 2));
 const failed = report.checks.filter(check => check.ok === false);
-for (const check of report.checks) console.log(`${check.ok === false ? "FAIL" : "ok  "} ${check.state} @${check.width}${check.edges ? " " + JSON.stringify(check.edges) : ""}${check.eyebrow ? " · " + check.eyebrow : ""}${check.offer ? " · offer: " + check.offer : ""}${check.toast ? " · " + check.toast : ""}${check.marks ? " " + JSON.stringify(check.marks) : ""}${check.reading ? " · " + check.reading : ""}${check.errors?.length ? " " + check.errors.join("; ") : ""}`);
+for (const check of report.checks) console.log(`${check.ok === false ? "FAIL" : "ok  "} ${check.state} @${check.width}${check.edges ? " " + JSON.stringify(check.edges) : ""}${check.eyebrow ? " · " + check.eyebrow : ""}${check.offer ? " · offer: " + check.offer : ""}${check.toast ? " · " + check.toast : ""}${check.marks ? " " + JSON.stringify(check.marks) : ""}${check.reading ? " · " + check.reading : ""}${check.rhythm ? " " + JSON.stringify(check.rhythm) : ""}${check.errors?.length ? " " + check.errors.join("; ") : ""}`);
 console.log(`receipt blob: ${JSON.stringify(report.receiptBlob)}`);
 console.log(`${report.files.length} files in ${OUT}; ${failed.length} failed checks`);
 process.exit(failed.length ? 1 : 0);
