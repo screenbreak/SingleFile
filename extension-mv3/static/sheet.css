@@ -8,11 +8,22 @@
 	.paper { position: relative; box-sizing: border-box; width: var(--paper-w, 210mm); height: var(--paper-h, 297mm); padding: 16mm var(--paper-side, 15mm) 0; background: #fff;
 		box-shadow: 0 1px 1px rgba(29, 30, 27, .06), 0 10px 30px rgba(29, 40, 33, .16); }
 	.paper > .page { position: relative; }
+	/* The page-margin lines as they print (sheet.js drawMargins; on paper: layout.js paperCSS). */
+	.sb-margin { position: absolute; left: var(--paper-side, 15mm); width: 150mm; display: flex; align-items: center; white-space: pre-wrap; }
+	.sb-margin.bottom { bottom: 0; height: 18mm; font: 400 6.8pt/1.35 "IBM Plex Mono", monospace; letter-spacing: .02em; color: #6b6f72; }
+	.sb-margin.top { top: 0; height: 16mm; font: italic 400 8.5pt/1.3 var(--serif); color: var(--ink); }
+	.style-book .sb-margin { right: var(--paper-side, 15mm); width: auto; justify-content: center; text-align: center; }
+	.style-large .sb-margin.bottom { font-size: 8pt; }
+	.style-large .sb-margin.top { font-size: 10pt; }
+	.style-riso .sb-margin.top { color: var(--blue); }
 }
 @media print {
 	.paper { display: contents; }
+	.sb-margin { display: none; }
 }
-/* Chrome prints its own date, title and URL in any page margin box left empty, so the empty ones are claimed. */
+/* Chrome prints its own date, title and URL in any page margin box left empty, so the empty ones are claimed.
+   The imprint (page 1 bottom-left; Book: bottom-center) and the gift line (page 1 top-left; Book: top-center) are
+   compose()'s, which come later and are more specific, so each box prints one thing. */
 @page {
 	@top-left { content: ""; }
 	@top-center { content: ""; }

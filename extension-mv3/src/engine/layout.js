@@ -9,7 +9,7 @@
 import QRCode from "qrcode";
 import { recommend } from "./recommend.js";
 import { FONTS } from "./fonts.js";
-import { cleanURL } from "./print-url.js";
+import { cleanURL, shownURL } from "./print-url.js";
 
 const PAGE = { w: 210, h: 297, side: 15 };
 const MEASURE = PAGE.w - 2 * PAGE.side;              // 180mm
@@ -314,9 +314,10 @@ function fontFaces() {
 		`@font-face{font-family:"${fam}";font-weight:${w};font-style:${st};src:url(${dir}${slug}-latin-ext-${w}-${st}.woff2);unicode-range:U+0100-02BA,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0}`))).join("\n");
 }
 
-// Step 2: the print document for one design. options: { style, pictures: colour|ink|bw|none, references: leave|small|keep }.
-// Returns { css, bodyClass, bodyHTML, lang, title } for sheet.html, which builds the pages.
-export async function compose(prepared, { style = "classic", pictures = "colour", references = "small", paper = "A4" } = {}) {
+// Step 2: the print document for one design. options: { style, pictures: colour|ink|bw|none, references: leave|small|keep,
+// paper: A4|Letter, gift: { for, from } (optional, printed in page 1's top margin) }.
+// Returns { css, bodyClass, bodyHTML, lang, title, greys, paper } for sheet.html, which builds the pages.
+export async function compose(prepared, { style = "classic", pictures = "colour", references = "small", paper = "A4", gift } = {}) {
 	const P = PAPERS[paper] || PAPERS.A4;
 	const { man, byId, body, type } = prepared;
 	style = STYLES[style] ? style : "classic";
@@ -355,15 +356,57 @@ export async function compose(prepared, { style = "classic", pictures = "colour"
 	const css = `${fontFaces()}\n@page { @bottom-left { content: "${runHead.replace(/["\\]/g, "").replace(/\s+/g, " ")}"; } }\n${await engineCSS()}
 html.sb-greys img, html.sb-greys svg { filter: grayscale(1); }
 ${P === PAPERS.A4 ? "" : `@page { size: ${P.width}mm ${P.height}mm; margin: 16mm ${((P.width - MEASURE) / 2).toFixed(2)}mm 18mm; }
-.page { height: ${P.contentHeight}mm; }`}`;
+.page { height: ${P.contentHeight}mm; }`}
+${paperCSS(style, gift, address)}`;
 	const bodyClass = `type-${type} style-${style}${coverOk ? " has-cover" : ""}`;
 	const bodyHTML = `<header class="masthead"><p class="kicker">${esc(site)}</p><h1>${esc(title)}</h1>
 ${standfirst && type !== "thread" && !out.dropStandfirst ? `<p class="standfirst">${esc(standfirst)}</p>` : ""}
 <p class="byline">${[man.byline, dateStr].filter(Boolean).map(esc).join(" · ")}</p></header>
 ${out.hero}
 <main class="flow">${readcard}${out.html}</main>
-<footer class="source">Saved from <span>${esc(man.url)}</span> · printed with Screenbreak</footer>`;
+<footer class="source">Saved from <span>${esc(man.url)}</span> · printed with Screenbreak</footer>
+<div class="sb-margins" hidden data-imprint="${esc(IMPRINT)}" data-gift="${esc(giftLine(gift))}"></div>`;
 	return { css, bodyClass, bodyHTML, lang: man.lang, title, greys: pictures === "bw", paper: { ...P, side: (P.width - MEASURE) / 2 } };
+}
+
+// The paper surface (research 05 §4). Screenbreak signs a print twice and never takes text space for it: the
+// imprint in page 1's bottom margin box (and, to come, the end block on the last page). The gift line sits in page 1's top
+// margin box. Margin boxes need Chrome 131 (manifest minimum_chrome_version).
+const IMPRINT = "Printed with myscreenbreak.com";
+const GIFT_NAME_MAX = 32;
+// The design's text serif for the gift line. Margin boxes take their variables from the root, not from the
+// design's body class, so the face is named here.
+const GIFT_FACE = { classic: "Source Serif 4", magazine: "Literata", cover: "Literata", notes: "Literata", broadsheet: "Newsreader", book: "EB Garamond",
+	large: "Atkinson Hyperlegible", riso: "Space Grotesk", swiss: "Inter", modern: "Inter", ecoprint: "Literata" };
+
+// A CSS string: line breaks and control characters gone, quotes and backslashes escaped, and "<" escaped too, so
+// the CSS can also sit in a <style> element.
+export const cssString = text => "\"" + String(text).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, " ").replace(/[\\"]/g, "\\$&").replace(/</g, "\\3c ") + "\"";
+
+// One name for the gift line: one line, no control characters, at most 32 characters (an emoji counts as one).
+function giftName(name) {
+	const line = String(name || "").replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ").replace(/\s+/g, " ").trim();
+	return Array.from(line).slice(0, GIFT_NAME_MAX).join("").trim();
+}
+
+// "Printed for Maria, from Yorgos", "Printed for Maria", "From Yorgos", or "" with no names.
+export function giftLine(gift) {
+	const to = giftName(gift && gift.for), from = giftName(gift && gift.from);
+	return to && from ? `Printed for ${to}, from ${from}` : to ? `Printed for ${to}` : from ? `From ${from}` : "";
+}
+
+// @page rules for the imprint and the gift line (page 1). Book centres them, as it centres its title and column.
+function paperCSS(style, gift, address) {
+	const book = style == "book", bottom = book ? "bottom-center" : "bottom-left", top = book ? "top-center" : "top-left";
+	const leftClear = book ? " @bottom-left { content: \"\"; }" : "";
+	const mono = `width: 150mm; font: 400 ${style == "large" ? 8 : 6.8}pt "IBM Plex Mono", monospace; letter-spacing: .02em; color: #6b6f72;${book ? " text-align: center;" : ""}`;
+	const line = giftLine(gift);
+	return [
+		"/* Paper surface: imprint, gift line (layout.js paperCSS). */",
+		`@page :first { @${bottom} { content: ${cssString(IMPRINT)}; ${mono} }${leftClear} }`,
+		line ? `@page :first { @${top} { content: ${cssString(line)}; width: 150mm; font: italic 400 ${style == "large" ? 10 : 8.5}pt "${GIFT_FACE[style] || GIFT_FACE.classic}", serif; ` +
+			`color: ${style == "riso" ? "#1d4ed8" : "var(--ink)"};${book ? " text-align: center;" : ""} } }` : ""
+	].filter(Boolean).join("\n");
 }
 
 // printlab layout.js, second page.evaluate: figures in, notes, sidenotes, pull quotes, transcript turns.

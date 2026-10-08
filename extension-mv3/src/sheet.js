@@ -35,8 +35,30 @@ window.renderSheet = async function ({ css, bodyClass, bodyHTML, lang, title, gr
 		page.before(paper);
 		paper.append(page);
 	});
+	drawMargins();
 	return { pages: window.__paged.pages, paperWidth: paper.width };
 };
+
+// On paper Chrome prints the imprint and the gift line from compose()'s @page rules;
+// a screen has no page margins, so the preview draws the same lines on the sheets (screen only, sheet.css).
+function drawMargins() {
+	const data = document.querySelector(".sb-margins");
+	const sheets = Array.from(document.querySelectorAll(".paper"));
+	if (!data || !sheets.length) {
+		return;
+	}
+	const add = (sheet, place, text) => {
+		if (text) {
+			const box = document.createElement("div");
+			box.className = "sb-margin " + place;
+			box.setAttribute("aria-hidden", "true");
+			box.textContent = text;
+			sheet.append(box);
+		}
+	};
+	add(sheets[0], "top", data.dataset.gift);
+	add(sheets[0], "bottom", data.dataset.imprint);
+}
 
 window.setSpread = function (spread) {
 	document.documentElement.classList.toggle("spread", spread);
