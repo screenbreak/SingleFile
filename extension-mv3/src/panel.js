@@ -89,11 +89,11 @@ export function designTile({ style, checked, locked, picked, describedBy, name =
 		el("span", { class: "tile-line", text: DESIGNS[style].line }));
 }
 
-// Swaps a card's thumbnail for a live one (an element from Desk.thumbnail).
+// Swaps a card's thumbnail for a live one (an element from Desk.thumbnail). A lock chip stays in its corner.
 export function setThumbnail(card, element) {
 	const thumb = card && card.querySelector(".thumb");
 	if (thumb && element) {
-		thumb.replaceChildren(element);
+		thumb.replaceChildren(element, ...thumb.querySelectorAll(".lock-chip"));
 		thumb.classList.add("live");
 	}
 }
@@ -219,7 +219,8 @@ export function renderDoor(container, { entry, design, serverUrl, intent, onCanc
 		addEventListener("focus", onFocus);
 		polling = setTimeout(check, POLL_EVERY);
 		title.setAttribute("tabindex", "-1");
-		title.focus();
+		title.focus({ preventScroll: true });
+		container.scrollIntoView({ block: "nearest", behavior: "smooth" });
 	};
 	container.hidden = false;
 	if (resume) {

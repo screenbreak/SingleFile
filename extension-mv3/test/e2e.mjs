@@ -94,6 +94,8 @@ try {
 	assert.equal(await printPage.locator("input[name=pictures]:checked").getAttribute("value"), "colour");
 	// The picked card shows page 1 of this article once it is built.
 	await printPage.locator(".pick.picked .thumb.live iframe").waitFor({ state: "attached", timeout: 30000 });
+	// So do the other designs' rows once their documents are built, and a locked row keeps its corner chip.
+	await printPage.waitForFunction(() => document.querySelectorAll(".others .pick[data-locked] .thumb.live .thumb-live ~ .lock-chip").length == 2, null, { timeout: 30000 });
 
 	// Locked preview: a locked design shows on the desk, the banner says so, and the footer swaps to the door.
 	const lockedRow = printPage.locator(".others .pick[data-locked]").first();

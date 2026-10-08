@@ -14,6 +14,7 @@ import { fillSegmented, setRadio, pickedCard, pickRow, designTile, setThumbnail,
 
 const MIN_ARTICLE_TEXT = 140;
 const THUMB_WIDTH = 64;
+const ROW_THUMB_WIDTH = 44;
 const INK_LOCKED_HELP = "Ink saver prints photos as light dots. It comes with a free account.";
 const REFERENCES_LOCKED_HELP = "Reference list comes with a free account.";
 
@@ -211,6 +212,15 @@ function updatePageCounts() {
 		const frame = desk.frames.get(keyFor({ ...state.choice, style: pick.dataset.style }));
 		const pages = frame && frame.pages ? `${frame.pages} page${frame.pages > 1 ? "s" : ""}` : "";
 		pick.querySelector(".pages").textContent = pages && pick.classList.contains("picked") ? `${pages} · ${paper}` : pages;
+		// "Other designs" rows show page 1 of this article once their document is built; the sample page until then.
+		const key = frame && frame.pages && keyFor({ ...state.choice, style: pick.dataset.style });
+		if (key && pick.classList.contains("row") && pick.dataset.thumbKey != key) {
+			const thumb = desk.thumbnail(frame, ROW_THUMB_WIDTH);
+			if (thumb) {
+				pick.dataset.thumbKey = key;
+				setThumbnail(pick, thumb);
+			}
+		}
 	}
 	updatePickedThumbnail();
 }
@@ -551,6 +561,8 @@ function openDoor(intent, entry, { slot = ".door-slot-print", start = null, resu
 		}
 	}));
 	if (document.body.classList.contains("sheet-open")) setSheet(false);
+	// The card sits just above the sticky footer: scroll it clear of the footer, not under it.
+	panel.style.scrollPaddingBottom = document.querySelector(".actions").offsetHeight + 16 + "px";
 	container.scrollIntoView({ block: "nearest", behavior: "smooth" });
 	state.door.focus();
 }
