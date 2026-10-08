@@ -28,7 +28,9 @@ const doneElement = document.querySelector(".done");
 // choice: what the desk shows. freeChoice: the last choice this reader can print, which a locked preview goes back to.
 const state = {
 	id: "", prepared: null, settings: null, account: { state: "guest" }, choice: null, freeChoice: null, picks: [],
-	previewOnly: false, article: null, busy: true, door: null, done: null, thumbKey: ""
+	previewOnly: false, article: null, busy: true, door: null, done: null, thumbKey: "",
+	// True once the guest tapped any locked design or option on this page: the done state's unlock offer follows it.
+	lockedClicked: false
 };
 
 init();
@@ -285,6 +287,7 @@ function syncControls() {
 document.addEventListener("change", async event => {
 	const target = event.target;
 	if (target.name == "design") {
+		if (!isOpen("design", target.value)) state.lockedClicked = true;
 		state.choice.style = target.value;
 		closeGallery({ focusRow: target.closest(".gallery") ? target.value : null });
 		syncControls();
@@ -293,6 +296,7 @@ document.addEventListener("change", async event => {
 		if (state.door && !state.door.waiting) closeDoor();
 	} else if (target.name == "pictures" || target.name == "references" || target.name == "paper") {
 		state.choice[target.name] = target.value;
+		if (!isOpen(target.name, target.value)) state.lockedClicked = true;
 		// An open value also changes what "Back to …" returns to.
 		if (isOpen(target.name, target.value)) state.freeChoice[target.name] = target.value;
 		await showChoice();
@@ -313,6 +317,7 @@ document.querySelector(".print-pick-button").addEventListener("click", async () 
 });
 document.querySelector(".lock-continue").addEventListener("click", () => openDoor({ kind: "design", design: state.choice.style }, "account"));
 document.querySelector(".references-locked").addEventListener("click", () => {
+	state.lockedClicked = true;
 	panel.querySelector(".references-locked").setAttribute("aria-expanded", "true");
 	openDoor(intentFor({ kind: "option", name: "references", value: "keep" }), "option");
 });
@@ -449,6 +454,9 @@ async function showDone(kind, { style, pages, screens }) {
 			printNow({ kind });
 		},
 		onChange: () => leaveDone(),
+		lockedClicked: state.lockedClicked,
+		keptPick: style == state.picks[0].style,
+		thumb: desk.thumbnail(desk.current, 52),
 		openDoor: intent => openDoor({ printJobId: state.id, sourceUrl: state.article.url, title: state.article.title, ...intent }, (intent && intent.kind) || "keep", { slot: ".door-slot-done" })
 	});
 }
