@@ -2,21 +2,27 @@
    Tokens come from ui.css. One left edge with the panel: every text line starts at the panel's padding;
    the done tick and the ladder marks hang in the gutter so they do not push the text in. */
 
-.done-state { display: grid; gap: 20px; }
+.done-state { display: grid; }
+/* The top block's rhythm, top to bottom: eyebrow, 12, title, 16, reason, 16, saving line, 24, pill, 14,
+   "Print again", 20, hairline, offer, hairline, "Change something". Margins, not gaps, so a missing line
+   (no reason, no saving) leaves no double space. */
 .done-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
-.done-fact { display: grid; gap: 8px; min-width: 0; }
+.done-fact { display: grid; min-width: 0; }
+.done-fact > :not(:first-child) { margin-top: 16px; }
+.done-fact > .done-eyebrow + .done-title { margin-top: 12px; }
 .done-eyebrow { position: relative; margin: 0; font: 400 11.5px/16px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .done-tick { position: absolute; left: -21px; top: 0; width: 16px; height: 16px; color: var(--signal); }
 .done-tick svg { display: block; width: 16px; height: 16px; }
 .done-tick circle { fill: currentColor; }
 .done-tick path { fill: none; stroke: var(--surface); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .done-title { margin: 0; font: 400 28px/34px var(--serif); color: var(--ink); letter-spacing: -.005em; }
-.done-title:focus { outline: none; }
+/* The title is focused by script (done.js quietFocus): no ring for that; a keyboard focus keeps it. */
+.done-title:focus:not(:focus-visible), .done-title[data-quiet-focus]:focus { outline: none; }
 .done-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
-.done-reason { margin: 0; font: 400 15px/22px var(--sans); color: var(--ink); }
-.done-saving { margin: 2px 0 0; font: 400 13px/20px var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
-.done-saving mark { padding: 1px 3px; margin: 0 -1px; color: var(--ink); background: var(--mark); border-radius: 2px; }
-.done-hint { margin: 0; font: 400 13.5px/20px var(--sans); color: var(--muted); }
+.done-reason { margin: 0; font: 400 15px/24px var(--sans); color: var(--ink); }
+.done-saving { margin: 0; font: 400 13px/24px var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.done-saving-n { white-space: nowrap; }
+.done-saving mark { padding: 2px 6px; color: var(--ink); background: var(--mark); border-radius: 3px; }
 /* Page 1 at 52 x 74: an image URL, or the live frame desk.thumbnail() returns (its own inline size). */
 .done-thumb { display: none; width: 52px; height: 74px; overflow: hidden; background: var(--paper); border-radius: 2px; box-shadow: 0 1px 3px rgba(22, 26, 24, .18); }
 .done-thumb > * { display: block; width: 52px; height: 74px; object-fit: cover; }
@@ -33,11 +39,11 @@
 .pill-secondary:hover { background: var(--accent-soft); }
 .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.done-actions { display: grid; justify-items: start; gap: 12px; }
+.done-actions { display: grid; justify-items: start; gap: 14px; margin-top: 24px; }
 .done-back { width: 100%; height: 44px; font-size: 15px; }
 .done-again, .done-change .link-button, .done-link { font: 500 14px/20px var(--sans); color: var(--accent); }
 
-.done-offer { display: grid; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+.done-offer { display: grid; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
 .done-offer p { margin: 0; font: 400 14px/20px var(--sans); color: var(--ink); }
 .done-offer-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
 .done-not-now { font-size: 14px; color: var(--muted); }
@@ -47,7 +53,7 @@
 .done-preview img { display: block; width: 118px; height: 118px; }
 .done-preview:hover { border-color: color-mix(in srgb, var(--signal) 60%, var(--line)); }
 .done-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.done-change { padding-top: 16px; border-top: 1px solid var(--line); }
+.done-change { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
 
 /* Narrow windows: the panel sits under the pages, so the same content rises as a bottom sheet over them,
    with page 1 of this article beside the title. No scrim: the pages stay bright. The sheet is full-bleed with
@@ -61,7 +67,14 @@
 	.done-state:not([hidden]) { margin: 0; }
 	.done-state .done-tick { left: -14px; top: 2px; width: 12px; height: 12px; }
 	.done-state .done-tick svg { width: 12px; height: 12px; }
-	.done-top:has(.done-thumb) { grid-template-columns: minmax(0, 1fr) 52px; align-items: start; }
+	/* Page 1 sits beside the eyebrow and title only; the reason and the saving line run the full width below, so
+	   the saving line stays on one line at 390. The thumb's -16 px bottom margin keeps it from growing the title
+	   row (74 px tall vs eyebrow + 12 + title = 62): it ends above the reason's 16 px margin, never on it. */
+	.done-top:has(.done-thumb) { grid-template-columns: minmax(0, 1fr) 52px; column-gap: 16px; row-gap: 0; align-items: start; }
+	.done-top:has(.done-thumb) .done-fact { display: contents; }
+	.done-top:has(.done-thumb) .done-fact > * { grid-column: 1 / -1; }
+	.done-top:has(.done-thumb) .done-fact > .done-eyebrow, .done-top:has(.done-thumb) .done-fact > .done-title { grid-column: 1; }
+	.done-top:has(.done-thumb) .done-thumb { grid-column: 2; grid-row: 1 / span 2; margin-bottom: -16px; }
 	.done-thumb { display: block; }
 }
 @media (prefers-reduced-motion: no-preference) {
