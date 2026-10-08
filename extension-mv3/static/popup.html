@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="ui.css">
+	<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+	<header class="head">
+		<img src="icons/logo.png" alt="Screenbreak" class="wordmark" width="141" height="20">
+	</header>
+	<div class="notice" hidden>
+		<p class="notice-title">Screenbreak can't run on this page</p>
+		<p class="notice-text">Chrome keeps its own pages, the Web Store and PDFs off limits to extensions. Open an article, then try again.</p>
+	</div>
+	<p class="label actions-label">This page</p>
+	<div class="actions" role="menu" aria-label="This page">
+		<button type="button" class="row" role="menuitem" data-action="save">
+			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10a1 1 0 0 1 1 1V20l-6-3.6L6 20V4.5a1 1 0 0 1 1-1z"/></svg>
+			<span class="row-text"><span class="row-title">Save</span><span class="row-desc">Add it to your articles</span></span>
+			<span class="keys" data-shortcut="save"></span>
+		</button>
+		<button type="button" class="row" role="menuitem" data-action="print">
+			<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
+			<span class="row-text"><span class="row-title">Print</span><span class="row-desc">A clean copy, or a PDF</span></span>
+			<span class="keys" data-shortcut="print"></span>
+		</button>
+		<label class="switch also-save"><input type="checkbox" name="saveWhenPrinting" role="switch"><span class="track"></span>Also save what I print</label>
+	</div>
+	<section class="default" aria-labelledby="default-label">
+		<p class="label" id="default-label">When I click the button</p>
+		<div class="segmented" role="radiogroup" aria-labelledby="default-label">
+			<label><input type="radio" name="defaultAction" value="ask"><span>Ask me</span></label>
+			<label><input type="radio" name="defaultAction" value="save"><span>Save</span></label>
+			<label><input type="radio" name="defaultAction" value="print"><span>Print</span></label>
+		</div>
+		<p class="consequence" aria-live="polite"></p>
+	</section>
+	<footer class="foot">
+		<a href="#" class="library" target="_blank">My articles</a>
+		<a href="options.html" target="_blank">Settings</a>
+	</footer>
+	<script src="popup.js"></script>
+</body>
+</html>

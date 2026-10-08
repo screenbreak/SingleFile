@@ -1,0 +1,141 @@
+/* Screenbreak concept styles: ideas that use paper, not just new fonts.
+   cover  - the lead photo becomes a magazine cover; the article starts on page 2
+   notes  - a reading copy: one text column, footnotes and captions as sidenotes, a dot grid margin to write in
+   swiss  - an asymmetric grid: numbered section heads hang in a wide left column, minutes-left meter
+   riso   - a two-ink zine: photos as blue halftone dots, pink display type */
+
+.progress { display: none; }
+.flow .readcard { display: none; }
+/* Ragged-right styles: the last line before a page break must not be stretched. */
+.style-notes .flow p.split, .style-swiss .flow p.split, .style-riso .flow p.split { text-align-last: auto; }
+
+/* ---------- COVER STORY ---------- */
+.style-cover { --serif: "Literata", Georgia, serif; --sans: "Inter", Arial, sans-serif; --display: "Fraunces", Georgia, serif; --accent: #b91c1c; font: 9.1pt/1.48 var(--serif); }
+.page.cover { position: relative; display: block; }
+.page.cover figure.hero { position: absolute; inset: 0; margin: 0; }
+.page.cover figure.hero img { width: 100%; height: 100%; max-height: none; object-fit: cover; display: block; }
+.page.cover figure.hero figcaption { position: absolute; top: 0; right: 0; max-width: 70mm; margin: 0; padding: 1.2mm 2mm; background: #fff; font: 6.4pt/1.3 var(--sans); }
+.page.cover .masthead { position: absolute; left: 0; bottom: 0; width: 132mm; margin: 0; padding: 8mm 9mm 0 0; background: #fff; }
+.page.cover .kicker { color: var(--accent); font: 700 8pt var(--sans); letter-spacing: .2em; }
+.page.cover .masthead h1 { font: 900 44pt/0.95 var(--display); letter-spacing: -.03em; margin-bottom: 4mm; }
+.page.cover .standfirst { font: italic 400 13pt/1.3 var(--display); color: var(--ink); text-align: left; }
+.page.cover .byline { border: 0; color: var(--accent); padding: 0; }
+.style-cover .masthead h1 { font: 900 34pt/1 var(--display); }
+.style-cover .flow p.lede::first-letter { font: 900 62pt/0.78 var(--display); color: var(--accent); margin: 1mm 2.2mm 0 0; }
+.style-cover .flow p.lede::first-line { font: 600 1em var(--sans); letter-spacing: .02em; text-transform: uppercase; font-size: .86em; }
+.style-cover .flow h2, .style-cover .flow h3 { font: 800 12.5pt/1.15 var(--display); }
+.style-cover:not(.type-tutorial):not(.type-essay) .cols { column-gap: 8mm; column-rule: none; }
+.style-cover .flow .pullquote { display: block; font: italic 700 16pt/1.15 var(--display); color: var(--accent); text-indent: 0; text-align: left; hyphens: manual;
+  border-top: 1pt solid var(--accent); border-bottom: 1pt solid var(--accent); padding: 3mm 0; margin: 4mm 0; break-inside: avoid; }
+.style-cover figcaption { font: 7pt/1.35 var(--sans); }
+.style-cover .progress { display: none; }
+.flow .readcard { display: none; }
+/* Ragged-right styles: the last line before a page break must not be stretched. */
+.style-notes .flow p.split, .style-swiss .flow p.split, .style-riso .flow p.split { text-align-last: auto; }
+
+/* ---------- NOTES MARGIN (reading copy) ---------- */
+.style-notes { --serif: "Literata", Georgia, serif; --sans: "Inter", Arial, sans-serif; --accent: #0f766e; font: 9.6pt/1.5 var(--serif); }
+.style-notes .masthead h1 { font: 700 28pt/1.05 var(--serif); letter-spacing: -.015em; max-width: 150mm; }
+.style-notes .standfirst { max-width: 118mm; text-align: left; }
+.style-notes .byline { border-bottom: 0; }
+.style-notes .cols { columns: 1 !important; column-rule: none; width: 180mm !important; margin: 0 !important; }
+.style-notes .cols > * { margin-right: 62mm; }
+.style-notes .cols > .sidenote, .style-notes .cols > .pullquote { float: right; clear: right; width: 54mm; margin: .6mm 0 3mm 0; position: relative; background: #fff; }
+.style-notes .sidenote { font: 6.6pt/1.38 var(--sans); color: #3f4447; text-align: left; hyphens: auto; padding-bottom: 1mm; }
+.style-notes .sidenote b { color: var(--accent); font-weight: 700; margin-right: .6mm; }
+.style-notes .sidenote.caption { font-style: normal; color: var(--soft); border-top: .5pt solid var(--rule); padding-top: 1mm; }
+.style-notes a.noteref, .style-notes sup a { color: var(--accent); text-decoration: none; font: 600 .72em var(--sans); }
+.style-notes .flow .pullquote { display: block; font: italic 500 11pt/1.3 var(--serif); color: var(--accent); text-indent: 0; text-align: left; border-top: 1.2pt solid var(--accent); padding-top: 1.5mm; }
+.style-notes .flow p { text-align: left; hyphens: auto; }
+.style-notes .flow h2, .style-notes .flow h3 { font: 700 11pt/1.25 var(--serif); }
+.style-notes .page { position: relative; }
+/* Dot grid to write on, only in the margin and only as far as the text goes (white layer masks the text side). */
+.style-notes .cols { background: linear-gradient(to right, #fff 0 124mm, transparent 124mm), radial-gradient(circle, #b4babe .45pt, transparent .65pt) 1mm 1mm / 5mm 5mm; }
+.style-notes .cols.last { padding-bottom: 4mm; }
+.style-notes .flow .readcard { display: block; border-top: 1.2pt solid var(--accent); padding-top: 2mm; }
+.style-notes .readcard .qr { float: left; width: 15mm; height: 15mm; margin: 0 2.5mm 1mm 0; }
+.style-notes .readcard .qr svg { width: 100%; height: 100%; display: block; }
+.style-notes .readcard p { margin: 0 0 1mm; text-indent: 0; text-align: left; font: 6.8pt/1.35 var(--sans); }
+.style-notes .readcard b { color: var(--ink); }
+.style-notes .progress { display: flex; justify-content: space-between; position: absolute; right: 0; bottom: 0; width: 54mm; height: 6mm; align-items: flex-end;
+  font: 600 6.5pt var(--sans); color: var(--soft); border-top: .5pt solid var(--rule);
+  background: linear-gradient(var(--accent), var(--accent)) left top / var(--p) 1.6pt no-repeat; }
+
+/* ---------- SWISS GRID ---------- */
+.style-swiss { --serif: "Inter", Arial, sans-serif; --sans: "Inter", Arial, sans-serif; --accent: #e30613; font: 8.9pt/1.5 var(--sans); counter-reset: sec; }
+.style-swiss .masthead { border-top: 5pt solid var(--ink); padding-top: 3mm; }
+.style-swiss .kicker { color: var(--ink); font: 600 7.5pt "IBM Plex Mono", monospace; letter-spacing: .04em; }
+.style-swiss .masthead h1 { font: 800 46pt/0.94 var(--sans); letter-spacing: -.05em; text-wrap: balance; margin-bottom: 6mm; }
+.style-swiss .standfirst, .style-swiss .byline { margin-left: 46mm; }
+.style-swiss .standfirst { font: 500 13pt/1.3 var(--sans); font-style: normal; color: var(--ink); text-align: left; }
+.style-swiss .byline { border: 0; font: 400 7.5pt "IBM Plex Mono", monospace; color: var(--soft); }
+.style-swiss .cols { columns: 1 !important; column-rule: none; width: 180mm !important; margin: 0 !important; }
+.style-swiss .cols > * { margin-left: 46mm; }
+.style-swiss .flow p { text-align: left; text-indent: 0; margin-bottom: 2.4mm; hyphens: auto; }
+.style-swiss .flow p.lede { font-size: 11pt; line-height: 1.4; font-weight: 500; }
+.style-swiss .flow p.lede::first-letter { all: unset; }
+.style-swiss .cols > h2, .style-swiss .cols > h3 { float: left; clear: left; width: 38mm; margin: .5mm 0 3mm 0; font: 700 8.6pt/1.25 var(--sans); text-align: left; }
+.style-swiss .cols > h2::before { counter-increment: sec; content: counter(sec, decimal-leading-zero); display: block; font: 800 24pt/1 var(--sans); color: var(--accent); letter-spacing: -.04em; margin-bottom: 1mm; }
+.style-swiss .flow .pullquote { display: block; margin-left: 0; font: 800 18pt/1.1 var(--sans); letter-spacing: -.03em; color: var(--accent); text-indent: 0; text-align: left; hyphens: manual;
+  border-top: 3pt solid var(--ink); padding: 2.5mm 0 1mm; margin: 4mm 0; break-inside: avoid; }
+.style-swiss .flow blockquote { border-left: 3pt solid var(--accent); font-style: normal; font-weight: 500; }
+.style-swiss figcaption { font: 6.8pt/1.35 "IBM Plex Mono", monospace; }
+.style-swiss .flow .wide { margin-left: 0; }
+.style-swiss .page { position: relative; }
+.style-swiss .progress { display: block; position: absolute; left: 0; bottom: 0; width: 38mm; padding-top: 1.5mm; font: 600 6.6pt "IBM Plex Mono", monospace; color: var(--ink);
+  background: linear-gradient(var(--accent), var(--accent)) left top / var(--p) 2.5pt no-repeat, linear-gradient(#e5e5e5, #e5e5e5) left top / 100% 2.5pt no-repeat; }
+.style-swiss .progress span { display: block; } .style-swiss .progress .of { color: var(--soft); }
+
+/* ---------- RISO ZINE ---------- */
+.style-riso { --ink: #1b1b1b; --blue: #1d4ed8; --pink: #ff3d7f; --serif: "Space Grotesk", Arial, sans-serif; --sans: "Space Grotesk", Arial, sans-serif; --accent: var(--pink); font: 8.9pt/1.45 var(--sans); }
+.style-riso .masthead { position: relative; }
+.style-riso .kicker { display: inline-block; color: #fff; background: var(--blue); font: 600 7.5pt "IBM Plex Mono", monospace; padding: .6mm 1.6mm; letter-spacing: .06em; }
+.style-riso .masthead h1 { font: 700 50pt/0.9 "Oswald", sans-serif; text-transform: uppercase; color: var(--pink); letter-spacing: -.01em; margin: 3mm 0 4mm; }
+.style-riso .standfirst { font: 500 13pt/1.3 var(--sans); font-style: normal; color: var(--blue); text-align: left; }
+.style-riso .byline { border-bottom: 1.5pt dashed var(--blue); font: 400 7.5pt "IBM Plex Mono", monospace; color: var(--blue); }
+.style-riso:not(.type-tutorial):not(.type-essay) .cols { column-gap: 6mm; column-rule: 1pt dashed var(--pink); }
+.style-riso .flow p { text-align: left; text-indent: 0; margin-bottom: 2.3mm; hyphens: auto; }
+.style-riso .flow p.lede::first-letter { all: unset; }
+.style-riso .flow p.lede { font-weight: 500; font-size: 10.4pt; line-height: 1.38; color: var(--blue); }
+.style-riso .flow h2, .style-riso .flow h3 { font: 700 15pt/1 "Oswald", sans-serif; text-transform: uppercase; color: var(--pink); }
+.style-riso .flow .pullquote { display: block; font: 700 21pt/0.98 "Oswald", sans-serif; text-transform: uppercase; color: var(--pink); text-indent: 0; text-align: left; hyphens: manual;
+  margin: 4mm 0; padding: 0 0 2mm; border-bottom: 4pt solid var(--blue); break-inside: avoid; }
+.style-riso .flow blockquote { border-left: 4pt solid var(--pink); font-style: normal; color: var(--blue); }
+.style-riso figcaption { font: 6.6pt/1.35 "IBM Plex Mono", monospace; color: var(--blue); }
+.style-riso .endmark::after { content: "\2605"; color: var(--pink); font-size: 10pt; }
+
+/* ---------- PHOTO ESSAY ---------- */
+.style-gallery { --serif: "Newsreader", Georgia, serif; --sans: "Inter", Arial, sans-serif; --accent: #111; font: 9.6pt/1.5 var(--serif); }
+.style-gallery .masthead { text-align: center; margin: 4mm 0 7mm; }
+.style-gallery .kicker { color: var(--soft); letter-spacing: .3em; }
+.style-gallery .masthead h1 { font: 300 36pt/1.05 var(--serif); letter-spacing: -.01em; max-width: 160mm; margin-inline: auto; }
+.style-gallery .standfirst { font: italic 400 12.5pt/1.4 var(--serif); margin-inline: auto; max-width: 120mm; text-align: center; }
+.style-gallery .byline { border: 0; font: 500 7.5pt var(--sans); text-transform: uppercase; letter-spacing: .15em; }
+.style-gallery:not(.type-tutorial) .cols { columns: 1; width: 132mm; margin: 0 auto; column-rule: none; }
+.style-gallery .flow p { text-align: left; hyphens: auto; }
+.style-gallery .flow p.lede::first-letter { all: unset; }
+.style-gallery .flow figure.photo { margin: 6mm 0 7mm; }
+.style-gallery .flow figure.wide { margin: 0 0 6mm; }
+.style-gallery figcaption { font: 7.2pt/1.4 var(--sans); color: var(--soft); text-align: left; border-left: 1pt solid var(--ink); padding-left: 2mm; margin-top: 2mm; }
+.style-gallery .flow h2, .style-gallery .flow h3 { font: 400 15pt/1.2 var(--serif); text-align: center; margin: 7mm 0 3mm; }
+.style-gallery .flow .pullquote { display: block; font: 300 18pt/1.25 var(--serif); text-align: center; text-indent: 0; hyphens: manual; margin: 6mm 6mm; }
+
+/* ---------- CONVERSATION ---------- */
+.style-conversation { --serif: "Literata", Georgia, serif; --sans: "Inter", Arial, sans-serif; --accent: #7c3aed; font: 9.4pt/1.5 var(--serif); }
+.style-conversation .masthead h1 { font: 800 32pt/1 var(--sans); letter-spacing: -.035em; }
+.style-conversation .standfirst { font: 400 12pt/1.35 var(--serif); font-style: italic; text-align: left; }
+.style-conversation .cols { columns: 1 !important; column-rule: none; width: 180mm !important; margin: 0 !important; }
+.style-conversation .cols > * { margin-left: 36mm; }
+.style-conversation .cols > .wide, .style-conversation .cols > .pullquote { margin-left: 0; }
+.style-conversation .flow p { text-align: left; text-indent: 0; margin-bottom: 2.6mm; hyphens: auto; }
+.style-conversation .flow p.lede::first-letter { all: unset; }
+.style-conversation .flow p.turn { position: relative; }
+.style-conversation .speaker { position: absolute; left: -36mm; top: .4mm; width: 31mm; text-align: right; font: 700 6.8pt/1.3 var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); }
+.style-conversation .flow p.cont .speaker { display: none; }
+.style-conversation .flow p.q { font: 600 9.4pt/1.45 var(--sans); color: var(--accent); }
+.style-conversation .flow .pullquote { display: block; font: 800 17pt/1.15 var(--sans); letter-spacing: -.02em; text-indent: 0; text-align: left; hyphens: manual;
+  border-top: 3pt solid var(--accent); padding-top: 2mm; margin: 4mm 0 5mm; break-inside: avoid; }
+.style-conversation .flow h2, .style-conversation .flow h3 { font: 700 11pt/1.2 var(--sans); }
+.style-conversation .flow p.split { text-align-last: auto; }
+.style-gallery .flow p.split { text-align-last: auto; }
+.page.cover figure.hero img { object-position: 50% 28%; }
