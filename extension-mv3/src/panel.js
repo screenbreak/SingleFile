@@ -98,12 +98,14 @@ export function setThumbnail(card, element) {
 	}
 }
 
-// Head: "Log in" for a guest; for an account, the name as a link to the library.
-export function renderWho(container, account, serverUrl) {
+// Head: "Log in" for a guest; for an account, the name as a link to the library. settings: the print page also links
+// to Settings (in a new tab), before them and in the same size.
+export function renderWho(container, account, serverUrl, { settings = false } = {}) {
+	const link = settings && el("a", { href: "options.html", target: "_blank", class: "settings-link", text: "Settings" });
 	if (account.state == "guest") {
-		container.replaceChildren(el("a", { href: loginPageURL(serverUrl), target: "_blank", text: "Log in" }));
+		container.replaceChildren(...[link, el("a", { href: loginPageURL(serverUrl), target: "_blank", text: "Log in" })].filter(Boolean));
 	} else {
-		container.replaceChildren(el("a", { href: libraryURL(serverUrl), target: "_blank", class: "who-name", title: "Open my library", text: account.name || account.email || "My library" }));
+		container.replaceChildren(...[link, el("a", { href: libraryURL(serverUrl), target: "_blank", class: "who-name", title: "Open my library", text: account.name || account.email || "My library" })].filter(Boolean));
 	}
 }
 

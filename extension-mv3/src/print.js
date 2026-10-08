@@ -25,11 +25,14 @@ const desk = new Desk(document.querySelector(".sheets"));
 const deskElement = document.querySelector(".desk");
 const gallery = document.querySelector(".gallery");
 const doneElement = document.querySelector(".done");
+const pdfHint = document.querySelector(".pdf-hint");
 
 // choice: what the desk shows. freeChoice: the last choice this reader can print, which a locked preview goes back to.
 const state = {
 	id: "", prepared: null, settings: null, account: { state: "guest" }, choice: null, freeChoice: null, picks: [],
 	previewOnly: false, article: null, busy: true, door: null, done: null, thumbKey: "",
+	// What the desk last showed (design and whether it was a locked preview): a change of either starts at page 1.
+	shown: null,
 	// True once the guest tapped any locked design or option on this page: the done state's unlock offer follows it.
 	lockedClicked: false
 };
@@ -129,7 +132,9 @@ function keyFor({ style, pictures, references, paper }) {
 
 function renderDesign(style) {
 	const choice = { ...state.choice, style };
-	return desk.render(keyFor(choice), compose(state.prepared, choice));
+	const key = keyFor(choice);
+	// compose() only for a document the desk does not have yet.
+	return desk.frames.has(key) ? desk.frames.get(key).ready : desk.render(key, compose(state.prepared, choice));
 }
 
 function renderPicksInBackground() {
@@ -152,10 +157,23 @@ async function showChoice() {
 	updatePageCounts();
 	updateLocks();
 	updateSummary();
+	const shown = { style: state.choice.style, locked: !!lockedPart() };
+	if (state.shown && (state.shown.style != shown.style || state.shown.locked != shown.locked)) deskToTop();
+	state.shown = shown;
 	// In a locked preview "Ready to print" counts what Print does: the printable choice, built if it is not yet.
 	if (lockedPart()) {
 		const free = { ...state.freeChoice };
 		desk.render(keyFor(free), compose(state.prepared, free)).then(() => updateSummary()).catch(() => {});
+	}
+}
+
+// A design switch (pick, row, tile, preview, back) opens at page 1: a shorter design never opens on empty space.
+function deskToTop() {
+	deskElement.scrollTop = 0;
+	// Under 860 px the page scrolls, not the desk: bring the top of the desk back when the reader is below it.
+	if (getComputedStyle(deskElement).overflowY == "visible") {
+		const top = deskElement.getBoundingClientRect().top + scrollY;
+		if (scrollY > top) scrollTo({ top });
 	}
 }
 
@@ -183,8 +201,10 @@ function renderPanel() {
 	panel.querySelector(".references-locked .locked-value").replaceChildren(REFERENCES.small.label, lockIcon(12));
 	panel.querySelector(".guest-line").hidden = !guest;
 	panel.querySelector(".straight-note").hidden = !settings.print.straightAway;
-	renderWho(panel.querySelector(".who"), state.account, settings.serverUrl);
+	renderWho(panel.querySelector(".who"), state.account, settings.serverUrl, { settings: true });
 	updateHelp();
+	// New tiles (after a sign-in) start from their sample pages again.
+	renderGalleryThumbnails();
 }
 
 // "Other designs": the picker's #2 and #3, plus the design on show when it is none of the top three.
@@ -246,15 +266,16 @@ function updateSummary() {
 	const minutes = state.prepared.facts.minutes;
 	document.querySelector(".summary").textContent = `${pages} ${PAPER[state.choice.paper].label} page${pages > 1 ? "s" : ""} · about ${minutes} minute${minutes > 1 ? "s" : ""} to read`;
 	document.querySelector(".print-label").textContent = `Print ${pages} page${pages > 1 ? "s" : ""}`;
+	// Two-sided is the print window's switch (D3): said once, before the print, when there is a second page.
+	document.querySelector(".duplex-hint").hidden = pages <= 1 || !!lockedPart();
 }
 
-// A locked preview: the row or tile gets an ink edge, the desk shows a banner, and the footer offers the door and the pick.
+// A locked preview: the row or tile gets an ink edge, the desk shows a banner, and the footer holds one step: the door.
 function updateLocks() {
 	const locked = lockedPart();
 	document.body.classList.toggle("is-previewing", !!locked);
 	document.querySelectorAll("[data-previewing]").forEach(element => element.removeAttribute("data-previewing"));
 	const banner = document.querySelector(".desk-banner");
-	const back = backTarget();
 	if (locked) {
 		const selector = locked.kind == "design" ? `.pick[data-style="${locked.value}"], .tile[data-style="${locked.value}"]` : `[data-name=${locked.name}] label[data-value="${locked.value}"]`;
 		document.querySelectorAll(selector).forEach(element => element.setAttribute("data-previewing", ""));
@@ -262,9 +283,7 @@ function updateLocks() {
 		const pages = desk.current.pages;
 		banner.querySelector(".banner-text .long").textContent = `Previewing ${locked.label}, ${pages} page${pages > 1 ? "s" : ""}. It needs a free account.`;
 		banner.querySelector(".banner-text .short").textContent = `Previewing ${locked.label} · needs a free account`;
-		banner.querySelector(".banner-back").textContent = `Back to ${back}`;
 		document.querySelector(".continue-button").textContent = locked.kind == "design" ? `Continue with email to print ${locked.label}` : "Continue with email to print it";
-		document.querySelector(".print-pick-label").textContent = `Print ${DESIGNS[state.freeChoice.style].name} now`;
 		document.querySelector(".locked-note").textContent = locked.kind == "design" ? "Free. No card. We keep this design for you." : "Free. No card. We keep this choice for you.";
 	} else {
 		state.freeChoice = { ...state.choice };
@@ -277,13 +296,6 @@ function updateLocks() {
 	updateHelp(locked);
 }
 
-// The name the banner goes back to: the design, or for an option its free value.
-function backTarget() {
-	const locked = lockedPart();
-	if (!locked || locked.kind == "design") return DESIGNS[state.freeChoice.style].name;
-	return locked.name == "pictures" ? PICTURES[state.freeChoice.pictures].label : REFERENCES[state.freeChoice.references].label;
-}
-
 async function backToFree() {
 	closeDoor();
 	state.choice = { ...state.freeChoice };
@@ -293,7 +305,7 @@ async function backToFree() {
 
 // Radios follow state.choice (after a back, a sign-in or a preview from the gallery).
 function syncControls() {
-	document.querySelectorAll("input[name=design]").forEach(input => input.checked = input.value == state.choice.style);
+	document.querySelectorAll("input[name=design], input[name=gallery-design]").forEach(input => input.checked = input.value == state.choice.style);
 	renderOthers();
 	setRadio(panel.querySelector("[data-name=pictures]"), state.choice.pictures);
 	setRadio(panel.querySelector("[data-name=paper]"), state.choice.paper);
@@ -302,11 +314,10 @@ function syncControls() {
 }
 
 // A design from the panel or the gallery. A locked one, by mouse or keyboard, only previews: printing it goes
-// through the door (printNow refuses it).
-async function chooseDesign(style, { fromGallery = false } = {}) {
+// through the door (printNow refuses it). The gallery stays open: it is a strip above the desk, not a swap.
+async function chooseDesign(style) {
 	if (!isOpen("design", style)) state.lockedClicked = true;
 	state.choice.style = style;
-	closeGallery({ focusRow: fromGallery ? style : null });
 	syncControls();
 	await showChoice();
 	// A door for another design would now be wrong; a sign-in already under way carries on.
@@ -326,6 +337,7 @@ document.addEventListener("change", async event => {
 		if (isOpen(target.name, target.value)) state.freeChoice[target.name] = target.value;
 		await showChoice();
 		state.picks.forEach(pick => renderDesign(pick.style).then(updatePageCounts).catch(() => {}));
+		renderGalleryThumbnails();
 		// Printer facts are remembered without asking; a locked value never is.
 		if ((target.name == "pictures" || target.name == "paper") && isOpen(target.name, target.value)) {
 			state.settings = { ...state.settings, print: { ...state.settings.print, [target.name]: target.value } };
@@ -341,10 +353,6 @@ document.querySelector(".banner-back").addEventListener("click", async () => {
 // The locked footer's ink pill is the door's email step: no second card asks again.
 document.querySelector(".continue-button").addEventListener("click", () => openDoorForLocked({ start: "email" }));
 document.querySelector(".continue-google").addEventListener("click", () => openDoorForLocked({ start: "google" }));
-document.querySelector(".print-pick-button").addEventListener("click", async () => {
-	await backToFree();
-	printNow();
-});
 document.querySelector(".lock-continue").addEventListener("click", () => openDoor({ kind: "design", design: state.choice.style }, "account"));
 document.querySelector(".references-locked").addEventListener("click", () => {
 	state.lockedClicked = true;
@@ -360,37 +368,78 @@ document.querySelector(".show-page-next").addEventListener("click", async () => 
 
 document.querySelectorAll("input[name=view]").forEach(input => input.addEventListener("change", () => desk.setSpread(input.value == "spread" && input.checked)));
 
-// Gallery: all 11 designs over the desk, not a longer panel.
+// Gallery: a strip of all 11 designs pinned on top of the desk. The pages below show the tile you choose, at real
+// size; the footer follows it (Print for an open design, the door for a locked one). Close or Escape keeps that design.
 
 const galleryToggle = document.querySelector(".all-toggle");
+const galleryGrid = gallery.querySelector(".gallery-grid");
 function openGallery() {
 	gallery.querySelectorAll("input[name=gallery-design]").forEach(input => input.checked = input.value == state.choice.style);
+	if (document.body.classList.contains("sheet-open")) setSheet(false);
 	gallery.hidden = false;
 	galleryToggle.setAttribute("aria-expanded", "true");
 	(gallery.querySelector("input:checked") || gallery.querySelector("input")).focus();
+	renderGalleryThumbnails();
 }
-function closeGallery({ focusRow } = {}) {
+function closeGallery({ focus = true } = {}) {
 	if (gallery.hidden) return;
 	gallery.hidden = true;
 	galleryToggle.setAttribute("aria-expanded", "false");
-	requestAnimationFrame(() => {
-		const row = focusRow && document.querySelector(`.panel input[name=design][value="${focusRow}"]`);
-		(row || galleryToggle).focus();
-	});
+	if (!focus) return;
+	// Back to the row of the design on show, else the toggle; under 860 px both are in the closed sheet: Print.
+	const shown = element => element && element.checkVisibility({ visibilityProperty: true });
+	const row = document.querySelector(`.panel input[name=design][value="${state.choice.style}"]`);
+	const card = row && row.closest(".pick");
+	(shown(card) ? row : shown(galleryToggle) ? galleryToggle : printButton).focus();
 }
 galleryToggle.addEventListener("click", () => gallery.hidden ? openGallery() : closeGallery());
 document.querySelector(".gallery-close").addEventListener("click", () => closeGallery());
-// A click on a tile chooses it. The click Chrome sends to the radio itself (also for arrow keys) is left alone.
-gallery.querySelector(".gallery-grid").addEventListener("click", event => {
+// A click on a tile chooses it. The click Chrome sends to the radio itself is left alone.
+galleryGrid.addEventListener("click", event => {
 	const tile = event.target.closest(".tile");
-	if (tile && !event.target.matches("input")) chooseDesign(tile.dataset.style, { fromGallery: true });
+	if (tile && !event.target.matches("input")) chooseDesign(tile.dataset.style);
 });
-gallery.querySelector(".gallery-grid").addEventListener("keydown", event => {
-	if ((event.key == "Enter" || event.key == " ") && event.target.matches("input[name=gallery-design]")) {
+// Arrow keys move the focus along the strip without choosing (the checked tile stays the design on show);
+// Enter or Space chooses.
+galleryGrid.addEventListener("keydown", event => {
+	if (!event.target.matches("input[name=gallery-design]")) return;
+	const inputs = Array.from(galleryGrid.querySelectorAll("input[name=gallery-design]"));
+	const index = inputs.indexOf(event.target);
+	const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+	if (step) {
 		event.preventDefault();
-		chooseDesign(event.target.value, { fromGallery: true });
+		inputs[(index + step + inputs.length) % inputs.length].focus();
+	} else if (event.key == "Home" || event.key == "End") {
+		event.preventDefault();
+		inputs[event.key == "Home" ? 0 : inputs.length - 1].focus();
+	} else if (event.key == "Enter" || event.key == " ") {
+		event.preventDefault();
+		chooseDesign(event.target.value);
 	}
 });
+
+// The tiles show page 1 of this article in each design. The designs are built one after another while the strip is
+// open, each when the page has a moment to spare; a tile keeps its sample page until its document exists.
+let galleryRun = null;
+function renderGalleryThumbnails() {
+	if (galleryRun || gallery.hidden || !state.prepared) return galleryRun;
+	const keyOf = tile => keyFor({ ...state.choice, style: tile.dataset.style });
+	const pending = () => Array.from(galleryGrid.querySelectorAll(".tile")).find(tile => tile.dataset.thumbKey != keyOf(tile));
+	galleryRun = (async () => {
+		let tile;
+		while (!gallery.hidden && (tile = pending())) {
+			await new Promise(resolve => requestIdleCallback(resolve, { timeout: 400 }));
+			const key = keyOf(tile);
+			const frame = await renderDesign(tile.dataset.style).catch(() => null);
+			// Marked even without a picture, so a design that cannot build is not tried again and again.
+			tile.dataset.thumbKey = key;
+			const width = Math.round(tile.querySelector(".thumb").getBoundingClientRect().width);
+			const thumb = frame && width && keyOf(tile) == key && desk.thumbnail(frame, width);
+			if (thumb) setThumbnail(tile, thumb);
+		}
+	})().finally(() => galleryRun = null);
+	return galleryRun;
+}
 
 // Under 860 px: a sticky bar with Print and "Design & paper", which opens the same blocks as a bottom sheet.
 
@@ -436,10 +485,16 @@ async function printNow({ straightAway = false, kind = "print" } = {}) {
 	state.busy = true;
 	printButton.setAttribute("aria-busy", "true");
 	try {
+		if (kind == "pdf") {
+			// Only for those who asked for a PDF, and only while the print window is open: it has no PDF button of its own.
+			pdfHint.hidden = false;
+			await nextPaint();
+		}
 		await desk.print();
 	} finally {
 		state.busy = false;
 		printButton.removeAttribute("aria-busy");
+		pdfHint.hidden = true;
 	}
 	const facts = state.prepared.facts || {};
 	const style = state.choice.style;
@@ -466,6 +521,14 @@ async function printNow({ straightAway = false, kind = "print" } = {}) {
 	await showDone(kind, { style, pages, screens });
 }
 
+// The print window blocks the page while it is open: let a change show first.
+function nextPaint() {
+	return new Promise(resolve => {
+		requestAnimationFrame(() => setTimeout(resolve, 0));
+		setTimeout(resolve, 120);
+	});
+}
+
 // The canonical address the paper and the print log use (C-2), with the article's own address as the fallback.
 function printURL() {
 	return (state.prepared.man && state.prepared.man.printURL) || state.article.printURL || state.article.url;
@@ -483,6 +546,7 @@ async function showDone(kind, { style, pages, screens }) {
 	if (state.done) state.done.close();
 	closeDoor();
 	setSheet(false);
+	closeGallery({ focus: false });
 	document.body.classList.add("is-done");
 	doneElement.hidden = false;
 	state.done = done.showDone(doneElement, {

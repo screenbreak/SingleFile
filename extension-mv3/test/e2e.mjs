@@ -92,6 +92,30 @@ try {
 	assert.notEqual(pickStyle, "riso");
 	assert.ok(printed.style.includes("style-" + pickStyle));
 	assert.equal(await printPage.locator("input[name=pictures]:checked").getAttribute("value"), "colour");
+	// The head links to Settings in a new tab, before "Log in" and in the same size.
+	assert.deepEqual(await printPage.evaluate(() => {
+		const [settings, login] = document.querySelectorAll(".who a");
+		return { text: settings.textContent, href: settings.getAttribute("href"), target: settings.target, next: login.textContent, same: getComputedStyle(settings).fontSize == getComputedStyle(login).fontSize };
+	}), { text: "Settings", href: "options.html", target: "_blank", next: "Log in", same: true });
+	// Two-sided is said before the print, under Print, when there is a second page. The PDF line waits for its link.
+	assert.equal(await printPage.locator(".duplex-hint").isVisible(), printed.pages > 1);
+	if (printed.pages > 1) assert.equal(await printPage.locator(".duplex-hint").textContent(), "To print on both sides, turn on Two-sided in the print window.");
+	assert.equal(await printPage.locator(".pdf-hint").isHidden(), true);
+	// The pick's green edge shows while the pick is on the desk.
+	const SIGNAL = "rgb(75, 155, 111)";
+	const pickedEdge = () => printPage.evaluate(() => getComputedStyle(document.querySelector(".pick.picked")).borderTopColor);
+	assert.equal(await pickedEdge(), SIGNAL);
+	// The desk is as tall as the design on show: hidden documents keep no size, and scrolling ends at the last page.
+	const deskFit = () => printPage.evaluate(() => {
+		const desk = document.querySelector(".desk");
+		const shown = document.querySelector(".sheet-holder.shown");
+		const hidden = Array.from(document.querySelectorAll(".sheet-holder:not(.shown)"));
+		const sheets = document.querySelector(".sheets");
+		const end = document.querySelector(".desk-top").offsetHeight + shown.offsetHeight + parseFloat(getComputedStyle(sheets).paddingBottom);
+		return { hiddenSized: hidden.filter(holder => holder.offsetWidth || holder.offsetHeight).length, overshoot: Math.max(0, desk.scrollHeight - Math.max(end, desk.clientHeight)) };
+	});
+	const deskTop = () => printPage.evaluate(() => document.querySelector(".desk").scrollTop);
+	const scrollDeskDown = () => printPage.evaluate(() => document.querySelector(".desk").scrollTop = 1e6);
 	// The picked card shows page 1 of this article once it is built.
 	await printPage.locator(".pick.picked .thumb.live iframe").waitFor({ state: "attached", timeout: 30000 });
 	// So do the other designs' rows once their documents are built, and a locked row keeps its corner chip.
@@ -100,15 +124,26 @@ try {
 	// Locked preview: a locked design shows on the desk, the banner says so, and the footer swaps to the door.
 	const lockedRow = printPage.locator(".others .pick[data-locked]").first();
 	const lockedStyle = await lockedRow.getAttribute("data-style");
+	// A design switch opens at page 1, wherever the reader was.
+	await scrollDeskDown();
 	await lockedRow.click();
 	await printPage.waitForFunction(style => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-" + style), lockedStyle);
 	await printPage.locator(".desk-banner:not([hidden])").waitFor();
+	assert.equal(await deskTop(), 0);
 	assert.match(await printPage.locator(".banner-text .long").textContent(), /^Previewing .+, \d+ pages?\. It needs a free account\.$/);
+	// The banner's pill closes the preview; it never names a design out of context.
+	assert.equal(await printPage.locator(".banner-back").textContent(), "Close preview");
+	// One selection at a time: the previewed row has the ink edge, the pick loses its green one.
+	assert.notEqual(await pickedEdge(), SIGNAL);
+	assert.equal(await printPage.locator(".duplex-hint").isHidden(), true);
 	// "Ready to print" keeps what Print does: the pick's page count, not the preview's.
 	assert.match(await printPage.locator(".summary").textContent(), new RegExp(`^${printed.pages} A4 pages? `));
 	assert.equal(await printPage.locator(".act-print").isHidden(), true);
 	assert.match(await printPage.locator(".continue-button").textContent(), /^Continue with email to print /);
-	assert.match(await printPage.locator(".print-pick-label").textContent(), /^Print .+ now$/);
+	// The locked footer is one step: the ink pill, the Google link and the line under it. No second print pill.
+	assert.equal(await printPage.locator(".print-pick-button").count(), 0);
+	assert.deepEqual(await printPage.locator(".actions").evaluate(actions => Array.from(actions.querySelectorAll("button, a, p")).filter(element => element.checkVisibility()).map(element => element.textContent.trim())),
+		[await printPage.locator(".continue-button").textContent(), "Continue with Google", "Free. No card. We keep this design for you."]);
 	assert.ok(await lockedRow.evaluate(row => row.hasAttribute("data-previewing")));
 	// Cmd/Ctrl+P follows the main pill: the door card, never a print of the locked design.
 	await printPage.keyboard.press("Control+p");
@@ -125,6 +160,8 @@ try {
 	assert.equal(await door.count(), 0);
 	assert.ok((await deskStyle(printPage)).includes("style-" + pickStyle));
 	await printPage.waitForFunction(() => document.activeElement && document.activeElement.matches(".print-button"));
+	assert.equal(await pickedEdge(), SIGNAL);
+	assert.deepEqual(await deskFit(), { hiddenSized: 0, overshoot: 0 });
 
 	// Keys pressed inside the desk frame reach the page: Ctrl+P opens the door, never the print dialog of the locked
 	// design, and a native print from the frame would print nothing while the preview shows.
@@ -146,29 +183,55 @@ try {
 	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
 	assert.equal(await printPage.locator("input[name=pictures]:checked").getAttribute("value"), "colour");
 
-	// The gallery: all 11 designs over the desk; a locked tile previews. By keyboard the current design is checked,
-	// arrow keys move inside the gallery only, and Enter chooses.
+	// The gallery: a strip of all 11 designs pinned on top of the desk, with the panel still beside it. By keyboard the
+	// current design is checked, arrow keys move the focus along the strip without choosing, and Enter chooses.
+	const strip = printPage.locator(".desk-top .gallery");
+	const checkedTile = () => printPage.locator(".gallery input:checked").getAttribute("value");
 	await printPage.click(".all-toggle");
+	await strip.waitFor();
 	assert.equal(await printPage.locator(".gallery .tile").count(), 11);
 	assert.equal(await printPage.locator(".gallery .tile[data-locked]").count(), 10);
+	assert.equal(await printPage.locator(".print-button").isVisible(), true);
 	assert.equal(await printPage.evaluate(() => document.activeElement.value), pickStyle);
+	// The tiles show page 1 of this article, built one after another in the background.
+	await printPage.waitForFunction(() => document.querySelectorAll(".gallery .tile .thumb.live .thumb-live").length == 11, null, { timeout: 90000 });
+	assert.equal(await printPage.locator(".gallery .tile[data-locked] .thumb.live .lock-chip").count(), 10);
 	await printPage.keyboard.press("ArrowRight");
-	assert.equal(await printPage.locator(".gallery").isVisible(), true);
 	assert.ok((await deskStyle(printPage)).includes("style-" + pickStyle));
 	const arrowed = await printPage.evaluate(() => document.activeElement.value);
 	assert.notEqual(arrowed, pickStyle);
+	assert.equal(await checkedTile(), pickStyle);
+	await scrollDeskDown();
 	await printPage.keyboard.press("Enter");
 	await printPage.waitForFunction(style => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-" + style), arrowed);
-	assert.equal(await printPage.locator(".gallery").isHidden(), true);
+	assert.equal(await strip.isVisible(), true);
+	assert.equal(await checkedTile(), arrowed);
+	assert.equal(await deskTop(), 0);
+	assert.equal(await printPage.locator(".act-locked").isVisible(), true);
+	assert.notEqual(await pickedEdge(), SIGNAL);
+	// A click on a tile shows it below; the pick's tile brings Print back.
+	await printPage.locator(".gallery .tile", { hasText: "Riso zine" }).click();
+	await printPage.waitForFunction(() => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-riso"));
+	assert.equal(await strip.isVisible(), true);
+	assert.match(await printPage.locator(".banner-text .long").textContent(), /^Previewing Riso zine, /);
+	await printPage.locator(`.gallery .tile[data-style="${pickStyle}"]`).click();
+	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
+	assert.equal(await printPage.locator(".act-print").isVisible(), true);
+	assert.equal(await pickedEdge(), SIGNAL);
+	assert.deepEqual(await deskFit(), { hiddenSized: 0, overshoot: 0 });
+	// Close keeps the design that was on show; Escape closes the strip too.
+	await printPage.locator(".gallery .tile", { hasText: "Riso zine" }).click();
+	await printPage.locator(".desk-banner:not([hidden])").waitFor();
+	await printPage.click(".gallery-close");
+	await strip.waitFor({ state: "hidden" });
+	assert.ok((await deskStyle(printPage)).includes("style-riso"));
 	await printPage.click(".banner-back");
 	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
 	await printPage.click(".all-toggle");
-	await printPage.locator(".gallery .tile", { hasText: "Riso zine" }).click();
-	await printPage.waitForFunction(() => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-riso"));
-	assert.equal(await printPage.locator(".gallery").isHidden(), true);
-	assert.match(await printPage.locator(".banner-text .long").textContent(), /^Previewing Riso zine, /);
-	await printPage.click(".banner-back");
-	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
+	await strip.waitFor();
+	await printPage.keyboard.press("Escape");
+	await strip.waitFor({ state: "hidden" });
+	assert.ok((await deskStyle(printPage)).includes("style-" + pickStyle));
 
 	// Paper is open to a guest and remembered silently; duplex is gone from the stored settings.
 	await printPage.locator("[data-name=paper] label[data-value=Letter]").click();
@@ -177,6 +240,22 @@ try {
 	assert.equal(stored.print.paper, "Letter");
 	assert.equal(stored.print.pictures, "ink", "a guest's preview never overwrites an account's stored choice");
 	assert.ok(!("duplex" in stored.print));
+
+	// Save as PDF: one help line under the link, only while its print window is open.
+	await printPage.evaluate(() => {
+		const win = document.querySelector(".sheet-holder.shown iframe").contentWindow;
+		const print = win.print;
+		win.print = () => {
+			window.pdfHintShown = document.querySelector(".pdf-hint").checkVisibility() && document.querySelector(".pdf-hint").textContent;
+			win.print = print;
+		};
+	});
+	await printPage.click(".pdf-button");
+	await printPage.locator(".panel-body > .done:not([hidden])").waitFor();
+	assert.equal(await printPage.evaluate(() => window.pdfHintShown), "In the print window, set Destination to Save as PDF.");
+	assert.equal(await printPage.locator(".pdf-hint").isHidden(), true);
+	await printPage.locator(".done .link-button", { hasText: "Change something" }).click();
+	await printPage.locator(".actions").waitFor();
 
 	// Print: no counter is written; the done state shows when done.js is in this build.
 	await printPage.click(".print-button");
@@ -283,10 +362,21 @@ try {
 	assert.equal(await accountPage.locator("[data-locked]").count(), 0);
 	assert.equal(await accountPage.locator(".guest-line").isHidden(), true);
 	assert.equal(await accountPage.locator(".locked-group").isHidden(), true);
-	assert.equal(await accountPage.locator(".who a").textContent(), "Reader");
+	assert.deepEqual(await accountPage.locator(".who a").allTextContents(), ["Settings", "Reader"]);
 	await accountPage.locator("[data-name=pictures] label[data-value=ink]").click();
 	await accountPage.waitForFunction(() => document.querySelector(".summary").textContent);
 	assert.equal(await accountPage.locator(".desk-banner").isHidden(), true);
+	// A design with more than one page: the two-sided line shows under Print, and the pick loses its green edge.
+	const longer = accountPage.locator(".others .pick").first();
+	const longerStyle = await longer.getAttribute("data-style");
+	await longer.click();
+	await accountPage.waitForFunction(style => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-" + style), longerStyle);
+	const longerPages = await accountPage.evaluate(() => document.querySelector(".sheet-holder.shown iframe").contentDocument.querySelectorAll(".page").length);
+	assert.ok(longerPages > 1, "the first other design runs to more than one page");
+	assert.equal(await accountPage.locator(".duplex-hint").isVisible(), true);
+	assert.equal(await accountPage.locator(".duplex-hint").textContent(), "To print on both sides, turn on Two-sided in the print window.");
+	assert.equal(await accountPage.locator(".print-label").textContent(), `Print ${longerPages} pages`);
+	assert.notEqual(await accountPage.evaluate(() => getComputedStyle(document.querySelector(".pick.picked")).borderTopColor), SIGNAL);
 	await accountPage.close();
 	me = null;
 
