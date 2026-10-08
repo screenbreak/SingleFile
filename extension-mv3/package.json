@@ -1,0 +1,39 @@
+{
+	"name": "screenbreak-extension",
+	"version": "2.0.0",
+	"private": true,
+	"description": "Screenbreak browser extension (Manifest V3): save an article to Screenbreak or print it at home",
+	"license": "AGPL-3.0-or-later",
+	"type": "module",
+	"scripts": {
+		"build": "node build.mjs",
+		"zip": "node build.mjs && cd dist && zip -qr ../screenbreak-extension-chromium.zip .",
+		"test": "node test/e2e.mjs"
+	},
+	"dependencies": {
+		"@mozilla/readability": "^0.6.0",
+		"qrcode": "^1.5.4",
+		"single-file-core": "^1.6.24"
+	},
+	"devDependencies": {
+		"@fontsource-variable/work-sans": "^5.3.0",
+		"@fontsource/atkinson-hyperlegible": "^5.3.0",
+		"@fontsource/crimson-pro": "^5.3.0",
+		"@fontsource/eb-garamond": "^5.3.0",
+		"@fontsource/fraunces": "^5.3.0",
+		"@fontsource/ibm-plex-mono": "^5.3.0",
+		"@fontsource/ibm-plex-sans": "^5.3.0",
+		"@fontsource/inter": "^5.3.0",
+		"@fontsource/libre-franklin": "^5.3.0",
+		"@fontsource/literata": "^5.3.0",
+		"@fontsource/newsreader": "^5.3.0",
+		"@fontsource/oswald": "^5.3.0",
+		"@fontsource/source-sans-3": "^5.3.0",
+		"@fontsource/source-serif-4": "^5.3.0",
+		"@fontsource/space-grotesk": "^5.3.0",
+		"@fontsource/trirong": "^5.3.0",
+		"@fontsource/work-sans": "^5.3.0",
+		"esbuild": "^0.25.0",
+		"playwright": "^1.55.0"
+	}
+}

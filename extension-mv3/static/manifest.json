@@ -1,0 +1,45 @@
+{
+	"manifest_version": 3,
+	"name": "Screenbreak",
+	"version": "2.0.0",
+	"description": "Save articles to your Screenbreak account, or print them beautifully at home.",
+	"icons": {
+		"16": "icons/icon_16.png",
+		"48": "icons/icon_48.png",
+		"64": "icons/icon_64.png",
+		"128": "icons/icon_128.png"
+	},
+	"background": {
+		"service_worker": "background.js"
+	},
+	"action": {
+		"default_icon": {
+			"16": "icons/icon_16.png",
+			"48": "icons/icon_48.png",
+			"64": "icons/icon_64.png",
+			"128": "icons/icon_128.png"
+		},
+		"default_title": "Screenbreak"
+	},
+	"options_ui": {
+		"page": "options.html",
+		"open_in_tab": true
+	},
+	"commands": {
+		"save-page": {
+			"suggested_key": { "default": "Ctrl+Shift+Y" },
+			"description": "Save this article to Screenbreak"
+		},
+		"print-page": {
+			"suggested_key": { "default": "Alt+Shift+P" },
+			"description": "Print this article"
+		}
+	},
+	"web_accessible_resources": [{
+		"resources": ["fonts/WorkSans-latin.woff2", "fonts/Trirong-Medium.ttf"],
+		"matches": ["<all_urls>"],
+		"use_dynamic_url": true
+	}],
+	"permissions": ["activeTab", "scripting", "storage", "contextMenus"],
+	"host_permissions": ["<all_urls>"]
+}
