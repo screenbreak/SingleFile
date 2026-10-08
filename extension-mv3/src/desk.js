@@ -11,6 +11,16 @@ function blockPrint(entry, blocked) {
 	}
 }
 
+// The height of the pages themselves. The document's scrollHeight never drops below the frame's own height, so a
+// frame that was once taller (a spread switched off, the 1200 px it is built in) would keep empty space under the pages.
+function contentHeight(doc) {
+	const book = doc && doc.getElementById("book");
+	if (book) {
+		return Math.ceil(book.getBoundingClientRect().bottom + doc.defaultView.scrollY);
+	}
+	return doc && doc.body ? doc.body.scrollHeight : 0;
+}
+
 export class Desk {
 	constructor(element) {
 		this.element = element;
@@ -58,7 +68,9 @@ export class Desk {
 	async show(key, doc) {
 		const entry = await this.render(key, doc);
 		if (this.current && this.current != entry) {
+			// A hidden holder keeps no size: its old width and height would stretch the desk past the last page.
 			this.current.holder.classList.remove("shown");
+			this.current.holder.style.width = this.current.holder.style.height = "";
 			blockPrint(this.current, false);
 		}
 		this.current = entry;
@@ -93,7 +105,7 @@ export class Desk {
 		const naturalWidth = across * (entry.pageWidth || PAGE_WIDTH) + (across - 1) * 18 + 2 * PAD;
 		const available = this.element.clientWidth;
 		const scale = Math.min(1, available / naturalWidth);
-		const height = entry.iframe.contentDocument ? entry.iframe.contentDocument.documentElement.scrollHeight : 0;
+		const height = contentHeight(entry.iframe.contentDocument);
 		entry.iframe.style.width = naturalWidth + "px";
 		entry.iframe.style.height = height + "px";
 		entry.iframe.style.transform = `scale(${scale})`;
