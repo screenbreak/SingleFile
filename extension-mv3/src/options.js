@@ -223,7 +223,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 form.addEventListener("change", async event => {
 	const target = event.target;
-	if (target.name == "view" || target.name == "giftRemember") {
+	if (target.name == "view") {
 		return;
 	}
 	const settings = await getSettings();

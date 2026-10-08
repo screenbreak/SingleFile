@@ -48,7 +48,7 @@ function check(surface, measures, name, selectors, expected) {
 }
 
 // The panel's text edges at 1280: section text at x = 24, card and row text at x = 112 (2 px edge + 10 px padding + 64 px thumbnail column + 12 px).
-const PANEL_EDGE = [".panel-head .wordmark", ".intro h1", ".summary", "#picked-heading", "#others-heading", ".all-toggle", "#pictures-label", "[data-name=pictures]", "#paper-label", ".gift-toggle", ".print-button", ".pdf-button"];
+const PANEL_EDGE = [".panel-head .wordmark", ".intro h1", ".summary", "#picked-heading", "#others-heading", ".all-toggle", "#pictures-label", "[data-name=pictures]", "#paper-label", ".print-button", ".pdf-button"];
 const GUEST_EDGE = [".guest-line", "#locked-heading", ".lock-line"];
 const CARD_EDGE = [".pick.picked .name", ".pick.picked .why", ".pick.picked .pages", ".others .pick .name", ".others .pick .why"];
 
@@ -134,12 +134,6 @@ try {
 	await sleep(500);
 	await shoot(guest, "07-guest-gallery.png");
 	await guest.keyboard.press("Escape");
-	// Gift line
-	await guest.click(".gift-toggle");
-	await guest.fill("#gift-for", "Maria");
-	await guest.fill("#gift-from", "Yorgos");
-	await sleep(1200);
-	await shoot(guest, "08-guest-gift.png", { clip: { x: 1280 - 392, y: 0, width: 392, height: 900 } });
 	// Done state (only when done.js is in this build)
 	await guest.click(".print-button");
 	await sleep(1200);
@@ -159,9 +153,9 @@ try {
 	await narrow.click(".sheet-toggle");
 	await sleep(400);
 	await shoot(narrow, "11-guest-390-sheet.png");
-	const sheetMeasures = await narrow.evaluate(MEASURE, { container: "body", selectors: [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", ".gift-toggle", "#locked-heading", ".lock-line"] });
+	const sheetMeasures = await narrow.evaluate(MEASURE, { container: "body", selectors: [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", "#locked-heading", ".lock-line"] });
 	report.alignment.sheet = sheetMeasures;
-	check("guest 390 sheet", sheetMeasures, "sheet text edge x16", [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", ".gift-toggle", "#locked-heading", ".lock-line"], 16);
+	check("guest 390 sheet", sheetMeasures, "sheet text edge x16", [".sheet-head h2", "#picked-heading", "#others-heading", "#pictures-label", "#paper-label", "#locked-heading", ".lock-line"], 16);
 	await narrow.locator(".blocks .others .pick[data-locked]").first().click();
 	await narrow.locator(".desk-banner:not([hidden])").waitFor();
 	await narrow.click(".sheet-close");

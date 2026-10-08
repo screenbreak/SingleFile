@@ -142,14 +142,6 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 .locked-value { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; font-size: 13px; }
 .locked-row:hover .locked-name { color: var(--ink); }
 
-/* Gift line */
-.gift { display: grid; gap: 10px; }
-.gift-toggle { justify-self: start; font-size: 13.5px; }
-.gift-fields { display: grid; gap: 8px; }
-.gift-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 8px; }
-.gift-row input { width: 100%; height: 34px; padding: 0 10px; font: 400 14px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-.gift-row input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
-
 /* Action footer: sticky at the bottom of the panel at every width. */
 .actions { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; padding: 14px 24px 16px; background: var(--bg); border-top: 1px solid var(--line); }
 .act-print, .act-locked { display: grid; gap: 8px; }

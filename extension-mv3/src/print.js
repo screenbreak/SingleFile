@@ -14,7 +14,6 @@ import { fillSegmented, setRadio, pickedCard, pickRow, designTile, setThumbnail,
 
 const MIN_ARTICLE_TEXT = 140;
 const THUMB_WIDTH = 64;
-const GIFT_FROM_KEY = "sbGiftFrom";
 const INK_LOCKED_HELP = "Ink saver prints photos as light dots. It comes with a free account.";
 const REFERENCES_LOCKED_HELP = "Reference list comes with a free account.";
 
@@ -120,9 +119,9 @@ function intentFor(locked) {
 		: { kind: "option", option: { name: locked.name, value: locked.value }, ...base };
 }
 
-// Documents are kept per design and per picture, reference, paper and gift setting.
-function keyFor({ style, pictures, references, paper, gift }) {
-	return [style, pictures, references, paper, gift ? gift.for + "\u0001" + gift.from : ""].join("|");
+// Documents are kept per design and per picture, reference and paper setting.
+function keyFor({ style, pictures, references, paper }) {
+	return [style, pictures, references, paper].join("|");
 }
 
 function renderDesign(style) {
@@ -265,7 +264,7 @@ function backTarget() {
 
 async function backToFree() {
 	closeDoor();
-	state.choice = { ...state.freeChoice, gift: state.choice.gift };
+	state.choice = { ...state.freeChoice };
 	syncControls();
 	await showChoice();
 }
@@ -356,51 +355,6 @@ function setSheet(open) {
 }
 sheetToggle.addEventListener("click", () => setSheet(!document.body.classList.contains("sheet-open")));
 document.querySelector(".sheet-close").addEventListener("click", () => setSheet(false));
-
-// Gift line (D4): "Printed for Maria, from Yorgos" in the page-1 top margin. The names never leave this computer.
-
-const giftToggle = document.querySelector(".gift-toggle");
-const giftFields = document.querySelector(".gift-fields");
-const giftFor = document.querySelector("#gift-for");
-const giftFrom = document.querySelector("#gift-from");
-const giftRemember = document.querySelector("input[name=giftRemember]");
-let giftTimer;
-chrome.storage.local.get(GIFT_FROM_KEY).then(({ [GIFT_FROM_KEY]: from }) => {
-	if (from) {
-		giftFrom.value = from;
-		giftRemember.checked = true;
-	}
-}).catch(() => {});
-giftToggle.addEventListener("click", () => {
-	const open = giftFields.hidden;
-	giftFields.hidden = !open;
-	giftToggle.setAttribute("aria-expanded", String(open));
-	if (open) giftFor.focus();
-	updateGift();
-});
-for (const input of [giftFor, giftFrom]) {
-	input.addEventListener("input", () => {
-		clearTimeout(giftTimer);
-		giftTimer = setTimeout(updateGift, 450);
-		rememberFrom();
-	});
-}
-giftRemember.addEventListener("change", rememberFrom);
-function rememberFrom() {
-	const from = giftFrom.value.trim();
-	if (giftRemember.checked && from) chrome.storage.local.set({ [GIFT_FROM_KEY]: from }).catch(() => {});
-	else chrome.storage.local.remove(GIFT_FROM_KEY).catch(() => {});
-}
-async function updateGift() {
-	if (!state.choice) return;
-	const names = { for: giftFor.value.trim().slice(0, 30), from: giftFrom.value.trim().slice(0, 30) };
-	const gift = !giftFields.hidden && (names.for || names.from) ? names : undefined;
-	if (keyFor({ ...state.choice, gift }) == keyFor(state.choice)) return;
-	state.choice.gift = gift;
-	state.freeChoice.gift = gift;
-	await showChoice();
-	renderPicksInBackground();
-}
 
 // Printing
 
