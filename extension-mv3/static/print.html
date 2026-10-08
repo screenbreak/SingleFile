@@ -6,17 +6,31 @@
 	<title>Print · Screenbreak</title>
 	<link rel="stylesheet" href="ui.css">
 	<link rel="stylesheet" href="flow.css">
+	<link rel="stylesheet" href="done.css">
 </head>
 <body class="is-loading">
 	<section class="desk" aria-label="Print preview">
-		<div class="desk-bar">
-			<p class="source"><img class="favicon" alt="" width="16" height="16" hidden><strong class="source-title"></strong><span class="source-site"></span></p>
-			<div class="segmented view-toggle" role="radiogroup" aria-label="View">
-				<label><input type="radio" name="view" value="pages" checked><span>Pages</span></label>
-				<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
+		<div class="desk-top">
+			<div class="desk-bar">
+				<p class="source"><img class="favicon" alt="" width="16" height="16" hidden><strong class="source-title"></strong><span class="source-site"></span></p>
+				<div class="segmented view-toggle" role="radiogroup" aria-label="View">
+					<label><input type="radio" name="view" value="pages" checked><span>Pages</span></label>
+					<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
+				</div>
+			</div>
+			<div class="desk-banner" role="status" hidden>
+				<p class="banner-text"></p>
+				<button type="button" class="button button-outline button-small banner-back"></button>
 			</div>
 		</div>
 		<div class="sheets"></div>
+		<section class="gallery" id="gallery" aria-labelledby="gallery-title" hidden>
+			<div class="gallery-head">
+				<h2 id="gallery-title">All 11 designs</h2>
+				<button type="button" class="button button-outline button-small gallery-close">Close</button>
+			</div>
+			<div class="gallery-grid" role="radiogroup" aria-labelledby="gallery-title"></div>
+		</section>
 		<div class="wait" aria-live="polite">
 			<div class="wait-inner">
 				<div class="web" aria-hidden="true">
@@ -45,78 +59,94 @@
 			<div class="intro">
 				<h1>Ready to print</h1>
 				<p class="summary"></p>
+				<p class="guest-line" hidden>No sign-up needed. Print right away.</p>
 			</div>
 			<p class="straight-note" hidden>The button prints straight away. <button type="button" class="link-button show-page-next">Show this page next time</button></p>
+			<p class="signed-in-line" role="status" hidden></p>
 
-			<section class="sec" aria-labelledby="design-heading">
-				<div class="sec-h"><h2 id="design-heading">Design</h2><span class="help">Picked for this article</span></div>
-				<div class="picks" role="radiogroup" aria-labelledby="design-heading"></div>
-				<button type="button" class="link-button all-toggle" aria-expanded="false">See all designs</button>
-				<div class="design-grid" role="radiogroup" aria-label="All designs" hidden></div>
-			</section>
+			<div class="done" hidden></div>
+			<div class="door-slot door-slot-done" hidden></div>
 
-			<section class="sec" aria-labelledby="paper-heading">
-				<div class="sec-h"><h2 id="paper-heading">Paper and ink</h2></div>
-				<div class="opt">
-					<p class="lbl" id="paper-label">Paper</p>
-					<div class="segmented wide" role="radiogroup" aria-labelledby="paper-label" data-name="paper"></div>
+			<div class="blocks" id="design-and-paper">
+				<div class="sheet-head">
+					<h2>Design &amp; paper</h2>
+					<button type="button" class="button button-outline button-small sheet-close">Done</button>
 				</div>
-				<div class="opt">
-					<p class="lbl" id="pictures-label">Pictures</p>
-					<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
-					<p class="help pictures-help"></p>
-				</div>
-				<div class="opt references-opt" hidden>
-					<p class="lbl" id="references-label">Reference list</p>
-					<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
-					<p class="help references-help"></p>
-				</div>
-				<div class="opt-row">
-					<label class="switch duplex"><input type="checkbox" name="duplex" role="switch"><span class="track"></span>Print on both sides</label>
-				</div>
-			</section>
 
-			<div class="actions">
-				<button type="button" class="button print-button" disabled>
+				<section class="sec" aria-labelledby="picked-heading">
+					<p class="eyebrow" id="picked-heading">Picked for this article</p>
+					<div class="picks" role="radiogroup" aria-labelledby="picked-heading"></div>
+					<p class="sub" id="others-heading">Other designs</p>
+					<div class="others" role="radiogroup" aria-labelledby="others-heading"></div>
+					<button type="button" class="link-button all-toggle" aria-expanded="false" aria-controls="gallery">See all 11 designs</button>
+				</section>
+
+				<section class="sec" aria-label="Paper and pictures">
+					<div class="opt">
+						<p class="lbl" id="pictures-label">Pictures</p>
+						<div class="segmented wide" role="radiogroup" aria-labelledby="pictures-label" data-name="pictures"></div>
+						<p class="help pictures-help" aria-live="polite"></p>
+					</div>
+					<div class="opt">
+						<p class="lbl" id="paper-label">Paper</p>
+						<div class="segmented wide" role="radiogroup" aria-labelledby="paper-label" data-name="paper"></div>
+					</div>
+					<div class="opt references-opt" hidden>
+						<p class="lbl" id="references-label">Reference list</p>
+						<div class="segmented wide" role="radiogroup" aria-labelledby="references-label" data-name="references"></div>
+						<p class="help references-help"></p>
+					</div>
+					<div class="gift">
+						<button type="button" class="link-button gift-toggle" aria-expanded="false" aria-controls="gift-fields">Add a note for someone</button>
+						<div class="gift-fields" id="gift-fields" hidden>
+							<div class="gift-row">
+								<label class="lbl" for="gift-for">For</label>
+								<input type="text" id="gift-for" name="giftFor" maxlength="30" autocomplete="off" spellcheck="false" placeholder="Maria">
+							</div>
+							<div class="gift-row">
+								<label class="lbl" for="gift-from">From</label>
+								<input type="text" id="gift-from" name="giftFrom" maxlength="30" autocomplete="off" spellcheck="false" placeholder="Your name">
+							</div>
+							<label class="check"><input type="checkbox" name="giftRemember"><span>Remember 'From'</span></label>
+							<p class="help">Optional. It prints small at the top of page 1. It stays on this computer.</p>
+						</div>
+					</div>
+				</section>
+
+				<section class="sec locked-group" aria-labelledby="locked-heading" hidden>
+					<p class="eyebrow" id="locked-heading">With a free account</p>
+					<p class="lock-line" id="lock-line">All 11 designs and every option. Free, just an email. <button type="button" class="link-button lock-continue">Continue with email</button></p>
+					<button type="button" class="locked-row references-locked" hidden aria-describedby="lock-line">
+						<span class="locked-name">Reference list</span>
+						<span class="locked-value">Small type</span>
+					</button>
+				</section>
+			</div>
+		</div>
+
+		<div class="actions">
+			<div class="act-print">
+				<button type="button" class="button print-button">
 					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
 					<span class="print-label">Print</span>
 				</button>
-				<div class="secondary-row">
-					<button type="button" class="link-button pdf-button" disabled>Save as PDF</button>
-					<span class="help sheet-count"></span>
-				</div>
-				<p class="help duplex-hint" hidden>Turn on Two-sided under More settings in the print dialog.</p>
-				<div class="quota"></div>
-				<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
+				<button type="button" class="button button-outline sheet-toggle" aria-expanded="false" aria-controls="design-and-paper">Design &amp; paper</button>
 			</div>
-
-			<div class="remember">
-				<label class="remember-top"><input type="checkbox" name="remember"><span><strong>Remember these choices</strong><small>Use them for the next article too.</small></span></label>
-				<div class="remember-more" hidden>
-					<fieldset>
-						<legend>Design</legend>
-						<label class="radio"><input type="radio" name="rememberDesign" value="fixed"><span><span class="fixed-name"></span> for every article</span></label>
-						<label class="radio"><input type="radio" name="rememberDesign" value="best"><span>The best match for each article</span></label>
-					</fieldset>
-					<fieldset>
-						<legend>When I press the button</legend>
-						<label class="radio"><input type="radio" name="rememberMode" value="page"><span>Show me this page first</span></label>
-						<label class="radio"><input type="radio" name="rememberMode" value="straight"><span>Print straight away<small>Right-click the button any time to come back here.</small></span></label>
-					</fieldset>
-				</div>
+			<div class="act-locked" hidden>
+				<button type="button" class="button button-ink continue-button"></button>
+				<button type="button" class="button button-outline print-pick-button">
+					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
+					<span class="print-pick-label"></span>
+				</button>
+				<p class="help locked-note">Free. No card. We keep this design for you.</p>
 			</div>
-
-			<div class="account"></div>
+			<div class="secondary-row">
+				<button type="button" class="link-button pdf-button">Save as PDF</button>
+			</div>
+			<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
+			<div class="door-slot door-slot-print" hidden></div>
 		</div>
 	</aside>
-
-	<div class="scrim done" hidden>
-		<div class="done-card" role="dialog" aria-modal="true" aria-labelledby="done-title">
-			<div class="done-stack"></div>
-			<h2 id="done-title">Sent to your printer</h2>
-			<div class="done-body"></div>
-		</div>
-	</div>
 	<script src="print.js"></script>
 </body>
 </html>

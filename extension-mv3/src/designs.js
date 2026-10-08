@@ -14,9 +14,10 @@ export const DESIGNS = {
 	ecoprint: { name: "Eco print", line: "Three tight columns. The least paper and ink." }
 };
 
+// "short" is the label under 400 px.
 export const PICTURES = {
 	colour: { label: "Colour", help: "Photos and charts print as they look on screen." },
-	ink: { label: "Ink saver", help: "Photos print as light dots. Uses much less ink." },
+	ink: { label: "Ink saver", short: "Ink", help: "Photos print as light dots. Uses much less ink." },
 	bw: { label: "Greys", help: "Pictures print in greys, for printers without colour." },
 	none: { label: "None", help: "Words only. Photos, charts and diagrams are left out." }
 };

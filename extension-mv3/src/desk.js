@@ -85,6 +85,35 @@ export class Desk {
 		entry.holder.style.height = height * scale + "px";
 	}
 
+	// Page 1 of a built document as a small still picture, width px wide: a copy of the page's markup without its
+	// scripts, in a frame that cannot run any. Same origin, so the article's pictures (blob URLs) still load.
+	thumbnail(entry, width) {
+		const doc = entry && entry.iframe.contentDocument;
+		const paper = doc && doc.querySelector("#book > .paper");
+		if (!paper) {
+			return null;
+		}
+		const copy = doc.documentElement.cloneNode(true);
+		copy.querySelectorAll("script").forEach(script => script.remove());
+		copy.querySelectorAll("#book > .paper").forEach((page, index) => index && page.remove());
+		const style = doc.createElement("style");
+		style.textContent = "html, body { margin: 0; overflow: hidden; background: #fff; } #book { display: block !important; padding: 0 !important; } .paper { box-shadow: none !important; }";
+		copy.querySelector("head").append(style);
+		const scale = width / paper.offsetWidth;
+		const frame = document.createElement("iframe");
+		frame.className = "thumb-frame";
+		frame.setAttribute("sandbox", "allow-same-origin");
+		frame.setAttribute("tabindex", "-1");
+		frame.setAttribute("aria-hidden", "true");
+		frame.style.cssText = `width:${paper.offsetWidth}px;height:${paper.offsetHeight}px;transform:scale(${scale});transform-origin:0 0;border:0;pointer-events:none;`;
+		frame.srcdoc = "<!doctype html>" + copy.outerHTML;
+		const holder = document.createElement("span");
+		holder.className = "thumb-live";
+		holder.style.cssText = `display:block;overflow:hidden;width:${width}px;height:${Math.round(paper.offsetHeight * scale)}px;`;
+		holder.append(frame);
+		return holder;
+	}
+
 	// The browser's print dialog for the design on show. Resolves after the dialog closes.
 	print() {
 		const win = this.current.iframe.contentWindow;
