@@ -2,6 +2,7 @@
 // worker, which opens it in the extension's print page. Nothing is uploaded.
 import { Readability } from "@mozilla/readability";
 import { showStatus, hideStatus } from "./overlay.js";
+import { printURL } from "./engine/print-url.js";
 
 // Images drawn by code (canvas charts, inline SVG diagrams) don't survive extraction or printing as is,
 // so they are turned into plain <img> elements before the page is cloned.
@@ -29,7 +30,11 @@ globalThis.__screenbreakExtract = async function extract() {
 		}
 		hideStatus();
 		return {
+			// url stays the address as opened (footnote links point into it); printURL is what the paper carries.
 			url: location.href,
+			printURL: printURL({ href: location.href, canonical: linkHref("link[rel~=canonical]"), ogURL: absoluteURL(metadata.url) }),
+			// How long the page is on screen, for "14 screens of scrolling became 5 pages".
+			screens: Math.max(1, Math.ceil(document.documentElement.scrollHeight / Math.max(1, innerHeight))),
 			title: article.title || document.title,
 			byline: article.byline || metadata.author,
 			siteName: article.siteName || metadata.siteName || location.hostname.replace(/^www\./, ""),
@@ -229,8 +234,14 @@ function getMetadata(doc) {
 		author: meta("meta[name=author]") || meta("meta[property='article:author']"),
 		siteName: meta("meta[property='og:site_name']"),
 		publishedTime: meta("meta[property='article:published_time']") || meta("meta[itemprop=datePublished]"),
-		image: absoluteURL(meta("meta[property='og:image']") || meta("meta[name='twitter:image']"))
+		image: absoluteURL(meta("meta[property='og:image']") || meta("meta[name='twitter:image']")),
+		url: meta("meta[property='og:url']")
 	};
+}
+
+function linkHref(selector) {
+	const link = document.querySelector(selector);
+	return link && link.getAttribute("href") ? link.href : undefined;
 }
 
 function absoluteURL(url) {

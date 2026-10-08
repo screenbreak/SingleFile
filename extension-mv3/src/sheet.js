@@ -35,8 +35,36 @@ window.renderSheet = async function ({ css, bodyClass, bodyHTML, lang, title, gr
 		page.before(paper);
 		paper.append(page);
 	});
-	return { pages: window.__paged.pages, paperWidth: paper.width };
+	drawMargins();
+	// end: how the end block printed ({ mode: "A" | "B" | "C", qrMM, roomMM }; paginate.js).
+	return { pages: window.__paged.pages, paperWidth: paper.width, end: window.__paged.report.end };
 };
+
+// On paper Chrome prints the imprint, the gift line and a full last page's end line from compose()'s @page rules;
+// a screen has no page margins, so the preview draws the same lines on the sheets (screen only, sheet.css).
+function drawMargins() {
+	const data = document.querySelector(".sb-margins");
+	const sheets = Array.from(document.querySelectorAll(".paper"));
+	if (!data || !sheets.length) {
+		return;
+	}
+	const add = (sheet, place, text) => {
+		if (text) {
+			const box = document.createElement("div");
+			box.className = "sb-margin " + place;
+			box.setAttribute("aria-hidden", "true");
+			box.textContent = text;
+			sheet.append(box);
+		}
+	};
+	const last = sheets[sheets.length - 1];
+	const endInMargin = last.querySelector(".page").style.page == "sb-end";
+	add(sheets[0], "top", data.dataset.gift);
+	add(sheets[0], "bottom", endInMargin && sheets.length == 1 ? data.dataset.endFirst : data.dataset.imprint);
+	if (endInMargin && sheets.length > 1) {
+		add(last, "bottom", data.dataset.end);
+	}
+}
 
 window.setSpread = function (spread) {
 	document.documentElement.classList.toggle("spread", spread);

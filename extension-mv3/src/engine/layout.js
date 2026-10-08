@@ -9,6 +9,7 @@
 import QRCode from "qrcode";
 import { recommend } from "./recommend.js";
 import { FONTS } from "./fonts.js";
+import { cleanURL, shownURL } from "./print-url.js";
 
 const PAGE = { w: 210, h: 297, side: 15 };
 const MEASURE = PAGE.w - 2 * PAGE.side;              // 180mm
@@ -186,7 +187,9 @@ function figureHtml(v, asset, p, captionHtml) {
 export async function prepare(article) {
 	const man = {
 		title: decode(article.title), excerpt: decode(article.excerpt || ""), byline: decode(article.byline || ""),
-		siteName: article.siteName || "", url: article.url, published: article.publishedTime, lang: article.lang || "en"
+		siteName: article.siteName || "", url: article.url, published: article.publishedTime, lang: article.lang || "en",
+		// The address on paper and in every QR (content-print.js); url stays for footnote anchors.
+		printURL: article.printURL || cleanURL(article.url) || article.url || ""
 	};
 	const doc = new DOMParser().parseFromString("<!doctype html><body><div id=sb-root></div></body>", "text/html");
 	const root = doc.getElementById("sb-root");
@@ -217,7 +220,9 @@ export async function prepare(article) {
 		if (v.kind === "img" && v.graphic) f.graphics++; else if (v.kind === "img") f.photos++; else f.charts++; }
 	const cls = classify(f);
 	const rec = recommend(f, { man, byId, blocks: body.blocks, heroId: body.heroId, type: cls.type });
-	return { man, byId, body, features: f, type: cls.type, picks: rec.picks, options: rec.options, facts: rec.facts };
+	// screens: how many screens of scrolling the page was at capture (content-print.js); null when unknown.
+	const screens = Number.isInteger(article.screens) && article.screens >= 1 ? article.screens : null;
+	return { man, byId, body, features: f, type: cls.type, picks: rec.picks, options: rec.options, facts: { ...rec.facts, screens } };
 }
 
 function hasImage(root, url) {
@@ -309,9 +314,10 @@ function fontFaces() {
 		`@font-face{font-family:"${fam}";font-weight:${w};font-style:${st};src:url(${dir}${slug}-latin-ext-${w}-${st}.woff2);unicode-range:U+0100-02BA,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0}`))).join("\n");
 }
 
-// Step 2: the print document for one design. options: { style, pictures: colour|ink|bw|none, references: leave|small|keep }.
-// Returns { css, bodyClass, bodyHTML, lang, title } for sheet.html, which builds the pages.
-export async function compose(prepared, { style = "classic", pictures = "colour", references = "small", paper = "A4" } = {}) {
+// Step 2: the print document for one design. options: { style, pictures: colour|ink|bw|none, references: leave|small|keep,
+// paper: A4|Letter, gift: { for, from } (optional, printed in page 1's top margin) }.
+// Returns { css, bodyClass, bodyHTML, lang, title, greys, paper } for sheet.html, which builds the pages.
+export async function compose(prepared, { style = "classic", pictures = "colour", references = "small", paper = "A4", gift } = {}) {
 	const P = PAPERS[paper] || PAPERS.A4;
 	const { man, byId, body, type } = prepared;
 	style = STYLES[style] ? style : "classic";
@@ -337,7 +343,8 @@ export async function compose(prepared, { style = "classic", pictures = "colour"
 	const out = finish(root, { swaps, colMM: G.COL, sidenotes: !!S.sidenotes, standfirst, byline: man.byline, references, pageURL: man.url });
 	const heroV = Object.values(byId).find(v => v.placed && v.placed.cls === "hero"), heroPx = heroV && heroV.px;
 	const coverOk = !!(S.cover && out.hero && heroPx && heroPx.h >= P.contentHeight / 25.4 * 150);
-	const words = body.features.words, qr = await QRCode.toString(man.url || "https://myscreenbreak.com", { type: "svg", margin: 0 });
+	const address = man.printURL || man.url || "https://myscreenbreak.com";
+	const words = body.features.words, qr = await QRCode.toString(address, { type: "svg", margin: 0 });
 	const readcard = `<aside class="sidenote readcard"><div class="qr">${qr}</div><p><b>${Math.max(1, Math.round(words / 230))} min read</b> · ${words.toLocaleString("en")} words</p><p>Scan for the original, with video and links.</p></aside>`;
 	const title = decode(body.title || man.title);
 	let site = man.siteName;
@@ -349,15 +356,92 @@ export async function compose(prepared, { style = "classic", pictures = "colour"
 	const css = `${fontFaces()}\n@page { @bottom-left { content: "${runHead.replace(/["\\]/g, "").replace(/\s+/g, " ")}"; } }\n${await engineCSS()}
 html.sb-greys img, html.sb-greys svg { filter: grayscale(1); }
 ${P === PAPERS.A4 ? "" : `@page { size: ${P.width}mm ${P.height}mm; margin: 16mm ${((P.width - MEASURE) / 2).toFixed(2)}mm 18mm; }
-.page { height: ${P.contentHeight}mm; }`}`;
+.page { height: ${P.contentHeight}mm; }`}
+${paperCSS(style, gift, address)}`;
 	const bodyClass = `type-${type} style-${style}${coverOk ? " has-cover" : ""}`;
 	const bodyHTML = `<header class="masthead"><p class="kicker">${esc(site)}</p><h1>${esc(title)}</h1>
 ${standfirst && type !== "thread" && !out.dropStandfirst ? `<p class="standfirst">${esc(standfirst)}</p>` : ""}
 <p class="byline">${[man.byline, dateStr].filter(Boolean).map(esc).join(" · ")}</p></header>
 ${out.hero}
 <main class="flow">${readcard}${out.html}</main>
-<footer class="source">Saved from <span>${esc(man.url)}</span> · printed with Screenbreak</footer>`;
+${await endBlock(address, style)}
+<div class="sb-margins" hidden data-imprint="${esc(IMPRINT)}" data-gift="${esc(giftLine(gift))}" data-end="${esc(endLine(address) + " · " + IMPRINT)}" data-end-first="${esc(IMPRINT + "\n" + endLine(address))}"></div>`;
 	return { css, bodyClass, bodyHTML, lang: man.lang, title, greys: pictures === "bw", paper: { ...P, side: (P.width - MEASURE) / 2 } };
+}
+
+// The paper surface (research 05 §4). Screenbreak signs a print twice and never takes text space for it: the
+// imprint in page 1's bottom margin box, and the end block on the last page. The gift line sits in page 1's top
+// margin box. Margin boxes need Chrome 131 (manifest minimum_chrome_version).
+const IMPRINT = "Printed with myscreenbreak.com";
+const GIFT_NAME_MAX = 32;
+// The design's text serif for the gift line. Margin boxes take their variables from the root, not from the
+// design's body class, so the face is named here.
+const GIFT_FACE = { classic: "Source Serif 4", magazine: "Literata", cover: "Literata", notes: "Literata", broadsheet: "Newsreader", book: "EB Garamond",
+	large: "Atkinson Hyperlegible", riso: "Space Grotesk", swiss: "Inter", modern: "Inter", ecoprint: "Literata" };
+// QR size by module count (0.43mm a module, 16 to 20mm); above version 7 a QR this small stops scanning, so the
+// end block is text only. Large print: 18mm at least.
+const QR_MODULE = 0.43, QR_MIN = { large: 18 }, QR_MAX = 20, QR_MAX_VERSION = 7;
+// Room kept free at the foot of the last page, in mm, where the design prints its reading-progress bar.
+const END_RESERVE = { notes: 7, swiss: 7 };
+
+// A CSS string: line breaks and control characters gone, quotes and backslashes escaped, and "<" escaped too, so
+// the CSS can also sit in a <style> element.
+export const cssString = text => "\"" + String(text).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, " ").replace(/[\\"]/g, "\\$&").replace(/</g, "\\3c ") + "\"";
+
+// One name for the gift line: one line, no control characters, at most 32 characters (an emoji counts as one).
+function giftName(name) {
+	const line = String(name || "").replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ").replace(/\s+/g, " ").trim();
+	return Array.from(line).slice(0, GIFT_NAME_MAX).join("").trim();
+}
+
+// "Printed for Maria, from Yorgos", "Printed for Maria", "From Yorgos", or "" with no names.
+export function giftLine(gift) {
+	const to = giftName(gift && gift.for), from = giftName(gift && gift.from);
+	return to && from ? `Printed for ${to}, from ${from}` : to ? `Printed for ${to}` : from ? `From ${from}` : "";
+}
+
+// The end line when it moves into the last page's margin (mode C): the only place the address is shortened.
+function endLine(address) {
+	const shown = shownURL(address);
+	return "Original: " + (shown.length > 110 ? shown.slice(0, 64) + "…" + shown.slice(-45) : shown);
+}
+
+// @page rules for the imprint (page 1), the gift line (page 1) and the end line of a full last page (sb-end;
+// paginate.js names that page). Book centres them, as it centres its title and column.
+function paperCSS(style, gift, address) {
+	const book = style == "book", bottom = book ? "bottom-center" : "bottom-left", top = book ? "top-center" : "top-left";
+	const leftClear = book ? " @bottom-left { content: \"\"; }" : "";
+	const mono = `width: 150mm; font: 400 ${style == "large" ? 8 : 6.8}pt "IBM Plex Mono", monospace; letter-spacing: .02em; color: #6b6f72;${book ? " text-align: center;" : ""}`;
+	const line = giftLine(gift);
+	return [
+		"/* Paper surface: imprint, gift line, end line (layout.js paperCSS). */",
+		`@page :first { @${bottom} { content: ${cssString(IMPRINT)}; ${mono} }${leftClear} }`,
+		line ? `@page :first { @${top} { content: ${cssString(line)}; width: 150mm; font: italic 400 ${style == "large" ? 10 : 8.5}pt "${GIFT_FACE[style] || GIFT_FACE.classic}", serif; ` +
+			`color: ${style == "riso" ? "#1d4ed8" : "var(--ink)"};${book ? " text-align: center;" : ""} } }` : "",
+		`@page sb-end { @${bottom} { content: ${cssString(endLine(address) + " · " + IMPRINT)}; ${mono} }${leftClear} }`,
+		`@page sb-end:first { @${bottom} { content: ${cssString(IMPRINT)} "\\A" ${cssString(endLine(address))}; white-space: pre-wrap; ${mono} }${leftClear} }`
+	].filter(Boolean).join("\n");
+}
+
+// The end block, last on the last page: the QR straight to the article with three lines (mode A), or one line
+// (mode B). paginate.js appends it, measures, and steps down A → B → C (the margin line above) until it fits, so
+// it never adds a page. Notes margin has its QR on page 1 already: one QR a print, so mode B at most there.
+async function endBlock(address, style) {
+	const shown = esc(shownURL(address));
+	let qr = null;
+	try {
+		qr = QRCode.create(address, { errorCorrectionLevel: "M" });
+	} catch {
+		// Too long for any QR: text only.
+	}
+	const withQR = !!qr && qr.version <= QR_MAX_VERSION && style != "notes";
+	const size = withQR ? Math.min(QR_MAX, Math.max(QR_MIN[style] || 16, qr.modules.size * QR_MODULE)) : 0;
+	const full = withQR ? `<div class="end-full"><div class="qr" style="width:${size.toFixed(1)}mm;height:${size.toFixed(1)}mm">` +
+		`${await QRCode.toString(address, { type: "svg", margin: 0, errorCorrectionLevel: "M" })}</div><div class="end-lines">` +
+		`<p><b>Original</b>&ensp;<span class="url">${shown}</span></p><p>Scan the code for the original, with video and links.</p>` +
+		`<p class="imprint">${IMPRINT}</p></div></div>` : "";
+	return `<footer class="endblock" data-max="${withQR ? "A" : "B"}" data-qr="${size.toFixed(1)}" data-reserve="${END_RESERVE[style] || 0}">${full}` +
+		`<p class="end-line"><b>Original:</b> <span class="url">${shown}</span> · <span class="imprint">${IMPRINT}</span></p></footer>`;
 }
 
 // printlab layout.js, second page.evaluate: figures in, notes, sidenotes, pull quotes, transcript turns.

@@ -22,7 +22,7 @@ window.addEventListener('load', () => Promise.all([...document.fonts].map(f => f
   const BAND_MIN = 20 * MM;                    // thinnest band of two-column text between pictures across the page
   const book = document.createElement('div'); book.id = 'book';
   const src = document.querySelector('main.flow');
-  const masthead = document.querySelector('header.masthead'), hero = document.querySelector('figure.hero'), source = document.querySelector('footer.source');
+  const masthead = document.querySelector('header.masthead'), hero = document.querySelector('figure.hero'), source = document.querySelector('footer.endblock');
   // Loose text/inline nodes become paragraphs so everything in the flow is a block.
   for (const n of [...src.childNodes]) if (n.nodeType === 3 ? n.textContent.trim() : n.nodeType === 1 && getComputedStyle(n).display.startsWith('inline'))
     { const p = document.createElement('p'); n.replaceWith(p); p.append(n); } else if (n.nodeType !== 1) n.remove();
@@ -280,8 +280,7 @@ window.addEventListener('load', () => Promise.all([...document.fonts].map(f => f
       if (off()) { cols.classList.remove('last'); cols.style.height = h; }
       if (overflows(cols)) { const right = colRight(cols), spill = [...cols.children].filter(e => e.getBoundingClientRect().left >= right - 1);
         spill.forEach(e => e.remove());
-        if (spill.length) { res = fill([], spill, []); res.P.cols.classList.add('last'); res.P.cols.style.height = 'auto'; } }
-      if (source) res.P.page.append(source); }
+        if (spill.length) { res = fill([], spill, []); res.P.cols.classList.add('last'); res.P.cols.style.height = 'auto'; } } }
   }
   // Safety net: anything that still sits past the last column of a page (a figure pushed out by a late reflow)
   // moves to the top of the next page, or to a new page after it, instead of being clipped away.
@@ -294,12 +293,31 @@ window.addEventListener('load', () => Promise.all([...document.fonts].map(f => f
     if (overflows(c) && lastEl && splittable(lastEl)) { const r = split(lastEl, c); if (r) spill.unshift(r); }
     if (!spill.length) continue;
     let nx = book.children[i + 1];
-    if (!nx || !nx.querySelector('.cols')) { const P = newPage([]); nx = P.page; book.insertBefore(nx, book.children[i + 1] || null); P.cols.classList.add('last'); P.cols.style.height = 'auto';
-      const src = pg.querySelector('footer.source'); if (src && i === book.children.length - 2) nx.append(src); }
+    if (!nx || !nx.querySelector('.cols')) { const P = newPage([]); nx = P.page; book.insertBefore(nx, book.children[i + 1] || null); P.cols.classList.add('last'); P.cols.style.height = 'auto'; }
     nx.querySelector('.cols').prepend(...spill);
   }
   // empty trailing page cleanup
   for (const p of [...book.children]) if (p.querySelector('.cols') && !p.querySelector('.cols').children.length && !p.querySelector('.tops').children.length) p.remove();
+  // Screenbreak end block (layout.js endBlock): placed once the pages are final, then measured, never trusted. Mode A
+  // (QR and three lines) when it fits above the page foot less the design's reserve (its progress bar), else mode B
+  // (one line), else mode C: the block leaves and the last page becomes the named page sb-end, whose bottom margin
+  // box carries the line. The block only ever goes into a page that exists, so it can't add one; and nothing
+  // printed is cut off by the page's overflow: hidden.
+  const endBlock = (() => {
+    const last = book.lastElementChild;
+    if (!source || !last) return null;
+    last.append(source);
+    const reserve = (parseFloat(source.dataset.reserve) || 0) * MM, qr = parseFloat(source.dataset.qr) || 0;
+    // A cover page (an article with no text after its cover) has no flow to follow: straight to the margin.
+    const free = () => last.classList.contains('cover') ? -Infinity : last.getBoundingClientRect().bottom - reserve - source.getBoundingClientRect().bottom;
+    // roomMM (report only): the free height under the text of the last page, less the reserve.
+    const above = source.previousElementSibling, room = +((last.getBoundingClientRect().bottom - reserve - (above ? above.getBoundingClientRect().bottom : last.getBoundingClientRect().top)) / MM).toFixed(1);
+    let mode = source.dataset.max === 'A' ? 'A' : 'B';
+    source.classList.add('mode-' + mode.toLowerCase());
+    if (mode === 'A' && free() < -0.5) { source.classList.replace('mode-a', 'mode-b'); mode = 'B'; }
+    if (mode === 'B' && free() < -0.5) { source.remove(); last.style.page = 'sb-end'; mode = 'C'; }
+    return { mode, qrMM: mode === 'A' ? qr : 0, roomMM: room };
+  })();
   // Placement report (measures layout changes; changes nothing on the page): for each picture, how far it prints
   // from the text block before it (its anchor), whether it comes after the end mark or is clipped by the page edge;
   // and how much of each page stays empty.
@@ -328,7 +346,7 @@ window.addEventListener('load', () => Promise.all([...document.fonts].map(f => f
       const n = parseInt(getComputedStyle(c).columnCount) || 1, cr = c.getBoundingClientRect(), bottoms = new Array(n).fill(cr.top);
       for (const ch of c.children) for (const r of ch.getClientRects()) { if (!r.height) continue; const i = Math.min(n - 1, Math.max(0, Math.floor((r.left - cr.left + 2) / (cr.width / n)))); bottoms[i] = Math.max(bottoms[i], r.bottom); }
       const pr = pg.getBoundingClientRect(), h = pr.bottom - cr.top; return +(bottoms.reduce((s, b) => s + Math.max(0, pr.bottom - b), 0) / (n * Math.max(1, h)) * (h / H)).toFixed(2); });
-    return { figs, empty: empty.slice(0, -1), lastEmpty: empty[empty.length - 1] };
+    return { figs, empty: empty.slice(0, -1), lastEmpty: empty[empty.length - 1], end: endBlock };
   })();
   // Reading progress on every page: how far through, and minutes of reading left (230 words a minute).
   const pages = [...book.children], wordsOf = el => (el.innerText || '').split(/\s+/).filter(Boolean).length;
