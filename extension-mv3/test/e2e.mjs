@@ -101,7 +101,9 @@ try {
 	await lockedRow.click();
 	await printPage.waitForFunction(style => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-" + style), lockedStyle);
 	await printPage.locator(".desk-banner:not([hidden])").waitFor();
-	assert.match(await printPage.locator(".banner-text").textContent(), /^Previewing .+\. It needs a free account\.$/);
+	assert.match(await printPage.locator(".banner-text .long").textContent(), /^Previewing .+, \d+ pages?\. It needs a free account\.$/);
+	// "Ready to print" keeps what Print does: the pick's page count, not the preview's.
+	assert.match(await printPage.locator(".summary").textContent(), new RegExp(`^${printed.pages} A4 pages? `));
 	assert.equal(await printPage.locator(".act-print").isHidden(), true);
 	assert.match(await printPage.locator(".continue-button").textContent(), /^Continue with email to print /);
 	assert.match(await printPage.locator(".print-pick-label").textContent(), /^Print .+ now$/);
@@ -113,11 +115,26 @@ try {
 	assert.match(await door.locator(".door-title").textContent(), /^Print in .+ with a free account$/);
 	assert.equal(await door.locator(".button-ink").textContent(), "Continue with email");
 	assert.equal(await door.locator(".door-exit").textContent(), "Keep printing without an account");
-	// "Keep printing without an account" closes the door and goes back to the pick.
+	// One ask at a time: with the card open, the footer's email pill steps aside.
+	assert.equal(await printPage.locator(".continue-button").isHidden(), true);
+	// "Keep printing without an account" closes the door, goes back to the pick and puts focus on Print.
 	await door.locator(".door-exit").click();
 	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
 	assert.equal(await door.count(), 0);
 	assert.ok((await deskStyle(printPage)).includes("style-" + pickStyle));
+	await printPage.waitForFunction(() => document.activeElement && document.activeElement.matches(".print-button"));
+
+	// Keys pressed inside the desk frame reach the page: Ctrl+P opens the door, never the print dialog of the locked
+	// design, and a native print from the frame would print nothing while the preview shows.
+	await lockedRow.click();
+	await printPage.locator(".desk-banner:not([hidden])").waitFor();
+	assert.equal(await printPage.evaluate(() => !!document.querySelector(".sheet-holder.shown iframe").contentDocument.getElementById("sb-print-blocked")), true);
+	await printPage.locator(".sheet-holder.shown iframe").contentFrame().locator("body").click({ position: { x: 5, y: 5 } });
+	await printPage.keyboard.press("Control+p");
+	await door.waitFor();
+	await printPage.keyboard.press("Escape");
+	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
+	assert.equal(await printPage.evaluate(() => !!document.querySelector(".sheet-holder.shown iframe").contentDocument.getElementById("sb-print-blocked")), false);
 
 	// Ink saver: selectable for preview, with the one-line help, and never stored.
 	await printPage.locator("[data-name=pictures] label[data-value=ink]").click();
@@ -127,14 +144,27 @@ try {
 	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
 	assert.equal(await printPage.locator("input[name=pictures]:checked").getAttribute("value"), "colour");
 
-	// The gallery: all 11 designs over the desk; a locked tile previews.
+	// The gallery: all 11 designs over the desk; a locked tile previews. By keyboard the current design is checked,
+	// arrow keys move inside the gallery only, and Enter chooses.
 	await printPage.click(".all-toggle");
 	assert.equal(await printPage.locator(".gallery .tile").count(), 11);
 	assert.equal(await printPage.locator(".gallery .tile[data-locked]").count(), 10);
+	assert.equal(await printPage.evaluate(() => document.activeElement.value), pickStyle);
+	await printPage.keyboard.press("ArrowRight");
+	assert.equal(await printPage.locator(".gallery").isVisible(), true);
+	assert.ok((await deskStyle(printPage)).includes("style-" + pickStyle));
+	const arrowed = await printPage.evaluate(() => document.activeElement.value);
+	assert.notEqual(arrowed, pickStyle);
+	await printPage.keyboard.press("Enter");
+	await printPage.waitForFunction(style => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-" + style), arrowed);
+	assert.equal(await printPage.locator(".gallery").isHidden(), true);
+	await printPage.click(".banner-back");
+	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
+	await printPage.click(".all-toggle");
 	await printPage.locator(".gallery .tile", { hasText: "Riso zine" }).click();
 	await printPage.waitForFunction(() => document.querySelector(".sheet-holder.shown iframe").contentDocument.body.classList.contains("style-riso"));
 	assert.equal(await printPage.locator(".gallery").isHidden(), true);
-	assert.match(await printPage.locator(".banner-text").textContent(), /^Previewing Riso zine\./);
+	assert.match(await printPage.locator(".banner-text .long").textContent(), /^Previewing Riso zine, /);
 	await printPage.click(".banner-back");
 	await printPage.locator(".desk-banner").waitFor({ state: "hidden" });
 
@@ -150,11 +180,8 @@ try {
 	await printPage.click(".print-button");
 	await new Promise(resolve => setTimeout(resolve, 800));
 	assert.equal((await extensionPage.evaluate(() => chrome.storage.local.get(["guestPrints", "monthPrints"]))).guestPrints, undefined);
-	if (await printPage.locator(".panel-body > .done:not([hidden])").count()) {
-		assert.equal(await printPage.locator(".actions").isHidden(), true);
-	} else {
-		console.log("Done state not checked: done.js is not in this build"); // eslint-disable-line no-console
-	}
+	await printPage.locator(".panel-body > .done:not([hidden])").waitFor();
+	assert.equal(await printPage.locator(".actions").isHidden(), true);
 	await printPage.close();
 	await extensionPage.evaluate(defaults => chrome.storage.sync.set({ print: { ...defaults, paper: "A4" } }), PRINT_DEFAULTS);
 
@@ -213,15 +240,15 @@ try {
 	await printAndSavePage.close();
 	await extensionPage.evaluate(() => chrome.storage.sync.set({ saveWhenPrinting: false }));
 
-	// The door, end to end: a guest previews a locked design, continues with email (the sign-in tab opens next to
-	// the print tab and the intent waits in session storage), signs in, and the print page applies the design once.
+	// The door, end to end: a guest previews a locked design, continues with email from the footer pill (the
+	// sign-in tab opens next to the print tab and the intent waits in session storage, with no second card), reloads
+	// the page (the wait comes back), signs in, and the print page applies the design once.
 	const doorPage = await openPrintPage();
 	const doorRow = doorPage.locator(".others .pick[data-locked]").first();
 	const doorStyle = await doorRow.getAttribute("data-style");
 	await doorRow.click();
 	await doorPage.locator(".desk-banner:not([hidden])").waitFor();
 	await doorPage.click(".continue-button");
-	await doorPage.locator(".door-slot-print .door .button-ink").click();
 	await doorPage.locator(".door.waiting").waitFor();
 	// The sign-in tab opens right after the print tab. The stand-in server has no sign-up page (it answers 404, and
 	// Chrome then hides the tab's address), so the server's request log shows where it went.
@@ -235,6 +262,10 @@ try {
 	const intent = await doorPage.evaluate(() => chrome.storage.session.get("sbIntent"));
 	assert.equal(intent.sbIntent.kind, "design");
 	assert.equal(intent.sbIntent.design, doorStyle);
+	assert.equal(intent.sbIntent.signInTabId, tabs.nextId);
+	await doorPage.reload();
+	await doorPage.waitForSelector("body:not(.is-loading)", { timeout: 60000 });
+	await doorPage.locator(".door-slot-print .door.waiting").waitFor();
 	me = { plan: "free", email: "reader@example.com", name: "Reader" };
 	await doorPage.locator(".signed-in-line:not([hidden])").waitFor({ timeout: 10000 });
 	assert.match(await doorPage.locator(".signed-in-line").textContent(), /^You're in\. .+ is ready to print\.$/);

@@ -19,7 +19,7 @@
 				</div>
 			</div>
 			<div class="desk-banner" role="status" hidden>
-				<p class="banner-text"></p>
+				<p class="banner-text"><span class="long"></span><span class="short"></span></p>
 				<button type="button" class="button button-outline button-small banner-back"></button>
 			</div>
 		</div>
@@ -101,12 +101,14 @@
 				<section class="sec locked-group" aria-labelledby="locked-heading" hidden>
 					<p class="eyebrow" id="locked-heading">With a free account</p>
 					<p class="lock-line" id="lock-line">All 11 designs and every option. Free, just an email. <button type="button" class="link-button lock-continue">Continue with email</button></p>
-					<button type="button" class="locked-row references-locked" hidden aria-describedby="lock-line">
+					<button type="button" class="locked-row references-locked" hidden aria-describedby="lock-line" aria-expanded="false" aria-controls="door-slot-print">
 						<span class="locked-name">Reference list</span>
 						<span class="locked-value">Small type</span>
 					</button>
 				</section>
 			</div>
+
+			<div class="door-slot door-slot-print" id="door-slot-print" hidden></div>
 		</div>
 
 		<div class="actions">
@@ -119,6 +121,10 @@
 			</div>
 			<div class="act-locked" hidden>
 				<button type="button" class="button button-ink continue-button"></button>
+				<div class="locked-links">
+					<button type="button" class="link-button continue-google">Continue with Google</button>
+					<button type="button" class="link-button sheet-link" aria-expanded="false" aria-controls="design-and-paper">Design &amp; paper</button>
+				</div>
 				<button type="button" class="button button-outline print-pick-button">
 					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
 					<span class="print-pick-label"></span>
@@ -129,7 +135,6 @@
 				<button type="button" class="link-button pdf-button">Save as PDF</button>
 			</div>
 			<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
-			<div class="door-slot door-slot-print" hidden></div>
 		</div>
 	</aside>
 	<script src="print.js"></script>
