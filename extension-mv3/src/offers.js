@@ -225,5 +225,14 @@ export function periodStats(log, from, to = Infinity) {
 		pages += entry.pages || 0;
 		words += entry.words || 0;
 	}
-	return { articles: latest.size, pages, words, hours: Math.round(words / WORDS_PER_MINUTE / 60 * 10) / 10 };
+	// Whole minutes: rounding to tenths of an hour first turned a short article into "0 minutes".
+	return { articles: latest.size, pages, words, minutes: Math.round(words / WORDS_PER_MINUTE) };
+}
+
+// "12 minutes" or "1.5 hours" of reading, as [number, words]; null at 0 so the line is left out.
+export function readingTime(minutes) {
+	if (!(minutes > 0)) return null;
+	if (minutes < 60) return [String(minutes), `minute${minutes == 1 ? "" : "s"} of reading`];
+	const hours = Math.round(minutes / 6) / 10;
+	return [hours.toLocaleString("en"), `hour${hours == 1 ? "" : "s"} of reading`];
 }

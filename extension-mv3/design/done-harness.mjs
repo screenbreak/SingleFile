@@ -204,7 +204,7 @@ try {
 				out["receipt-boxes"] = await asData(await receipt.drawReceipt({ screens: 9, pages: 2, design: { id: "magazine", name: "Magazine" }, photos: 1, words: 1300, boxes: [
 					[{ kind: "title", x: 0, y: 0, w: .9, h: .07 }, { kind: "photo", x: 0, y: .12, w: 1, h: .35 }, { kind: "text", x: 0, y: .52, w: .47, h: .48 }, { kind: "text", x: .53, y: .52, w: .47, h: .48 }],
 					[{ kind: "text", x: 0, y: 0, w: .47, h: .6 }, { kind: "text", x: .53, y: 0, w: .47, h: 1 }]] }));
-				out["year-2026"] = await asData(await receipt.drawYearCard({ articles: 48, pages: 212, hours: 7.3, label: "2026 on paper" }));
+				out["year-2026"] = await asData(await receipt.drawYearCard({ articles: 48, pages: 212, minutes: 438, label: "2026 on paper" }));
 				const blob = await receipt.drawReceipt({ screens: 14, pages: 5, design: "broadsheet" });
 				out.check = { type: blob.type, size: blob.size, bitmap: await createImageBitmap(blob).then(image => [image.width, image.height]) };
 				return out;

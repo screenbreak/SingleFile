@@ -2,7 +2,7 @@
 // It states only what the code knows: the window closed. Chrome cannot tell a print from a cancel, so the
 // copy never says "Printed". One fact, one primary action, at most one offer (scheduled in offers.js).
 import { el } from "./panel.js";
-import { lastPrint, nextOffer, dismissOffer, markFailure, markReviewOpened, milestoneEyebrow, printStats, periodStats, getLog } from "./offers.js";
+import { lastPrint, nextOffer, dismissOffer, markFailure, markReviewOpened, milestoneEyebrow, printStats, periodStats, readingTime, getLog } from "./offers.js";
 import { drawReceipt, drawYearCard, openReceiptSheet, receiptText } from "./receipt.js";
 
 const TICK = `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M4.9 8.2l2.1 2.1 4.1-4.4"/></svg>`;
@@ -183,21 +183,22 @@ export async function renderYourPrints(container) {
 	}
 	const now = new Date();
 	const month = now.toLocaleString("en", { month: "long" });
-	const card = (heading, label, period) => el("section", { class: "yp-card", "aria-label": heading },
-		el("p", { class: "yp-label", text: heading.toUpperCase() }),
-		el("ul", { class: "yp-numbers" },
-			el("li", {}, el("strong", { text: period.articles.toLocaleString("en") }), ` article${period.articles == 1 ? "" : "s"}`),
-			el("li", {}, el("strong", { text: period.pages.toLocaleString("en") }), ` page${period.pages == 1 ? "" : "s"}`),
-			period.hours >= 1
-				? el("li", {}, el("strong", { text: String(period.hours) }), ` hour${period.hours == 1 ? "" : "s"} of reading`)
-				: el("li", {}, el("strong", { text: String(Math.round(period.hours * 60)) }), ` minute${Math.round(period.hours * 60) == 1 ? "" : "s"} of reading`)),
-		period.articles > 0 && el("button", {
-			type: "button", class: "link-button yp-share", text: "Share",
-			onclick: async () => {
-				const blob = await drawYearCard({ ...period, label });
-				openReceiptSheet({ blob, heading: label.charAt(0).toUpperCase() + label.slice(1), text: `${label.charAt(0).toUpperCase() + label.slice(1)}: ${plural(period.articles, "article")}, ${plural(period.pages, "page")}. myscreenbreak.com`, filename: "screenbreak-reading.png" });
-			}
-		}));
+	const card = (heading, label, period) => {
+		const reading = readingTime(period.minutes);
+		return el("section", { class: "yp-card", "aria-label": heading },
+			el("p", { class: "yp-label", text: heading.toUpperCase() }),
+			el("ul", { class: "yp-numbers" },
+				el("li", {}, el("strong", { text: period.articles.toLocaleString("en") }), ` article${period.articles == 1 ? "" : "s"}`),
+				el("li", {}, el("strong", { text: period.pages.toLocaleString("en") }), ` page${period.pages == 1 ? "" : "s"}`),
+				reading && el("li", {}, el("strong", { text: reading[0] }), ` ${reading[1]}`)),
+			period.articles > 0 && el("button", {
+				type: "button", class: "link-button yp-share", text: "Share",
+				onclick: async () => {
+					const blob = await drawYearCard({ ...period, label });
+					openReceiptSheet({ blob, heading: label.charAt(0).toUpperCase() + label.slice(1), text: `${label.charAt(0).toUpperCase() + label.slice(1)}: ${plural(period.articles, "article")}, ${plural(period.pages, "page")}. myscreenbreak.com`, filename: "screenbreak-reading.png" });
+				}
+			}));
+	};
 	const date = time => new Date(time).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 	container.replaceChildren(
 		el("div", { class: "yp-cards" },

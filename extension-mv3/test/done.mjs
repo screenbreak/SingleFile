@@ -295,7 +295,24 @@ test("printStats: milestone dates and month/year counts by distinct article", as
 	assert.equal(stats.rungs.find(rung => rung.n == 10).at, null);
 	assert.deepEqual([stats.month.articles, stats.month.pages, stats.month.words], [2, 10, 4200]);
 	assert.equal(stats.year.articles, 5);
-	assert.equal(stats.year.hours, Math.round(5 * 2100 / 230 / 60 * 10) / 10);
+	assert.equal(stats.year.minutes, Math.round(5 * 2100 / 230));
+});
+
+test("reading time: whole minutes, hours from minutes, nothing at 0", async () => {
+	await fresh();
+	await mod.recordPrint({ url: "https://example.com/short", pages: 1, words: 900 });
+	const stats = await mod.printStats();
+	assert.equal(stats.month.minutes, 4, "one short article is 4 minutes, not 0");
+	assert.deepEqual(mod.readingTime(stats.month.minutes), ["4", "minutes of reading"]);
+	assert.deepEqual(mod.readingTime(1), ["1", "minute of reading"]);
+	assert.deepEqual(mod.readingTime(59), ["59", "minutes of reading"]);
+	assert.deepEqual(mod.readingTime(60), ["1", "hour of reading"]);
+	assert.deepEqual(mod.readingTime(90), ["1.5", "hours of reading"]);
+	assert.deepEqual(mod.readingTime(438), ["7.3", "hours of reading"]);
+	for (const none of [0, null, undefined, NaN]) assert.equal(mod.readingTime(none), null);
+	await fresh();
+	await mod.recordPrint({ url: "https://example.com/no-words", pages: 2 });
+	assert.equal((await mod.printStats()).month.minutes, 0);
 });
 
 let failed = 0;
