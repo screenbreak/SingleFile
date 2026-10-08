@@ -79,9 +79,11 @@ export function saveFailed(error, { plusURL } = {}) {
 			return { state: "error", title: "Can't reach Screenbreak", detail: "Nothing was saved. Check your connection and try again.", actions: [{ label: "Try again", action: "retry", primary: true }] };
 		case "limit": {
 			// Our words, not the server's: its title and button speak of monthly uploads and upgrades.
+			// Nothing went wrong, so the card is neutral: info (role=status) with the library icon, not the red error.
 			const href = error.actionURL || plusURL;
 			return {
-				state: "error",
+				state: "info",
+				icon: "library",
 				title: "Your library is full",
 				detail: "Plus keeps as many articles as you like. Printing is still free.",
 				actions: [...(href ? [{ label: "See Plus", href, primary: true }] : []), { label: "Print instead", action: "print-instead" }]
