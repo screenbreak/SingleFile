@@ -1,7 +1,8 @@
 // Background service worker: decides what a click does (save, print, or ask), runs the action
 // in the tab, and does the work content scripts can't (cross-origin fetches, uploading).
 import { getSettings, updateSettings } from "./settings.js";
-import { createArticle, uploadArticle, removeArticle, loginURL } from "./api.js";
+import { createArticle, uploadArticle, removeArticle, emailDoorURL, savedPageKey } from "./api.js";
+import { plusURL } from "./plans.js";
 import { bytesToBase64, base64ToBytes } from "./base64.js";
 import * as STATUS from "./status-copy.js";
 
@@ -23,6 +24,13 @@ const MAX_STORED_PRINT_JOBS = 5;
 const MAX_PRINT_JOB_SOURCES = 20;
 const LOGIN_POLL_DELAY = 3000;
 const MAX_LOGIN_WAIT = 5 * 60 * 1000;
+const MAX_SAVED_PAGES = 200;
+// What a guest was doing when the sign-in tab opened (contract C-1); the print panel uses the same key.
+const INTENT_KEY = "sbIntent";
+// The sign-in and sign-up pages: while the tab is on one of these, the reader hasn't finished yet.
+const SIGN_IN_PATHS = /^\/(login|signup|accounts)\//;
+// Only the version: no ids, no counts tied to a person (SPEC C6).
+const UNINSTALL_URL = "https://myscreenbreak.com/bye?v=";
 
 const runningTabs = new Set();
 const printJobs = new Map();
@@ -35,9 +43,11 @@ const printSaveStatuses = new Map();
 chrome.runtime.onInstalled.addListener(async details => {
 	await createMenus();
 	await applyDefaultAction();
+	chrome.runtime.setUninstallURL(UNINSTALL_URL + chrome.runtime.getManifest().version).catch(() => {});
 	if (details.reason == "install") {
 		chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
-	} else if (details.reason == "update" && parseInt(details.previousVersion, 10) < 2) {
+	} else if (details.reason == "update" && String(details.previousVersion || "").startsWith("1.")) {
+		// Only readers coming from 1.x (Save only) get "What's new"; 2.x updates open nothing.
 		chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html#updated") });
 	}
 });
@@ -81,9 +91,9 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
 		// A new page in the tab: the "can't run here" state belongs to the old one.
 		clearUnsupportedPage(tabId);
 	}
-	// The login tab moved on from the login form: try the save again straight away instead of at the next poll.
+	// The sign-in tab moved on from the sign-in pages: try the save again straight away instead of at the next poll.
 	for (const job of saveJobs.values()) {
-		if (job.loginTabId == tabId && change.status == "complete" && tab.url && !tab.url.includes("/login/")) {
+		if (job.loginTabId == tabId && change.status == "complete" && tab.url && !isSignInPage(tab.url)) {
 			job.wakeUp?.();
 		}
 	}
@@ -114,7 +124,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			return true;
 		case "screenbreak.getPrintJob":
 			getPrintJob(message.id).then(sendResponse);
+			markPrintedOnce();
 			return true;
+		case "screenbreak.printed":
+			showPrinted(message);
+			break;
 		case "singlefile.frameTree.initResponse":
 		case "singlefile.frameTree.ackInitRequest":
 			// Frame contents travel from each iframe to the top frame through here.
@@ -249,6 +263,7 @@ async function submitSave(job) {
 			}
 			if (Date.now() - job.loginStartTime > MAX_LOGIN_WAIT) {
 				job.loginTabId = null;
+				endSaveIntent();
 				report(job, STATUS.loginTimedOut());
 				return;
 			}
@@ -264,16 +279,60 @@ async function submitSave(job) {
 		report(job, STATUS.uploading());
 		job.result = await uploadArticle({ serverUrl: settings.serverUrl, refId: created.refId, gzippedHTML, version });
 		if (job.loginTabId) {
-			// Logged in from another tab: bring back the tab the user came from, so they see it was saved.
+			// Signed in from another tab: bring back the tab the user came from, so they see it was saved.
 			chrome.tabs.update(job.returnTabId || tab.id, { active: true }).catch(() => {});
 			job.loginTabId = null;
+			endSaveIntent();
 		}
-		report(job, STATUS.saved({ title: withoutSiteName(capture.title), articleURL: job.result.articleURL, tip: await takeTip() }));
+		await rememberSavedPage(capture.url, job.result.articleURL);
+		report(job, STATUS.saved({ title: withoutSiteName(capture.title), articleURL: job.result.articleURL, saves: job.result.saves, tip: await takeTip() }));
 	} catch (error) {
 		console.error(error); // eslint-disable-line no-console
-		job.loginTabId = null;
-		report(job, STATUS.saveFailed(error));
+		if (job.loginTabId) {
+			job.loginTabId = null;
+			endSaveIntent();
+		}
+		report(job, STATUS.saveFailed(error, { plusURL: plusURL(settings.serverUrl) }));
 	}
+}
+
+function isSignInPage(url) {
+	try {
+		return SIGN_IN_PATHS.test(new URL(url).pathname);
+	} catch (error) {
+		return false;
+	}
+}
+
+// The pending Save, kept for the print panel's sign-in flow too (contract C-1). The worker keeps the job
+// itself; the stored intent tells other pages what the sign-in tab is for.
+async function startSaveIntent(job) {
+	const intent = { kind: "save", sourceUrl: job.capture.url, title: job.capture.title, created: Date.now() };
+	if (job.printJobId) {
+		Object.assign(intent, { printJobId: job.printJobId, printTabId: job.returnTabId });
+	}
+	await chrome.storage.session.set({ [INTENT_KEY]: intent }).catch(() => {});
+}
+
+async function endSaveIntent() {
+	const { [INTENT_KEY]: intent } = await chrome.storage.session.get(INTENT_KEY).catch(() => ({}));
+	if (intent && intent.kind == "save") {
+		await chrome.storage.session.remove(INTENT_KEY).catch(() => {});
+	}
+}
+
+// Pages saved from this browser, so the popup can say "Saved 3 Oct · Open ↗". Keyed by a short hash of the
+// address, so the list holds no readable URLs or titles. Best effort: saves from other computers don't show.
+async function rememberSavedPage(url, articleURL) {
+	const { savedPages = {} } = await chrome.storage.local.get("savedPages");
+	savedPages[await savedPageKey(url)] = { at: Date.now(), articleURL };
+	await chrome.storage.local.set({ savedPages: Object.fromEntries(Object.entries(savedPages).slice(-MAX_SAVED_PAGES)) });
+}
+
+async function forgetSavedPage(url) {
+	const { savedPages = {} } = await chrome.storage.local.get("savedPages");
+	delete savedPages[await savedPageKey(url)];
+	await chrome.storage.local.set({ savedPages });
 }
 
 // Page titles usually end with the site's name ("The Quiet Return of Paper | Longform Weekly"); the card shows the site already.
@@ -302,7 +361,8 @@ async function onStatusAction(action, tab) {
 				return;
 			}
 			const { serverUrl } = await getSettings();
-			const loginTab = await chrome.tabs.create({ url: loginURL(serverUrl), index: tab.index + 1, openerTabId: tab.id });
+			await startSaveIntent(job);
+			const loginTab = await chrome.tabs.create({ url: emailDoorURL(serverUrl), index: tab.index + 1, openerTabId: tab.id });
 			job.loginTabId = loginTab.id;
 			job.loginStartTime = Date.now();
 			submitSave(job);
@@ -327,6 +387,7 @@ async function onStatusAction(action, tab) {
 				job.loginTabId = null;
 				job.wakeUp?.();
 			}
+			endSaveIntent();
 			report(job, STATUS.notSaved(), tab);
 			break;
 		case "dismiss":
@@ -339,6 +400,7 @@ async function onStatusAction(action, tab) {
 					const { serverUrl } = await getSettings();
 					await removeArticle({ serverUrl, refId: job.result.refId });
 					job.result = null;
+					await forgetSavedPage(job.capture.url);
 					report(job, STATUS.removed());
 				} catch (error) {
 					report(job, STATUS.undoFailed(job.result.articleURL));
@@ -350,6 +412,12 @@ async function onStatusAction(action, tab) {
 				job.cancelled = true;
 				job.loginTabId = null;
 			}
+			endSaveIntent();
+			hideStatus(tab);
+			runAction("print", tab);
+			break;
+		case "print-again":
+			// From the card after a straight-away print: the same print again, with the same settings.
 			hideStatus(tab);
 			runAction("print", tab);
 			break;
@@ -443,6 +511,23 @@ async function getPrintJob(id) {
 	}
 	const key = "printJob:" + id;
 	return (await chrome.storage.session.get(key))[key] || null;
+}
+
+// The welcome page's "Printed your first article" check. The print page opening is the closest the extension
+// can tell: Chrome doesn't say whether the dialog printed or was cancelled. Never reuse `tipShown` for this.
+async function markPrintedOnce() {
+	const { printedOnce } = await chrome.storage.local.get("printedOnce");
+	if (!printedOnce) {
+		await chrome.storage.local.set({ printedOnce: true });
+	}
+}
+
+// After a straight-away print the print tab closes itself, so the article tab says what printed (contract C-5).
+async function showPrinted({ tabId, design, pages }) {
+	const tab = tabId && await chrome.tabs.get(tabId).catch(() => null);
+	if (tab && design) {
+		showStatus(tab, STATUS.printed({ design, pages }));
+	}
 }
 
 async function fetchForPage({ url, headers }) {
