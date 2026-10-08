@@ -131,13 +131,26 @@ const WAIT_LIMIT = 5 * 60 * 1000;
 // reader signs in on the server's tab; this page checks /api/v1/me/ every 2 s and on focus, for 5 minutes. When the
 // account appears, the intent is read and deleted, then handed to onSignedIn once. Cancel or time out deletes it.
 // entry: "design" | "option" | "save" | "keep" | "account". exit: false leaves out "Keep printing without an account".
-export function renderDoor(container, { entry, design, serverUrl, intent, onCancel, onSignedIn, exit = true }) {
-	let polling = null, signInTab = null, stopped = false, onFocus = () => {};
+// start: "email" | "google" skips the card and goes straight to that way in (the locked footer's pill is the email
+// step). resume: a stored intent whose sign-in is still under way (after a reload): the card comes back waiting.
+export function renderDoor(container, { entry, design, serverUrl, intent, onCancel, onSignedIn, exit = true, start = null, resume = null }) {
+	let polling = null, signInTab = null, signInOpen = false, stopped = false, settled = false, inFlight = null;
+	let onFocus = () => {};
 	const headingId = "door-title-" + Math.random().toString(36).slice(2, 8);
+	const onTabRemoved = tabId => {
+		if (signInTab && tabId == signInTab.id) signInOpen = false;
+	};
+	// Leaving the page while no sign-in tab is open: nothing can finish this intent, so it goes. With the tab still
+	// open it stays, and the page picks the wait up again when it comes back (resume).
+	const onPageHide = () => {
+		if (!stopped && !signInOpen) chrome.storage.session.remove(INTENT_KEY).catch(() => {});
+	};
 	const close = () => {
 		stopped = true;
 		clearTimeout(polling);
 		removeEventListener("focus", onFocus);
+		removeEventListener("pagehide", onPageHide);
+		chrome.tabs.onRemoved.removeListener(onTabRemoved);
 		container.replaceChildren();
 		container.hidden = true;
 	};
@@ -158,32 +171,49 @@ export function renderDoor(container, { entry, design, serverUrl, intent, onCanc
 		await chrome.storage.session.set({ [INTENT_KEY]: stored }).catch(() => {});
 		const url = way == "google" ? doorGoogleURL(serverUrl) : doorEmailURL(serverUrl);
 		signInTab = await chrome.tabs.create(tab ? { url, index: tab.index + 1, openerTabId: tab.id } : { url }).catch(() => null);
-		showWait();
+		if (signInTab) {
+			// Kept with the intent, so a reloaded page can still bring the sign-in tab forward.
+			await chrome.storage.session.set({ [INTENT_KEY]: { ...stored, signInTabId: signInTab.id } }).catch(() => {});
+		}
+		showWait({ started: stored.created, note: !!start });
 	};
-	const showWait = () => {
-		const started = Date.now();
+	const showWait = ({ started, note = false }) => {
+		signInOpen = !!signInTab;
+		chrome.tabs.onRemoved.addListener(onTabRemoved);
+		addEventListener("pagehide", onPageHide);
 		const title = el("h3", { class: "door-title", id: headingId, text: "Waiting for you to sign in" });
 		container.replaceChildren(el("div", { class: "door waiting", role: "region", "aria-labelledby": headingId, onkeydown: onKey },
 			title,
 			el("p", { class: "door-note", role: "status", text: "Finish on the Screenbreak tab. This page carries on by itself." }),
+			// Straight from the footer pill the reader never saw the card, so its reassurance comes along.
+			note && el("p", { class: "door-note", text: "New here? Same button. We make your free account as you go." }),
 			el("div", { class: "door-buttons" },
 				el("button", { type: "button", class: "button button-outline", text: "Open the sign-in tab", onclick: () => signInTab && chrome.tabs.update(signInTab.id, { active: true }).catch(() => {}) }),
 				el("button", { type: "button", class: "link-button", text: "Cancel", onclick: () => cancel() }))));
-		const check = async () => {
+		container.hidden = false;
+		// One check at a time: the 2 s timer and a window focus can both fire, and the intent must apply exactly once.
+		// settled is set before any await that follows the answer, so a second check can never pass it.
+		const check = () => {
+			if (stopped || settled) return inFlight;
+			if (inFlight) return inFlight;
 			clearTimeout(polling);
-			if (stopped) return;
-			const account = await getAccount(serverUrl);
-			if (stopped) return;
-			if (account.state != "guest") {
-				const { [INTENT_KEY]: saved } = await chrome.storage.session.get(INTENT_KEY).catch(() => ({}));
-				await chrome.storage.session.remove(INTENT_KEY).catch(() => {});
-				close();
-				if (onSignedIn) onSignedIn(account, saved || intent || { kind: entry });
-			} else if (Date.now() - started > WAIT_LIMIT) {
-				cancel({ timedOut: true });
-			} else {
-				polling = setTimeout(check, POLL_EVERY);
-			}
+			inFlight = (async () => {
+				const account = await getAccount(serverUrl);
+				if (stopped || settled) return;
+				if (account.state != "guest") {
+					settled = true;
+					const { [INTENT_KEY]: saved } = await chrome.storage.session.get(INTENT_KEY).catch(() => ({}));
+					await chrome.storage.session.remove(INTENT_KEY).catch(() => {});
+					close();
+					if (onSignedIn) onSignedIn(account, saved || intent || { kind: entry });
+				} else if (Date.now() - started > WAIT_LIMIT) {
+					settled = true;
+					cancel({ timedOut: true });
+				} else {
+					polling = setTimeout(check, POLL_EVERY);
+				}
+			})().finally(() => inFlight = null);
+			return inFlight;
 		};
 		onFocus = check;
 		addEventListener("focus", onFocus);
@@ -191,6 +221,19 @@ export function renderDoor(container, { entry, design, serverUrl, intent, onCanc
 		title.setAttribute("tabindex", "-1");
 		title.focus();
 	};
+	container.hidden = false;
+	if (resume) {
+		signInTab = resume.signInTabId ? { id: resume.signInTabId } : null;
+		showWait({ started: resume.created || Date.now() });
+		if (signInTab) chrome.tabs.get(signInTab.id).then(() => {}, () => signInOpen = false);
+		return { close, focus: () => container.querySelector(".door-title")?.focus(), get waiting() { return !stopped; } };
+	}
+	if (start) {
+		container.replaceChildren();
+		container.hidden = true;
+		go(start);
+		return { close, focus: () => {}, get waiting() { return !stopped; } };
+	}
 	const heading = (DOOR_HEADINGS[entry] || DOOR_HEADINGS.account)({ design, intent });
 	const first = el("button", { type: "button", class: "button button-ink", text: "Continue with email", onclick: () => go("email") });
 	container.replaceChildren(el("section", { class: "door", "aria-labelledby": headingId, onkeydown: onKey },
@@ -201,7 +244,6 @@ export function renderDoor(container, { entry, design, serverUrl, intent, onCanc
 		el("p", { class: "door-note", text: "New here? Same button. We make your free account as you go." }),
 		exit && el("button", { type: "button", class: "link-button door-exit", text: "Keep printing without an account", onclick: () => cancel() }),
 		el("p", { class: "door-legal", text: "By continuing, you agree to the Terms and the Privacy policy." })));
-	container.hidden = false;
 	return { close, focus: () => first.focus(), get waiting() { return polling != null && !stopped; } };
 }
 
