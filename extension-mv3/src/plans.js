@@ -42,9 +42,11 @@ export async function getAccount(serverUrl) {
 			state: me.plan == "plus" ? "plus" : "free",
 			name: me.name || me.email || "",
 			email: me.email || "",
-			// The library meter, when the server sends it (fields asked for on webapp#103).
-			savesUsed: Number.isFinite(me.saves_used) ? me.saves_used : null,
-			savesLimit: Number.isFinite(me.saves_limit) ? me.saves_limit : null
+			// The library numbers, under the server's own names, when it sends them (fields asked for on webapp#103):
+			// saves_used and saves_limit for a free account, articles for Plus. null when absent: no number shows.
+			saves_used: Number.isFinite(me.saves_used) ? me.saves_used : null,
+			saves_limit: Number.isFinite(me.saves_limit) ? me.saves_limit : null,
+			articles: Number.isFinite(me.articles) ? me.articles : null
 		};
 	} catch (error) {
 		return { state: "guest" };
@@ -63,6 +65,7 @@ export function libraryURL(serverUrl) {
 	return `${serverUrl}/articles/`;
 }
 
+// This file is the one home of the door and library addresses (popup, welcome and background import them from here).
 // The door's two ways in. Best guesses, to confirm with webapp#103: the server makes the account if the email is
 // new, then sends the reader to the page that tells them to go back to Chrome.
 export const DOOR_NEXT = "/extension/signed-in/";

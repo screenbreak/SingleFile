@@ -124,7 +124,8 @@ function renderAccountSection(settings) {
 	if (door) door.close();
 	door = null;
 	doorSlot.hidden = true;
-	const meter = account.savesLimit ? `${account.savesUsed || 0} of ${account.savesLimit} saved · ` : "";
+	const meter = account.saves_limit ? `${account.saves_used || 0} of ${account.saves_limit} saved · `
+		: account.state == "plus" && account.articles != null ? `${account.articles.toLocaleString("en")} articles · ` : "";
 	container.replaceChildren(el("div", { class: "account-row" },
 		el("p", { class: "account-email" }, el("span", { text: account.email || account.name }), el("span", { class: "plan", text: account.state == "plus" ? "Plus" : "Free" })),
 		el("p", { class: "help" }, meter, el("a", { href: libraryURL(settings.serverUrl), target: "_blank", text: "Open my library ↗" }))));
