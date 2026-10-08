@@ -73,8 +73,9 @@ figure.wide figcaption { max-width: 120mm; }
 .video-card .url { font-size: 6.5pt; color: var(--soft); word-break: break-all; }
 
 /* End block (layout.js endBlock, paginate.js picks the mode): A = QR straight to the original + three lines,
-   B = one line. The QR is black in every design and picture mode: it is a link, not a picture. */
-.endblock { flex: none; margin-top: 4mm; padding-top: 2mm; border-top: .3pt solid var(--rule); font: 6.8pt/1.35 var(--sans); color: #6b6f72; hyphens: manual; }
+   B = one line. The QR is black in every design and picture mode: it is a link, not a picture. --qz: the QR's quiet
+   zone under the rule, 4 modules (layout.js). */
+.endblock { flex: none; margin-top: 4mm; padding-top: var(--qz, 2mm); border-top: .3pt solid var(--rule); font: 6.8pt/1.35 var(--sans); color: #6b6f72; hyphens: manual; }
 .endblock p { margin: 0; text-indent: 0; text-align: left; }
 .endblock b { font-weight: 600; }
 .endblock .url { word-break: break-all; }   /* only the address may break anywhere */
@@ -85,6 +86,8 @@ figure.wide figcaption { max-width: 120mm; }
 .endblock .end-line, .endblock.mode-b .end-full { display: none; }
 .endblock.mode-b { margin-top: 3mm; padding-top: 1.5mm; }
 .endblock.mode-b .end-line { display: block; }
+/* A one-page print has the imprint in its margin already (paginate.js adds .one-page). */
+.endblock.one-page .imprint, .endblock.one-page .end-imprint { display: none; }
 /* Per article type and design: the block keeps the text's left edge and measure (types.css, styles.css, concepts.css). */
 .type-essay .endblock, .type-thread .endblock { width: 120mm; margin-inline: auto; }
 .type-tutorial .endblock { width: 150mm; margin-inline: auto; }

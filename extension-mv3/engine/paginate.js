@@ -306,6 +306,8 @@ window.addEventListener('load', () => Promise.all([...document.fonts].map(f => f
   const endBlock = (() => {
     const last = book.lastElementChild;
     if (!source || !last) return null;
+    // One page: its margin prints the imprint already, so the block leaves out its own (magazine.css .one-page).
+    if (book.children.length === 1) source.classList.add('one-page');
     last.append(source);
     const reserve = (parseFloat(source.dataset.reserve) || 0) * MM, qr = parseFloat(source.dataset.qr) || 0;
     // A cover page (an article with no text after its cover) has no flow to follow: straight to the margin.
