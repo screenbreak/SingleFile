@@ -12,7 +12,9 @@ body { width: 320px; }
 .row:hover { background: rgba(22, 26, 24, .05); }
 .row:active { background: rgba(22, 26, 24, .08); }
 .row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Green marks the print action only; the Save bookmark is ink-2. */
 .row .icon { color: var(--accent); }
+.row[data-action=save] .icon { color: var(--ink-2); }
 .row-text { display: grid; flex: 1; min-width: 0; }
 .row-title { font: 500 14px/20px var(--sans); }
 .row-desc { font: 400 12.5px/16px var(--sans); color: var(--muted); }

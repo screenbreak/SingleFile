@@ -1,8 +1,8 @@
 // Background service worker: decides what a click does (save, print, or ask), runs the action
 // in the tab, and does the work content scripts can't (cross-origin fetches, uploading).
 import { getSettings, updateSettings } from "./settings.js";
-import { createArticle, uploadArticle, removeArticle, emailDoorURL, savedPageKey } from "./api.js";
-import { plusURL } from "./plans.js";
+import { createArticle, uploadArticle, removeArticle, savedPageKey } from "./api.js";
+import { plusURL, doorEmailURL } from "./plans.js";
 import { bytesToBase64, base64ToBytes } from "./base64.js";
 import * as STATUS from "./status-copy.js";
 
@@ -363,7 +363,7 @@ async function onStatusAction(action, tab) {
 			}
 			const { serverUrl } = await getSettings();
 			await startSaveIntent(job);
-			const loginTab = await chrome.tabs.create({ url: emailDoorURL(serverUrl), index: tab.index + 1, openerTabId: tab.id });
+			const loginTab = await chrome.tabs.create({ url: doorEmailURL(serverUrl), index: tab.index + 1, openerTabId: tab.id });
 			job.loginTabId = loginTab.id;
 			job.loginStartTime = Date.now();
 			submitSave(job);

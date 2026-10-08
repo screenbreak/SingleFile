@@ -1,8 +1,8 @@
 // The toolbar popup: Print and Save for this page, what a click on the button does, and the account (SPEC A4).
 import { getSettings, updateSettings } from "./settings.js";
 import { getShortcuts, renderKeys } from "./shortcuts.js";
-import { getAccount, plusURL } from "./plans.js";
-import { getMe, accountPageURL, libraryURL, savedPageKey } from "./api.js";
+import { getAccount, plusURL, libraryURL } from "./plans.js";
+import { accountPageURL, savedPageKey } from "./api.js";
 
 const CONSEQUENCES = {
 	ask: "Clicking the button shows this menu.",
@@ -39,9 +39,9 @@ async function init() {
 	}
 	rows.forEach(row => row.addEventListener("click", () => runRow(row, tab)));
 	// A guest sees the popup at once; the account line follows when the server answers.
-	const [account, me, saved] = await Promise.all([getAccount(settings.serverUrl), getMe(settings.serverUrl), getSavedPage(tab)]);
+	const [account, saved] = await Promise.all([getAccount(settings.serverUrl), getSavedPage(tab)]);
 	state.account = account;
-	renderAccount(account, me || {}, saved, supported);
+	renderAccount(account, saved, supported);
 	setDefaultAction(document.querySelector("input[name=defaultAction]:checked").value);
 	// Says the account line is final (design/capture-small.mjs waits for it).
 	document.body.dataset.account = account.state;
@@ -89,12 +89,12 @@ async function getSavedPage(tab) {
 	}
 }
 
-// `me` holds the optional /api/v1/me/ numbers: saves_used, saves_limit (free), articles (Plus). No number shows
-// when the server doesn't send it.
-function renderAccount(account, me, saved, supported) {
+// The numbers come with the account (plans.js `getAccount`, one /api/v1/me/ call): saves used and limit (free),
+// articles (Plus). No number shows when the server doesn't send it. Either spelling of the saves fields is read.
+function renderAccount(account, saved, supported) {
 	const guest = account.state == "guest";
-	const used = Number.isFinite(me.saves_used) ? me.saves_used : null;
-	const limit = Number.isFinite(me.saves_limit) ? me.saves_limit : null;
+	const used = firstNumber(account.savesUsed, account.saves_used);
+	const limit = firstNumber(account.savesLimit, account.saves_limit);
 	const meter = account.state == "free" && used != null && limit ? { text: `${used} of ${limit} saved`, high: used / limit >= NEARLY_FULL, full: used >= limit } : null;
 	// The switch can't work without an account, and has nothing to act on where the page can't run.
 	document.querySelector(".also-save").hidden = guest || !supported;
@@ -112,16 +112,20 @@ function renderAccount(account, me, saved, supported) {
 	if (guest) {
 		return;
 	}
-	const email = account.email || me.email || "";
+	const email = account.email || "";
 	const emailElement = document.querySelector(".email");
 	emailElement.textContent = middleTruncate(email, MAX_EMAIL_LENGTH);
 	emailElement.title = email;
 	document.querySelector(".plan").textContent = account.state == "plus" ? "Plus" : "Free";
 	const count = document.querySelector(".count");
-	const articles = Number.isFinite(me.articles) ? me.articles : null;
+	const articles = firstNumber(account.articles);
 	count.textContent = account.state == "plus" ? (articles != null ? `${articles} article${articles == 1 ? "" : "s"}` : "") : (meter ? meter.text : "");
 	count.classList.toggle("is-high", Boolean(meter && meter.high && account.state == "free"));
 	count.hidden = !count.textContent;
+}
+
+function firstNumber(...values) {
+	return values.find(Number.isFinite) ?? null;
 }
 
 function setSaveRow(title, description, href = null, high = false) {

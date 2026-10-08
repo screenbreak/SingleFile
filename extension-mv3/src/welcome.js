@@ -1,8 +1,7 @@
 // The page Chrome opens after install (SPEC A5), and "What's new" (#updated) after an update from 1.x.
 import { getSettings, updateSettings } from "./settings.js";
 import { getShortcuts, renderKeys, openShortcutSettings } from "./shortcuts.js";
-import { getAccount } from "./plans.js";
-import { emailDoorURL, googleDoorURL, loginURL } from "./api.js";
+import { getAccount, doorEmailURL, doorGoogleURL } from "./plans.js";
 
 const PIN_CHECK_INTERVAL = 1500;
 const SAVED_DELAY = 1500;
@@ -23,9 +22,12 @@ async function init() {
 		for (const selector of [".click", ".without", ".setup"]) {
 			document.querySelector(selector).hidden = true;
 		}
+		// Signed out, the door is the one ask: it names the library they already have. There is no "step one" here.
+		document.querySelector(".door .eyebrow").hidden = true;
+		document.querySelector("#door-heading").textContent = "Sign in to see your library";
 	}
-	document.querySelector(".door-email").href = emailDoorURL(settings.serverUrl);
-	document.querySelector(".door-google").href = googleDoorURL(settings.serverUrl);
+	document.querySelector(".door-email").href = doorEmailURL(settings.serverUrl);
+	document.querySelector(".door-google").href = doorGoogleURL(settings.serverUrl);
 	document.querySelector(".open-sample").addEventListener("click", openSample);
 	const radios = document.querySelectorAll("input[name=defaultAction]");
 	radios.forEach(radio => {
@@ -56,7 +58,8 @@ async function init() {
 	addEventListener("focus", () => showAccount(settings));
 }
 
-// One door, only for a reader who is signed out. "What's new" says who is signed in instead.
+// One door, only for a reader who is signed out. "What's new" says who is signed in instead; signed out, the
+// door is the only ask (no second sign-in link).
 async function showAccount(settings) {
 	const account = await getAccount(settings.serverUrl);
 	const guest = account.state == "guest";
@@ -65,12 +68,8 @@ async function showAccount(settings) {
 	document.querySelector(".also-save").hidden = guest;
 	if (updated) {
 		const line = document.querySelector(".signed-in");
-		if (guest) {
-			line.replaceChildren(Object.assign(document.createElement("a"), { href: loginURL(settings.serverUrl), target: "_blank", textContent: "Sign in to see your library" }));
-		} else {
-			line.textContent = account.email ? `Signed in as ${account.email}` : "You're signed in.";
-		}
-		line.hidden = false;
+		line.textContent = guest ? "" : account.email ? `Signed in as ${account.email}` : "You're signed in.";
+		line.hidden = guest;
 	}
 	// Says the account parts are final (design/capture-small.mjs waits for it).
 	document.body.dataset.account = account.state;

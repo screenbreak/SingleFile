@@ -11,7 +11,9 @@ const ICONS = {
 	done: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" class="fill"/><path d="M4.9 8.2l2.1 2.1 4.1-4.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 	error: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" class="fill"/><path d="M8 4.6v4.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".95" fill="#fff"/></svg>`,
 	login: `<svg viewBox="0 0 16 16"><circle cx="8" cy="5.6" r="2.6" fill="none" stroke-width="1.5"/><path d="M2.9 14c.6-2.6 2.6-4 5.1-4s4.5 1.4 5.1 4" fill="none" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-	info: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25" fill="none" stroke-width="1.5"/><path d="M8 7.4v3.6" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="5" r=".9" class="fill"/></svg>`
+	info: `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25" fill="none" stroke-width="1.5"/><path d="M8 7.4v3.6" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="5" r=".9" class="fill"/></svg>`,
+	// The popup's Save bookmark, for a library notice that is not an error (a full library).
+	library: `<svg viewBox="0 0 16 16"><path d="M4.75 2.25h6.5a.75.75 0 0 1 .75.75v10.6l-4-2.4-4 2.4V3a.75.75 0 0 1 .75-.75z" fill="none" stroke-width="1.5" stroke-linejoin="round"/></svg>`
 };
 
 // Kept on globalThis because the save and print scripts each bundle this module but must share one card.
@@ -19,12 +21,12 @@ const ui = globalThis.__screenbreakStatusUI || (globalThis.__screenbreakStatusUI
 
 export function showStatus(status) {
 	ensureCard();
-	const { state, title, detail, quote, tip, actions = [], autoHide, step } = status;
+	const { state, icon, title, detail, quote, tip, actions = [], autoHide, step } = status;
 	const card = ui.card;
 	clearTimers();
 	card.className = "card " + state;
 	card.setAttribute("role", state == "error" ? "alert" : "status");
-	card.querySelector(".icon").innerHTML = ICONS[state] || "";
+	card.querySelector(".icon").innerHTML = ICONS[icon || state] || "";
 	card.querySelector(".title").textContent = title || "";
 	setText(card.querySelector(".detail"), detail);
 	const quoteElement = card.querySelector(".quote");
@@ -164,7 +166,8 @@ function ensureCard() {
 			.actions a, .actions button { font-family: inherit; font-size: 13px; font-weight: 600; line-height: 20px; color: #005d4c; text-decoration: none; background: none; border: 0; padding: 0; cursor: pointer; }
 			.actions a:hover, .actions button:hover { text-decoration: underline; text-underline-offset: 2px; }
 			/* The card's main step is never a print, so it is the ink pill (BRAND-SPEC); green stays for links. */
-			.actions .primary { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; color: #fff; background: #161a18; border-radius: 999px; }
+			/* The gap keeps the space before a link's arrow, which the flex box would collapse ("See Plus ↗"). */
+			.actions .primary { display: inline-flex; align-items: center; gap: .3em; height: 32px; padding: 0 14px; color: #fff; background: #161a18; border-radius: 999px; }
 			.actions .primary:hover { background: #2e3431; text-decoration: none; }
 			.actions a::after { content: " \\2197" / ""; }
 			:focus-visible { outline: 2px solid #005d4c; outline-offset: 2px; border-radius: 4px; }

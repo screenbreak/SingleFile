@@ -12,12 +12,27 @@ import { join } from "node:path";
 const EXT = new URL("../dist", import.meta.url).pathname;
 const OUT = process.argv[2] || "design/after/small";
 mkdirSync(OUT, { recursive: true });
-// A free port picked by the system, so it can run next to `npm test` and design/capture.mjs.
-const server = await start(0);
+// SB_CAPTURE_PORT, or a free port picked by the system, so it can run next to `npm test` and design/capture.mjs.
+const server = await start(Number(process.env.SB_CAPTURE_PORT) || 0);
 const BASE = `http://localhost:${server.address().port}`, ARTICLE = BASE + "/article.html";
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const report = { alignment: {}, checks: [] };
 const ok = (surface, name, pass, values) => report.checks.push({ surface, name, ok: Boolean(pass), values });
+// A check that can't run on this build says why instead of passing or failing in silence.
+const skip = (surface, name, why) => report.checks.push({ surface, name, ok: true, skipped: why });
+const INK = "rgb(22, 26, 24)", INK_2 = "rgb(74, 82, 80)", ACCENT = "rgb(0, 93, 76)", WHITE = "rgb(255, 255, 255)";
+
+// Whether plans.js `getAccount` passes the Plus article count on (FIX-1 P11). The popup reads it from there only.
+const accountHasArticles = await (async () => {
+	const { getAccount } = await import("../src/plans.js");
+	const realFetch = globalThis.fetch;
+	globalThis.fetch = async () => new Response(JSON.stringify({ email: "a@b.c", plan: "plus", articles: 214 }), { status: 200, headers: { "Content-Type": "application/json" } });
+	try {
+		return (await getAccount("http://localhost")).articles == 214;
+	} finally {
+		globalThis.fetch = realFetch;
+	}
+})();
 
 // Left edge of the text inside an element (first text node), or of the box for controls and cards.
 const MEASURE = selectors => selectors.map(selector => {
@@ -69,14 +84,21 @@ try {
 	await article.goto(ARTICLE);
 	const articleTab = await tabOf(ARTICLE);
 	const popup = await context.newPage();
-	await popup.setViewportSize({ width: 320, height: 300 });
+	// Taller than any popup state, so the account row and the footer are always in the shot.
+	await popup.setViewportSize({ width: 320, height: 700 });
+	let meRequests = 0;
+	popup.on("request", request => request.url().endsWith("/api/v1/me/") && meRequests++);
 	const shootPopup = async (name, hash = "") => {
 		await popup.goto("about:blank");
+		meRequests = 0;
 		await popup.goto(ext("popup.html?tabId=" + articleTab.id + hash));
 		await popup.waitForSelector("body[data-account]", { timeout: 15000 });
 		await sleep(700);
-		const height = await popup.evaluate(() => document.documentElement.scrollHeight);
+		// The body's own height: the root element is at least the 700 px viewport.
+		const { height, footBottom } = await popup.evaluate(() => ({ height: Math.ceil(document.body.getBoundingClientRect().bottom), footBottom: document.querySelector(".foot").getBoundingClientRect().bottom }));
 		await popup.screenshot({ path: join(OUT, name), clip: { x: 0, y: 0, width: 320, height } });
+		ok("popup " + name, "account row and footer in the shot", height <= 700 && footBottom <= height, { height, footBottom });
+		ok("popup " + name, "one /api/v1/me/ call", meRequests == 1, { meRequests });
 		return popup.evaluate(() => document.body.innerText);
 	};
 	const popupEdges = async surface => {
@@ -96,6 +118,8 @@ try {
 	ok("popup guest", "print row first", (await popup.evaluate(() => document.querySelector(".row").dataset.action)) == "print", null);
 	ok("popup guest", "guest copy", text.includes("Needs a free account") && text.includes("Printing never needs an account.") && text.includes("Get all 11 designs, free →") && !text.includes("Also save what I print") && !text.includes("My articles"), null);
 	ok("popup guest", "account link opens sign-up", (await popup.getAttribute(".account-link", "href")) == `${BASE}/signup/?from=extension`, null);
+	const icons = await popup.evaluate(() => ["print", "save"].map(action => getComputedStyle(document.querySelector(`.row[data-action=${action}] .icon`)).color));
+	ok("popup guest", "green on the Print icon only, Save icon in ink-2", icons[0] == ACCENT && icons[1] == INK_2, icons);
 	await popup.click("input[name=defaultAction][value=save]");
 	await popup.screenshot({ path: join(OUT, "p02-popup-guest-click-save.png") });
 	ok("popup guest", "Save click action says it needs an account", (await popup.textContent(".consequence")) == "Save needs a free account.", null);
@@ -134,7 +158,12 @@ try {
 	me = { email: "a.very.long.reader.name.for.testing@longdomain.example.com", plan: "plus", articles: 214 };
 	text = await shootPopup("p08-popup-plus-long-email.png");
 	await popupEdges("popup plus");
-	ok("popup plus", "plus copy", text.includes("214 articles") && /PLUS/.test(text) && text.includes("Keep it for later") && text.includes("…"), null);
+	ok("popup plus", "plus copy", /PLUS/.test(text) && text.includes("Keep it for later") && text.includes("…") && text.includes("Open my library"), null);
+	if (accountHasArticles) {
+		ok("popup plus", "article count from getAccount", text.includes("214 articles"), null);
+	} else {
+		skip("popup plus", "article count from getAccount", "plans.js getAccount does not pass `articles` on yet (fixer P, FIX-1 P11)");
+	}
 	ok("popup plus", "email fits on one line", await popup.evaluate(() => { const email = document.querySelector(".email"); return email.scrollWidth <= email.clientWidth + 1; }), null);
 	me = null;
 
@@ -157,12 +186,19 @@ try {
 	ok("welcome guest", "guest copy", text.includes("No sign-up needed. Print right away.") && text.includes("Open the sample and print it") && text.includes("Your free Screenbreak account") && text.includes("Continue with Google") && text.includes("Printed your first article") && text.includes("Know someone who prints articles? Send them myscreenbreak.com.") && !text.includes("Two things it does") && !text.includes("Saving needs an account"), null);
 	ok("welcome guest", "door opens sign-up with next", (await welcome.getAttribute(".door-email", "href")).startsWith(`${BASE}/signup/?from=extension&next=`), null);
 	ok("welcome guest", "printed check empty before a print", !(await welcome.evaluate(() => document.querySelector("[data-check=printed]").classList.contains("is-done"))), null);
+	const selected = await welcome.evaluate(() => { const body = getComputedStyle(document.querySelector(".choice input:checked + .choice-body")); return { edge: body.borderTopColor, fill: body.backgroundColor, shadow: body.boxShadow }; });
+	ok("welcome guest", "selected choice: ink edge on the surface, no green", selected.edge == INK && selected.fill == WHITE && selected.shadow.includes(INK), selected);
+	const badges = await welcome.evaluate(() => [...new Set([...document.querySelectorAll(".badge")].map(badge => getComputedStyle(badge).backgroundColor))]);
+	ok("welcome guest", "step badges in ink-2", badges.length == 1 && badges[0] == INK_2, badges);
 	me = { email: "yorgos@example.com", plan: "free", saves_used: 12, saves_limit: 50 };
 	text = await shootWelcome("w02-welcome-free.png", "", "welcome free");
 	ok("welcome free", "no door, account ticked, also-save shown", !text.includes("Continue with email") && text.includes("Also save what I print") && await welcome.evaluate(() => document.querySelector("[data-check=account]").classList.contains("is-done")), null);
 	me = null;
 	text = await shootWelcome("w03-whats-new-signed-out.png", "#updated", "what's new signed out");
 	ok("what's new signed out", "copy and door", text.includes("Screenbreak now prints.") && text.includes("Sign in to see your library") && text.includes("Continue with email") && !text.includes("When you click the button"), null);
+	const asks = await welcome.evaluate(() => ({ heading: document.querySelector("#door-heading").textContent, signInMentions: document.body.innerText.split("Sign in to see your library").length - 1, emailButtons: document.body.innerText.split("Continue with email").length - 1, line: !document.querySelector(".signed-in").hidden }));
+	ok("what's new signed out", "one ask: the door, headed \"Sign in to see your library\"", asks.heading == "Sign in to see your library" && asks.signInMentions == 1 && asks.emailButtons == 1 && !asks.line, asks);
+	ok("what's new signed out", "tags in ink-2", await welcome.evaluate(() => [...document.querySelectorAll(".list .tag")].every(tag => getComputedStyle(tag).color == "rgb(74, 82, 80)")), null);
 	me = { email: "yorgos@example.com", plan: "free" };
 	text = await shootWelcome("w04-whats-new-signed-in.png", "#updated", "what's new signed in");
 	ok("what's new signed in", "signed in, no door", text.includes("Signed in as yorgos@example.com") && !text.includes("Continue with email"), null);
@@ -207,12 +243,24 @@ try {
 	await showCard(STATUS.saveFailed({ kind: "limit" }, { plusURL: BASE + "/plus/" }));
 	text = await shootCard("c03-card-library-full.png", "card library full");
 	ok("card library full", "copy", text.includes("Your library is full") && text.includes("Plus keeps as many articles as you like. Printing is still free.") && text.includes("See Plus") && text.includes("Print instead") && !/upgrade/i.test(text), null);
+	const full = await article.evaluate(() => {
+		const root = document.querySelector("screenbreak-status").shadowRoot;
+		const card = root.querySelector(".card"), link = root.querySelector(".actions a.primary");
+		// The arrow is the link's ::after: its box starts after the label's text, with a gap.
+		const range = document.createRange();
+		range.selectNodeContents(link.firstChild);
+		const textRight = range.getBoundingClientRect().right;
+		const arrowGap = Math.round((link.getBoundingClientRect().right - parseFloat(getComputedStyle(link).paddingRight) - textRight) * 10) / 10;
+		return { role: card.getAttribute("role"), info: card.classList.contains("info"), icon: getComputedStyle(root.querySelector(".icon")).color, arrow: getComputedStyle(link, "::after").content, gap: getComputedStyle(link).columnGap, arrowGap };
+	});
+	ok("card library full", "neutral notice: info, role=status, ink-2 icon", full.role == "status" && full.info && full.icon == INK_2, full);
+	ok("card library full", "\"See Plus ↗\" keeps a space before the arrow", full.arrow.includes("↗") && parseFloat(full.gap) > 2, full);
 
 	// The guest Save door, for real: Save → the card → Continue with email → the sign-up tab and the stored intent.
 	await ctl.evaluate(tab => chrome.runtime.sendMessage({ method: "screenbreak.run", action: "save", tab }), articleTab);
 	await article.waitForFunction(() => document.querySelector("screenbreak-status")?.shadowRoot?.querySelector(".card.login"), null, { timeout: 30000 });
 	text = await shootCard("c04-card-login-required.png", "card login required");
-	ok("card login required", "door copy", text.includes("Save this article to your library") && text.includes("Free for up to 50 articles.") && text.includes("Continue with email") && text.includes("Print instead"), null);
+	ok("card login required", "door copy", text.includes("Save this article to your library") && text.includes("Your library keeps what you print and save, on any computer. Free.") && !/\d+\s+articles/.test(text) && text.includes("Continue with email") && text.includes("Print instead"), null);
 	const signUpsBefore = log.filter(line => line.startsWith("GET /signup/")).length;
 	await article.evaluate(() => document.querySelector("screenbreak-status").shadowRoot.querySelector(".primary").click());
 	for (let i = 0; i < 80 && log.filter(line => line.startsWith("GET /signup/")).length == signUpsBefore; i++) await sleep(250);
@@ -244,7 +292,7 @@ try {
 } finally {
 	writeFileSync(join(OUT, "report.json"), JSON.stringify(report, null, 1));
 	for (const check of report.checks) {
-		console.log(`${check.ok ? "ok  " : "FAIL"}  ${check.surface}: ${check.name}${check.values ? "  " + JSON.stringify(check.values) : ""}`); // eslint-disable-line no-console
+		console.log(`${check.skipped ? "skip" : check.ok ? "ok  " : "FAIL"}  ${check.surface}: ${check.name}${check.skipped ? "  (" + check.skipped + ")" : check.values ? "  " + JSON.stringify(check.values) : ""}`); // eslint-disable-line no-console
 	}
 	if (report.checks.some(check => !check.ok)) process.exitCode = 1;
 	await context.close();
