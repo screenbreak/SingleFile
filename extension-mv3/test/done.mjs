@@ -254,6 +254,101 @@ test("one offer per state: a call returns one object with one type", async () =>
 	assert.equal(await mod.nextOffer({ account: GUEST, lockedClicked: true }), null, "a second call on the same print gets nothing");
 });
 
+test("the unlock offer comes only after a locked click", async () => {
+	await fresh();
+	// Below the 10-article account ask, with no saving and no kept pick, a guest gets nothing without a locked click.
+	const seen = [];
+	for (let i = 0; i < 8; i++) {
+		await printArticles(1, { from: i, screens: null });
+		seen.push((await mod.nextOffer({ account: GUEST, keptPick: false }))?.type || null);
+	}
+	assert.deepEqual(seen, Array(8).fill(null));
+	await printArticles(1, { from: 8, screens: null });
+	assert.deepEqual(await mod.nextOffer({ account: GUEST, lockedClicked: true, keptPick: false }), { type: "account", unlock: true });
+	// An account user's locked click brings no account ask.
+	await fresh();
+	await printArticles(4, { screens: null });
+	assert.equal(await mod.nextOffer({ account: FREE, lockedClicked: true, keptPick: false }), null);
+});
+
+test("the review ask comes only on a print that kept the pick", async () => {
+	await fresh();
+	await printArticles(3);
+	await chrome.storage.local.set({ sbOffers: { receiptRung: 100 } });  // keep the receipt out of the way
+	assert.equal(await mod.nextOffer({ account: FREE, keptPick: false }), null);
+	assert.equal((await chrome.storage.local.get("reviewAsk")).reviewAsk, undefined, "a skipped review is not booked");
+	await printArticles(1, { from: 3 });
+	assert.equal(await mod.nextOffer({ account: FREE, keptPick: false }), null);
+	await printArticles(1, { from: 4 });
+	assert.equal((await mod.nextOffer({ account: FREE, keptPick: true }))?.type, "review");
+});
+
+test("after the 3 account asks, only a locked click brings it back, and \"Not now\" still holds", async () => {
+	await fresh();
+	await chrome.storage.local.set({ reviewAsk: { at: 1 } });
+	await printArticles(10, { screens: null });
+	const seen = [];
+	for (let i = 0; i < 30; i++) {
+		await printArticles(1, { from: 100 + i, screens: null });
+		seen.push((await mod.nextOffer({ account: GUEST }))?.type || null);
+	}
+	assert.equal(seen.filter(type => type == "account").length, 3, `asks: ${seen}`);
+	await printArticles(3, { from: 200, screens: null });
+	assert.deepEqual(await mod.nextOffer({ account: GUEST, lockedClicked: true }), { type: "account", unlock: true });
+	await mod.dismissOffer("account");
+	for (let i = 0; i < 9; i++) {
+		await printArticles(1, { from: 300 + i, screens: null });
+		assert.equal(await mod.nextOffer({ account: GUEST, lockedClicked: true }), null, `print ${i + 1} after Not now`);
+	}
+	await printArticles(1, { from: 400, screens: null });
+	assert.equal((await mod.nextOffer({ account: GUEST, lockedClicked: true }))?.type, "account");
+});
+
+test("\"Not now\" on the receipt pushes the next rung back 10 prints", async () => {
+	await fresh();
+	await chrome.storage.local.set({ reviewAsk: { at: 1 } });
+	await printArticles(5);
+	assert.deepEqual(await mod.nextOffer({ account: FREE }), { type: "receipt", rung: 5 });
+	await mod.dismissOffer("receipt");
+	const seen = [];
+	for (let i = 0; i < 9; i++) {
+		await printArticles(1, { from: 5 + i });
+		seen.push((await mod.nextOffer({ account: FREE }))?.type || null);
+	}
+	assert.ok(!seen.includes("receipt"), `receipt came back too soon: ${seen}`);
+	await printArticles(1, { from: 14 });
+	assert.deepEqual(await mod.nextOffer({ account: FREE }), { type: "receipt", rung: 10 });
+});
+
+test("no offer on the first print, for anyone, in any season", async () => {
+	for (const account of [null, GUEST, FREE, { state: "plus" }]) {
+		for (const start of [BASE_TIME, new Date(2026, 11, 10).getTime()]) {
+			await fresh();
+			now = start;
+			await printArticles(1);
+			assert.equal(await mod.nextOffer({ account, lockedClicked: true, keptPick: true }), null, `${account?.state} at ${new Date(start).toDateString()}`);
+		}
+	}
+});
+
+test("no offer of any type after a failure", async () => {
+	const cases = [
+		["account", GUEST, { lockedClicked: true }, () => printArticles(2)],
+		["review", FREE, {}, () => printArticles(3, { screens: null })],
+		["receipt", FREE, {}, async () => { await chrome.storage.local.set({ reviewAsk: { at: 1 } }); await printArticles(5); }],
+		["year", FREE, {}, async () => { now = new Date(2026, 11, 1).getTime(); await printArticles(4); }]
+	];
+	for (const [type, account, options, setup] of cases) {
+		await fresh();
+		await setup();
+		assert.equal((await mod.nextOffer({ account, ...options }))?.type, type, `${type} is due before the failure`);
+		await fresh();
+		await setup();
+		await mod.markFailure();
+		assert.equal(await mod.nextOffer({ account, ...options }), null, `${type} after a failure`);
+	}
+});
+
 test("milestone eyebrows", () => {
 	assert.equal(milestoneEyebrow(1), "PRINT WINDOW CLOSED");
 	assert.equal(milestoneEyebrow(3), "3 ARTICLES ON PAPER");
@@ -295,7 +390,24 @@ test("printStats: milestone dates and month/year counts by distinct article", as
 	assert.equal(stats.rungs.find(rung => rung.n == 10).at, null);
 	assert.deepEqual([stats.month.articles, stats.month.pages, stats.month.words], [2, 10, 4200]);
 	assert.equal(stats.year.articles, 5);
-	assert.equal(stats.year.hours, Math.round(5 * 2100 / 230 / 60 * 10) / 10);
+	assert.equal(stats.year.minutes, Math.round(5 * 2100 / 230));
+});
+
+test("reading time: whole minutes, hours from minutes, nothing at 0", async () => {
+	await fresh();
+	await mod.recordPrint({ url: "https://example.com/short", pages: 1, words: 900 });
+	const stats = await mod.printStats();
+	assert.equal(stats.month.minutes, 4, "one short article is 4 minutes, not 0");
+	assert.deepEqual(mod.readingTime(stats.month.minutes), ["4", "minutes of reading"]);
+	assert.deepEqual(mod.readingTime(1), ["1", "minute of reading"]);
+	assert.deepEqual(mod.readingTime(59), ["59", "minutes of reading"]);
+	assert.deepEqual(mod.readingTime(60), ["1", "hour of reading"]);
+	assert.deepEqual(mod.readingTime(90), ["1.5", "hours of reading"]);
+	assert.deepEqual(mod.readingTime(438), ["7.3", "hours of reading"]);
+	for (const none of [0, null, undefined, NaN]) assert.equal(mod.readingTime(none), null);
+	await fresh();
+	await mod.recordPrint({ url: "https://example.com/no-words", pages: 2 });
+	assert.equal((await mod.printStats()).month.minutes, 0);
 });
 
 let failed = 0;

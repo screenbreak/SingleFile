@@ -1,6 +1,7 @@
 // The before-and-after receipt (SPEC B4) and the yearly card (C7): 1080 x 1080 PNGs drawn on a canvas on this
 // computer. Nothing is uploaded. The card carries shapes and numbers only: no article text, title, photo, site
 // or URL, so it is safe to post and says nothing about what the person reads.
+import { readingTime } from "./offers.js";
 
 const SIZE = 1080;
 const MARGIN = 72;
@@ -306,12 +307,13 @@ export async function drawReceipt({ screens, pages, design, photos, words, boxes
 }
 
 // The year (or month) on paper: three numbers, the same footer. label is the eyebrow, e.g. "2026 on paper".
-export async function drawYearCard({ articles = 0, pages = 0, hours = 0, label = `${new Date().getFullYear()} on paper` } = {}) {
+// minutes: whole minutes of reading (periodStats); the reading row is left out at 0.
+export async function drawYearCard({ articles = 0, pages = 0, minutes = 0, label = `${new Date().getFullYear()} on paper` } = {}) {
 	await fontsReady();
 	const { canvas, ctx, t } = newCard();
 	eyebrow(ctx, t, label);
-	const reading = hours >= 1 ? [String(Math.round(hours * 10) / 10), `hour${hours == 1 ? "" : "s"} of reading`] : [String(Math.round(hours * 60)), `minute${Math.round(hours * 60) == 1 ? "" : "s"} of reading`];
-	const rows = [[articles.toLocaleString("en"), `article${articles == 1 ? "" : "s"}`, true], [reading[0], reading[1]], [pages.toLocaleString("en"), `page${pages == 1 ? "" : "s"}`]];
+	const reading = readingTime(minutes);
+	const rows = [[articles.toLocaleString("en"), `article${articles == 1 ? "" : "s"}`, true], reading, [pages.toLocaleString("en"), `page${pages == 1 ? "" : "s"}`]].filter(Boolean);
 	let y = 380;
 	for (const [number, word, mark] of rows) {
 		ctx.font = `400 150px ${SERIF}`;
