@@ -9,6 +9,7 @@
 import QRCode from "qrcode";
 import { recommend } from "./recommend.js";
 import { FONTS } from "./fonts.js";
+import { cleanURL } from "./print-url.js";
 
 const PAGE = { w: 210, h: 297, side: 15 };
 const MEASURE = PAGE.w - 2 * PAGE.side;              // 180mm
@@ -186,7 +187,9 @@ function figureHtml(v, asset, p, captionHtml) {
 export async function prepare(article) {
 	const man = {
 		title: decode(article.title), excerpt: decode(article.excerpt || ""), byline: decode(article.byline || ""),
-		siteName: article.siteName || "", url: article.url, published: article.publishedTime, lang: article.lang || "en"
+		siteName: article.siteName || "", url: article.url, published: article.publishedTime, lang: article.lang || "en",
+		// The address on paper and in every QR (content-print.js); url stays for footnote anchors.
+		printURL: article.printURL || cleanURL(article.url) || article.url || ""
 	};
 	const doc = new DOMParser().parseFromString("<!doctype html><body><div id=sb-root></div></body>", "text/html");
 	const root = doc.getElementById("sb-root");
@@ -217,7 +220,9 @@ export async function prepare(article) {
 		if (v.kind === "img" && v.graphic) f.graphics++; else if (v.kind === "img") f.photos++; else f.charts++; }
 	const cls = classify(f);
 	const rec = recommend(f, { man, byId, blocks: body.blocks, heroId: body.heroId, type: cls.type });
-	return { man, byId, body, features: f, type: cls.type, picks: rec.picks, options: rec.options, facts: rec.facts };
+	// screens: how many screens of scrolling the page was at capture (content-print.js); null when unknown.
+	const screens = Number.isInteger(article.screens) && article.screens >= 1 ? article.screens : null;
+	return { man, byId, body, features: f, type: cls.type, picks: rec.picks, options: rec.options, facts: { ...rec.facts, screens } };
 }
 
 function hasImage(root, url) {
@@ -337,7 +342,8 @@ export async function compose(prepared, { style = "classic", pictures = "colour"
 	const out = finish(root, { swaps, colMM: G.COL, sidenotes: !!S.sidenotes, standfirst, byline: man.byline, references, pageURL: man.url });
 	const heroV = Object.values(byId).find(v => v.placed && v.placed.cls === "hero"), heroPx = heroV && heroV.px;
 	const coverOk = !!(S.cover && out.hero && heroPx && heroPx.h >= P.contentHeight / 25.4 * 150);
-	const words = body.features.words, qr = await QRCode.toString(man.url || "https://myscreenbreak.com", { type: "svg", margin: 0 });
+	const address = man.printURL || man.url || "https://myscreenbreak.com";
+	const words = body.features.words, qr = await QRCode.toString(address, { type: "svg", margin: 0 });
 	const readcard = `<aside class="sidenote readcard"><div class="qr">${qr}</div><p><b>${Math.max(1, Math.round(words / 230))} min read</b> · ${words.toLocaleString("en")} words</p><p>Scan for the original, with video and links.</p></aside>`;
 	const title = decode(body.title || man.title);
 	let site = man.siteName;
