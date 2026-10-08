@@ -91,6 +91,7 @@ figure.wide figcaption { max-width: 120mm; }
 .style-notes .endblock, .style-swiss .endblock { width: auto; margin-inline: 0; }
 .style-notes .endblock { margin-right: 62mm; }
 .style-swiss .endblock .end-full { display: grid; grid-template-columns: 38mm 1fr; column-gap: 8mm; }
+.style-swiss .endblock.mode-b .end-full { display: none; }   /* after the grid rule, so mode B is one line in Swiss too */
 .style-swiss .endblock .end-line { margin-left: 46mm; }
 .style-book:not(.type-tutorial) .endblock { width: 118mm; margin-inline: auto; }
 .style-large .endblock { width: 150mm; margin-inline: auto; font-size: 9pt; }
