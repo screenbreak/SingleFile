@@ -61,12 +61,19 @@ body { display: grid; grid-template-columns: minmax(0, 1fr) 392px; background: v
 .message p { margin: 0; color: var(--ink-2); }
 .message-actions { display: flex; gap: 16px; align-items: center; }
 
-/* Designs as tiles: the gallery over the desk on the print page, the design grid in Settings. Sample pages stay
-   at full colour; a locked design has a corner lock chip and a --muted name. */
-.gallery { position: fixed; z-index: 6; left: 0; top: 0; bottom: 0; right: 392px; overflow: auto; padding: 0 24px 32px; background: var(--bg); }
-.gallery-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0 12px; background: var(--bg); }
-.gallery-head h2 { margin: 0; font: 400 24px/30px var(--serif); }
-.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 24px 20px; }
+/* Designs as tiles: the strip pinned on top of the desk on the print page, the design grid in Settings. Sample pages
+   stay at full colour until page 1 of this article replaces them; a locked design has a corner lock chip and a --muted
+   name. The strip scrolls sideways; the pages below show the tile you choose. */
+.gallery { display: grid; gap: 6px; padding: 2px 0 10px; border-bottom: 1px solid var(--line); }
+.gallery-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 24px; }
+.gallery-head h2 { margin: 0; font: 400 11px/16px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.gallery-head .button-small { height: 30px; }
+.gallery-grid { display: grid; grid-auto-flow: column; grid-auto-columns: 84px; gap: 16px; overflow-x: auto; padding: 6px 24px 4px; scroll-padding-inline: 24px; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.gallery .tile { gap: 0; }
+.gallery .tile .thumb { margin-bottom: 6px; }
+.gallery .tile .thumb.live { aspect-ratio: auto; overflow: hidden; }
+.gallery .tile-name { font-size: 12px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gallery .tile-line { display: none; }
 .design-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 12px 10px; }
 .tile { position: relative; display: grid; align-content: start; gap: 4px; cursor: pointer; }
 .tile input { position: absolute; opacity: 0; pointer-events: none; }
@@ -77,16 +84,19 @@ body { display: grid; grid-template-columns: minmax(0, 1fr) 392px; background: v
 .design-grid .tile-name { font-size: 12px; line-height: 16px; }
 .design-grid .tile-line { display: none; }
 .tile[data-locked] .tile-name { font-weight: 500; color: var(--muted); }
-.tile[data-picked] .thumb { outline-color: var(--signal); }
+/* One selection at a time: the pick's --signal edge shows only while the pick is the design on show. */
+.tile[data-picked]:has(input:checked) .thumb { outline-color: var(--signal); }
 .tile:has(input:checked):not([data-picked]) .thumb { outline-color: var(--ink); }
 .tile:has(input:focus-visible) .thumb { outline: 2px solid var(--accent); }
 
 /* Panel: one text edge at x = 24. The picked card and the rows share a second edge for their text. */
 .panel { display: flex; flex-direction: column; min-width: 0; overflow: auto; background: var(--bg); border-left: 1px solid var(--line); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px 8px; }
-.who { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.who a { font-size: 13px; }
-.who-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-head .wordmark { flex: none; }
+/* "Settings" and "Log in" (or the name) side by side, the same size; a long name gives way first. */
+.who { display: flex; align-items: center; gap: 16px; min-width: 0; font-size: 13px; }
+.who a { flex: none; font-size: 13px; }
+.who .who-name { flex: 0 1 auto; min-width: 0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .panel-body { flex: 1 0 auto; display: grid; align-content: start; gap: 22px; padding: 6px 24px 28px; }
 .intro h1 { margin: 0; font: 400 26px/32px var(--serif); letter-spacing: -.005em; }
 .intro p { margin: 4px 0 0; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -111,8 +121,8 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 .radio input { margin: 3px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
 .radio small { display: block; font-size: 12px; color: var(--muted); }
 
-/* The pick and the other designs. Every card has a 2 px edge slot: --signal marks the pick, --ink the design on the
-   desk when it is not the pick (for a guest, a locked preview). */
+/* The pick and the other designs. Every card has a 2 px edge slot: --signal marks the pick while it is on the desk,
+   --ink the design on the desk when it is not the pick (for a guest, a locked preview). One edge at a time. */
 .picks, .others { display: grid; gap: 6px; }
 .pick { position: relative; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border: 2px solid transparent; border-radius: 14px; cursor: pointer; }
 .pick input { position: absolute; opacity: 0; pointer-events: none; }
@@ -128,7 +138,8 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 .pick .why { font-size: 12.5px; line-height: 17px; color: var(--ink-2); }
 .pick .pages { font-size: 12.5px; line-height: 17px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pick .pages:empty { display: none; }
-.picked { background: var(--surface); border-color: var(--signal); }
+.picked { background: var(--surface); }
+.picked:has(input:checked) { border-color: var(--signal); }
 .row:hover { border-color: var(--line); }
 .row[data-locked] .name { font-weight: 500; color: var(--muted); }
 .row:has(input:checked) { border-color: var(--ink); background: var(--surface); }
@@ -146,7 +157,7 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 /* Action footer: sticky at the bottom of the panel at every width. */
 .actions { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 10px; padding: 14px 24px 16px; background: var(--bg); border-top: 1px solid var(--line); }
 .act-print, .act-locked { display: grid; gap: 8px; }
-.print-button, .continue-button, .print-pick-button { width: 100%; height: 48px; font-size: 16px; }
+.print-button, .continue-button { width: 100%; height: 48px; font-size: 16px; }
 /* A long design name wraps inside the pill rather than pushing the panel sideways. */
 .continue-button { height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; line-height: 22px; white-space: normal; text-align: center; }
 .locked-links { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -154,12 +165,14 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 .sheet-link { display: none; }
 /* While the door is open or waiting, its own card holds the next step: the footer does not ask again. */
 .door-open .continue-button, .door-open .continue-google { display: none; }
-.print-pick-button { height: 44px; font-size: 15px; }
-.print-button .icon, .print-pick-button .icon { width: 20px; height: 20px; }
+.print-button .icon { width: 20px; height: 20px; }
 .print-button[aria-busy=true] { cursor: progress; }
 .sheet-toggle { display: none; }
 .secondary-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .secondary-row .link-button { font-size: 13.5px; }
+/* Quiet lines in the footer: Two-sided under Print (pages > 1), the PDF step under "Save as PDF" while its window is open. */
+.duplex-hint { margin-top: -2px; }
+.pdf-hint { margin-top: -6px; }
 
 .save-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; line-height: 20px; color: var(--ink-2); }
 .save-icon { display: grid; width: 16px; height: 16px; color: var(--green); }
@@ -195,7 +208,7 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
    blocks in a bottom sheet with the same order (SPEC A2). */
 @media (max-width: 860px) {
 	html, body { height: auto; }
-	body { display: flex; flex-direction: column; padding-bottom: 96px; }
+	body { display: flex; flex-direction: column; padding-bottom: 120px; }
 	.panel, .panel-body { display: contents; }
 	.panel-head { order: -3; padding: 14px 16px 4px; }
 	.intro { order: -2; padding: 0 16px 8px; }
@@ -204,8 +217,8 @@ legend { padding: 0; margin-bottom: 4px; font-size: 12.5px; color: var(--muted);
 	.desk-bar { padding: 10px 16px; }
 	.desk-banner { padding: 4px 16px; }
 	.view-toggle { display: none; }
-	.gallery { right: 0; padding: 0 16px 32px; }
-	.gallery-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+	.gallery-head { padding: 0 16px; }
+	.gallery-grid { grid-auto-columns: 64px; gap: 12px; padding-inline: 16px; scroll-padding-inline: 16px; }
 	.blocks { position: fixed; z-index: 8; left: 0; right: 0; bottom: 0; max-height: 85vh; overflow: auto; padding: 0 16px 24px; background: var(--bg); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 40px rgba(22, 26, 24, .18); transform: translateY(105%); visibility: hidden; transition: transform .2s, visibility 0s .2s; }
 	.sheet-open .blocks { transform: none; visibility: visible; transition: transform .2s; }
 	.sheet-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 14px 0 6px; background: var(--bg); }

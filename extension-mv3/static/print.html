@@ -18,19 +18,19 @@
 					<label><input type="radio" name="view" value="spread"><span>Side by side</span></label>
 				</div>
 			</div>
+			<section class="gallery" id="gallery" aria-labelledby="gallery-title" hidden>
+				<div class="gallery-head">
+					<h2 id="gallery-title">All 11 designs</h2>
+					<button type="button" class="button button-outline button-small gallery-close">Close</button>
+				</div>
+				<div class="gallery-grid" role="radiogroup" aria-labelledby="gallery-title"></div>
+			</section>
 			<div class="desk-banner" role="status" hidden>
 				<p class="banner-text"><span class="long"></span><span class="short"></span></p>
-				<button type="button" class="button button-outline button-small banner-back"></button>
+				<button type="button" class="button button-outline button-small banner-back">Close preview</button>
 			</div>
 		</div>
 		<div class="sheets"></div>
-		<section class="gallery" id="gallery" aria-labelledby="gallery-title" hidden>
-			<div class="gallery-head">
-				<h2 id="gallery-title">All 11 designs</h2>
-				<button type="button" class="button button-outline button-small gallery-close">Close</button>
-			</div>
-			<div class="gallery-grid" role="radiogroup" aria-labelledby="gallery-title"></div>
-		</section>
 		<div class="wait" aria-live="polite">
 			<div class="wait-inner">
 				<div class="web" aria-hidden="true">
@@ -119,21 +119,19 @@
 				</button>
 				<button type="button" class="button button-outline sheet-toggle" aria-expanded="false" aria-controls="design-and-paper">Design &amp; paper</button>
 			</div>
+			<p class="help duplex-hint" hidden>To print on both sides, turn on Two-sided in the print window.</p>
 			<div class="act-locked" hidden>
 				<button type="button" class="button button-ink continue-button"></button>
 				<div class="locked-links">
 					<button type="button" class="link-button continue-google">Continue with Google</button>
 					<button type="button" class="link-button sheet-link" aria-expanded="false" aria-controls="design-and-paper">Design &amp; paper</button>
 				</div>
-				<button type="button" class="button button-outline print-pick-button">
-					<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8"/><rect x="3.5" y="8" width="17" height="8.5" rx="1.5"/><path d="M7 13.5h10v7H7z"/></svg>
-					<span class="print-pick-label"></span>
-				</button>
 				<p class="help locked-note">Free. No card. We keep this design for you.</p>
 			</div>
 			<div class="secondary-row">
 				<button type="button" class="link-button pdf-button">Save as PDF</button>
 			</div>
+			<p class="help pdf-hint" role="status" hidden>In the print window, set Destination to Save as PDF.</p>
 			<span class="save-status" role="status" aria-live="polite" hidden><span class="save-icon" aria-hidden="true"></span><span class="save-text"></span><span class="save-actions"></span></span>
 		</div>
 	</aside>
