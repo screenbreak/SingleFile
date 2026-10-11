@@ -26,7 +26,8 @@ read this policy before publishing material to it.
   browser. Hooks cannot intercept non-Git publication tools: agents must enforce
   the same review before those operations and hold unknown material.
 - Report existing exposure privately to Nikos. Do not quote protected logic in
-  public findings, rewrite/purge published history or claim deletion recalls it.
+  public findings. Rewriting or purging published history requires his specific
+  authorization for that scope; deletion cannot recall past disclosure.
 
 ## Development and acceptance
 
